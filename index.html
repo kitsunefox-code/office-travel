@@ -113,7 +113,14 @@ function townCachePut(town){try{let idx=JSON.parse(localStorage.getItem(TOWNS_KE
 const TOWN_KEY='officetravel.town.v1';
 const OVERPASS=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
 async function overpass(q){let err;for(const ep of OVERPASS){try{const r=await fetch(ep,{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'}});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();return j.elements||[];}catch(e){err=e;}}throw err||new Error('地図サーバーに届きませんでした');}
-async function geocode(q){const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&accept-language=ja&q='+encodeURIComponent(q));if(!r.ok)throw new Error('住所検索に失敗');return r.json();}
+async function geocodeOnce(q){const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&accept-language=ja&countrycodes=jp&q='+encodeURIComponent(q));if(!r.ok)throw new Error('住所検索に失敗');return r.json();}
+function addrVariants(q){q=q.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[－‐―ー−]/g,'-').replace(/\s+/g,' ').trim();const out=[q];
+  const m=q.match(/^(.*?)(\d+)-(\d+)(?:-(\d+))?$/);if(m){out.push(m[1]+m[2]+'丁目'+m[3]);out.push(m[1]+m[2]+'丁目');}
+  const m2=q.match(/^(.*?)(\d+)丁目(\d+)(?:番)?(\d+)?(?:号)?$/);if(m2)out.push(m2[1]+m2[2]+'丁目');
+  const m3=q.match(/^(.*?)(\d+)(丁目|番地|番|号).*$/);if(m3)out.push(m3[1]+m3[2]+'丁目');
+  const noNum=q.replace(/[\d\-丁目番地号]+$/,'').trim();if(noNum&&noNum!==q)out.push(noNum);
+  return [...new Set(out.filter(Boolean))];}
+async function geocode(q){let last=[];for(const v of addrVariants(q)){const rs=await geocodeOnce(v);if(rs.length){rs.forEach(r=>r._q=v);return rs;}last=rs;await new Promise(r=>setTimeout(r,1100));}return last;}
 const KIND_MAP={restaurant:'restaurant',cafe:'cafe',pub:'pub',bar:'bar',fast_food:'fast_food',bakery:'bakery',confectionery:'sweets',pastry:'sweets',chocolate:'sweets',ice_cream:'sweets',donut:'sweets',
  books:'books',gift:'shop',variety_store:'shop',second_hand:'shop',stationery:'shop',toys:'shop',music:'shop',art:'shop',craft:'shop',antiques:'shop',deli:'shop',tea:'cafe',coffee:'cafe',convenience:'conv',supermarket:'super',
  park:'park',station:'station',theatre:'theatre',cinema:'cinema',museum:'museum',gallery:'museum',library:'library',attraction:'attraction',artwork:'artwork',marketplace:'market',
@@ -639,7 +646,7 @@ function showSetup(){const days='日月火水木金土';
   const cands=$('sCands');if(chosen)cands.innerHTML=`<div style="color:var(--ok)">📍 ${chosen.addr||chosen.label}</div>`;
   $('sFind').onclick=async()=>{const q=$('sAddr').value.trim();if(!q)return;cands.innerHTML='<span style="color:var(--dim)">探しています…</span>';
     try{const rs=await geocode(q);if(!rs.length){cands.innerHTML='<span style="color:var(--ng)">見つかりませんでした。町名や駅名で試してください</span>';return;}
-      cands.innerHTML=rs.map((r,i)=>{const a=r.address||{};const town=a.suburb||a.neighbourhood||a.quarter||a.town||a.city||a.village||'';return `<label style="display:block;margin:2px 0"><input type="radio" name="sCand" value="${i}" ${i===0?'checked':''}> ${r.display_name.split(',').slice(0,4).join(' ')}</label>`;}).join('');
+      cands.innerHTML=(rs[0]._q&&rs[0]._q!==q?`<div style="color:var(--dim);font-size:11px">番地までは地図に無かったので「${rs[0]._q}」で探しました(家は丁目の中心あたりに置かれます)</div>`:'')+rs.map((r,i)=>{const a=r.address||{};const town=a.suburb||a.neighbourhood||a.quarter||a.town||a.city||a.village||'';return `<label style="display:block;margin:2px 0"><input type="radio" name="sCand" value="${i}" ${i===0?'checked':''}> ${r.display_name.split(',').slice(0,4).join(' ')}</label>`;}).join('');
       const pick=i=>{const r=rs[i];const a=r.address||{};chosen={la:+r.lat,lo:+r.lon,label:a.suburb||a.neighbourhood||a.quarter||a.town||a.city||a.village||r.display_name.split(',')[0],addr:q};};
       pick(0);cands.querySelectorAll('input[name=sCand]').forEach(el=>el.onchange=()=>pick(+el.value));}
     catch(e){cands.innerHTML='<span style="color:var(--ng)">住所検索がうまくいきませんでした。少し待って再試行</span>';}};
