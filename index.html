@@ -4,54 +4,93 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>オフィストラベル</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
 <style>
-  :root{--bg:#f3efe6;--panel:rgba(20,24,34,.93);--fg:#f2f4f8;--dim:#a3abbd;--acc:#ffcc4d;--ok:#6ee7a1;--ng:#ff7b7b;--ad:#7cc4ff;--ink:#2b2f3a}
+  :root{
+    --paper:#faf6ee;--paper2:#f1ebdf;--line:#e3dccb;--ink:#2a2f3a;--ink2:#5b6270;--dim:#8a9099;
+    --acc:#d9773b;--acc2:#f2c9ab;--ok:#3f8f5f;--ng:#c8503c;--info:#3a78b5;--gold:#b8860b;
+    --map:#f3efe6;--shadow:0 6px 24px rgba(40,30,10,.14),0 1px 3px rgba(40,30,10,.10);
+    --fd:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Noto Sans JP",sans-serif;--fb:"Noto Sans JP","Hiragino Sans","Yu Gothic UI",system-ui,sans-serif;
+  }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:13px/1.4 system-ui,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif;overflow:hidden;user-select:none}
+  html,body{margin:0;height:100%;background:var(--map);color:var(--ink);font:13px/1.5 var(--fb);overflow:hidden;user-select:none}
   #map{position:absolute;left:0;top:0;right:0;bottom:46px;display:block;cursor:crosshair}
-  #field{position:absolute;left:0;right:0;bottom:0;height:46px;background:#3b2f2a;border-top:3px solid #5a4a3a;cursor:pointer}
-  #hud{position:absolute;left:8px;top:6px;display:flex;gap:8px;align-items:center;pointer-events:none}
-  #hud b{font-size:17px;color:#b8860b;font-variant-numeric:tabular-nums}
-  .badge{background:rgba(255,255,255,.85);border:1px solid rgba(0,0,0,.08);border-radius:10px;padding:1px 8px;font-size:11px;color:#333;box-shadow:0 1px 2px rgba(0,0,0,.08)}
-  #btns{position:absolute;right:8px;top:6px;display:flex;gap:6px}
-  button{background:rgba(255,255,255,.9);color:#222;border:1px solid rgba(0,0,0,.12);border-radius:8px;padding:4px 10px;font:inherit;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  #field{position:absolute;left:0;right:0;bottom:0;height:46px;background:#6b8f4e;border-top:1px solid rgba(0,0,0,.15);cursor:pointer}
+  /* 上部: 今どこ */
+  #hud{position:absolute;left:10px;top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;max-width:calc(100% - 420px);pointer-events:none}
+  #hud .card{background:rgba(250,246,238,.94);border:1px solid var(--line);border-radius:12px;padding:6px 12px;box-shadow:var(--shadow);display:flex;gap:10px;align-items:center}
+  #hud .who{font-family:var(--fd);font-weight:700;font-size:14px;color:var(--ink)}
+  #hud #status{font-size:13px;color:var(--ink);font-weight:500}
+  #hud #wallet{font-size:15px;color:var(--gold);font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:.3px}
+  #hud .badge{background:transparent;border:0;padding:0;font-size:12px;color:var(--ink2)}
+  #hud #clock{font-variant-numeric:tabular-nums}
+  /* 右上: タブ */
+  #btns{position:absolute;right:10px;top:8px;display:flex;gap:0;background:rgba(250,246,238,.94);border:1px solid var(--line);border-radius:12px;padding:3px;box-shadow:var(--shadow)}
+  #btns button{background:transparent;border:0;border-radius:9px;padding:5px 11px;font:500 13px/1.2 var(--fb);color:var(--ink2);cursor:pointer;box-shadow:none}
+  #btns button:hover{background:var(--paper2);color:var(--ink)}
+  #btns button.act{background:var(--ink);color:#fff}
+  button{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:5px 11px;font:500 13px/1.2 var(--fb);cursor:pointer}
   button:hover{background:#fff}
-  button.dark{background:var(--panel);color:var(--fg);border-color:rgba(255,255,255,.15)}
-  #panel{position:absolute;right:8px;top:36px;bottom:54px;width:360px;max-width:calc(100% - 16px);background:var(--panel);color:var(--fg);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px;overflow:auto;backdrop-filter:blur(4px)}
-  #panel h3{margin:0 0 8px;font-size:14px;color:var(--acc)}
-  #panel .row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.07)}
-  #panel .row small{display:block;color:var(--dim)}
-  #panel .note{color:var(--dim);font-size:11px;margin-top:8px}
-  #panel a{color:var(--ad)}
-  #panel button{background:rgba(255,255,255,.08);color:var(--fg);border-color:rgba(255,255,255,.18);white-space:nowrap}
-  #panel button.on{color:var(--acc);border-color:var(--acc)}
-  .polaroid{display:inline-block;width:104px;background:#fff;color:#222;padding:6px 6px 8px;margin:4px;border-radius:2px;box-shadow:0 2px 6px rgba(0,0,0,.35);transform:rotate(-1.5deg);vertical-align:top}
-  .polaroid:nth-child(even){transform:rotate(1.5deg)}
-  .polaroid .pic{height:70px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:34px}
-  .polaroid .cap{font-size:10px;line-height:1.25;margin-top:5px;color:#333}
+  button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+  button:disabled{opacity:.45;cursor:default}
+  button.buy,#modal button.buy,#sOk{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
+  button.buy:hover,#sOk:hover{background:#c4692f}
+  /* 右パネル: 日記・旅程 */
+  #panel{position:absolute;right:10px;top:50px;bottom:56px;width:392px;max-width:calc(100% - 20px);background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:14px 16px 16px;overflow:auto;box-shadow:var(--shadow)}
+  #panel h3{margin:0 0 10px;font:700 17px/1.3 var(--fd);color:var(--ink);letter-spacing:.2px;padding-right:28px}
+  #panel .pclose{position:absolute;right:10px;top:10px;width:26px;height:26px;border-radius:50%;padding:0;font-size:15px;line-height:1;color:var(--ink2)}
+  #panel .row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+  #panel .row small{display:block;color:var(--ink2);font-size:11.5px;line-height:1.45;margin-top:1px}
+  #panel .row b{font-weight:700}
+  #panel .row button{white-space:nowrap}
+  #panel .note{color:var(--dim);font-size:11.5px;margin-top:8px;line-height:1.5}
+  #panel a{color:var(--info);text-decoration:none;border-bottom:1px solid rgba(58,120,181,.3)}
+  #panel a:hover{border-bottom-color:var(--info)}
+  #panel button.on{color:var(--acc);border-color:var(--acc);background:#fff}
+  #panel input,#panel select,#panel textarea{font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+  #panel input:focus,#panel textarea:focus,#panel select:focus{outline:2px solid var(--acc2);border-color:var(--acc)}
+  .polaroid{display:inline-block;width:110px;background:#fff;color:#222;padding:7px 7px 9px;margin:4px 6px 6px 0;border-radius:3px;box-shadow:0 3px 10px rgba(40,30,10,.18);transform:rotate(-1.2deg);vertical-align:top}
+  .polaroid:nth-child(even){transform:rotate(1.2deg)}
+  .polaroid .pic{height:74px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:34px;overflow:hidden}
   .polaroid .pic img{width:100%;height:100%;object-fit:cover;border-radius:2px;display:block}
-  .polaroid .credit{font-size:8px;color:#888;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .receipt{font:11px/1.4 ui-monospace,Consolas,monospace;background:#fbfaf5;color:#222;padding:6px 8px;border-radius:3px;margin:4px 0;box-shadow:0 1px 3px rgba(0,0,0,.3)}
-  #modal{position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center}
-  #modal .box{background:var(--panel);color:var(--fg);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:10px 16px;min-width:300px;max-width:92%;max-height:94%;overflow:auto;text-align:center;font-size:12px;line-height:1.4}
-  #modal h2{margin:0 0 4px;font-size:15px;color:var(--acc)}
-  #modal p{margin:2px 0 6px;color:var(--dim)}
-  #modal button{background:rgba(255,255,255,.1);color:var(--fg);border-color:rgba(255,255,255,.2);margin:3px}
-  #modal select,#modal input{font:inherit;padding:2px 4px;border-radius:6px;border:1px solid #888;background:#fff;color:#222}
-  #world{position:absolute;inset:0;background:#0e1420;z-index:5}
-  #world iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-  #bWorldClose{position:absolute;left:8px;bottom:8px;z-index:6;background:rgba(0,0,0,.6);color:#fff;border-color:rgba(255,255,255,.25)}
+  .polaroid .cap{font-size:10.5px;line-height:1.3;margin-top:6px;color:#333;font-family:var(--fd)}
+  .polaroid .credit{font-size:8px;color:#999;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .receipt{font:12px/1.5 var(--fb);background:#fff;color:var(--ink);padding:8px 10px;border-radius:8px;margin:6px 0;border:1px solid var(--line);border-left:3px solid var(--acc2)}
+  .receipt button{padding:3px 9px;font-size:12px}
+  .tl{display:grid;grid-template-columns:44px 20px 1fr;gap:0 6px;align-items:start;padding:5px 0;border-bottom:1px dashed var(--line);font-size:12.5px;line-height:1.45}
+  .tl .tlt{color:var(--ink2);font-variant-numeric:tabular-nums;font-size:12px;padding-top:1px}
+  .tl .tle{text-align:center}
+  .tl .tlc{color:var(--acc);font-variant-numeric:tabular-nums;white-space:nowrap;margin-left:6px}
+  /* 見出しつきの区切り */
+  #panel .sec{font:700 13px/1.3 var(--fd);color:var(--ink2);margin:14px 0 4px;letter-spacing:.4px}
+  /* 設定・報告 */
+  #modal{position:absolute;inset:0;background:rgba(42,47,58,.42);display:flex;align-items:center;justify-content:center;padding:8px}
+  #modal .box{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:16px 20px 18px;min-width:300px;max-width:min(640px,96%);max-height:94%;overflow:auto;text-align:center;font-size:13px;line-height:1.5;box-shadow:var(--shadow)}
+  #modal h2{margin:0 0 6px;font:700 18px/1.3 var(--fd);color:var(--ink);text-wrap:balance}
+  #modal p{margin:2px 0 8px;color:var(--ink2)}
+  #modal .big{font-size:24px;color:var(--ink);margin:6px 0;font-variant-numeric:tabular-nums}
+  #modal button{margin:4px}
+  #modal select,#modal input{font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+  #modal input[type=time]{width:112px}
+  #modal label{cursor:pointer}
   .hidden{display:none!important}
-  #toast{position:absolute;left:50%;bottom:54px;transform:translateX(-50%);background:rgba(20,24,34,.85);color:var(--ok);padding:4px 12px;border-radius:8px;pointer-events:none;transition:opacity .4s;opacity:0;font-size:12px}
+  #toast{position:absolute;left:50%;bottom:56px;transform:translateX(-50%);background:rgba(42,47,58,.92);color:#fff;padding:6px 14px;border-radius:10px;pointer-events:none;transition:opacity .4s;opacity:0;font-size:12.5px;box-shadow:var(--shadow);max-width:90%}
+  @media (max-width:760px){
+    #hud{max-width:calc(100% - 20px);top:52px}
+    #btns{right:10px;left:10px;justify-content:space-between}
+    #panel{left:10px;right:10px;width:auto;top:96px}
+    #modal .box{padding:12px 14px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <canvas id="map"></canvas>
 <canvas id="field"></canvas>
 <div id="hud">
-  <div><b id="wallet">¥0</b> <span class="badge">お小遣い</span></div>
-  <span id="status" class="badge"></span>
-  <span id="clock" class="badge"></span>
+  <div class="card"><span class="who" id="hudName">もう1人のあなた</span><span id="status" class="badge"></span></div>
+  <div class="card"><b id="wallet">¥0</b><span class="badge">お小遣い</span><span id="clock" class="badge"></span></div>
 </div>
 <div id="btns">
   <button id="bPlan">旅程</button>
@@ -538,9 +577,9 @@ function draw(now){const hr=hour(Date.now());const night=nightness(hr);
   // 夜のトーン
   if(night>0&&night<=0.5){ctx.fillStyle=`rgba(40,40,80,${night*0.35})`;ctx.fillRect(0,0,W,H);}
   // 収穫欄
-  fctx.setTransform(1,0,0,1,0,0);fctx.fillStyle='#3b2f2a';fctx.fillRect(0,0,fv.width,FH);fctx.fillStyle='#4a3a30';for(let x=0;x<fv.width;x+=14)fctx.fillRect(x,FH-6,8,2);
+  fctx.setTransform(1,0,0,1,0,0);{const g=fctx.createLinearGradient(0,0,0,FH);g.addColorStop(0,'#7da35b');g.addColorStop(0.55,'#6b8f4e');g.addColorStop(0.56,'#8a6a45');g.addColorStop(1,'#6e5236');fctx.fillStyle=g;fctx.fillRect(0,0,fv.width,FH);}fctx.fillStyle='rgba(255,255,255,.10)';for(let x=6;x<fv.width;x+=17){fctx.fillRect(x,FH*0.56-4,2,4);fctx.fillRect(x+4,FH*0.56-6,2,6);}fctx.fillStyle='rgba(0,0,0,.12)';for(let x=0;x<fv.width;x+=14)fctx.fillRect(x,FH-7,8,2);
   const sw=fv.width/SLOTS;const J=JOBS[S.job];
-  fctx.font='11px sans-serif';fctx.fillStyle='rgba(255,255,255,.5)';fctx.textAlign='left';if(!S.field.slots.length)fctx.fillText(J.n+'の畑 · '+J.item+'が育つ。クリックで収穫するとお小遣いになる',8,14);else{fctx.textAlign='right';fctx.fillText(J.n+'の畑 · クリックで収穫',fv.width-8,12);}
+  fctx.font='11px "Noto Sans JP",sans-serif';fctx.fillStyle='rgba(255,255,255,.85)';fctx.textAlign='left';if(!S.field.slots.length)fctx.fillText(J.n+'の畑 · '+J.item+'が育つ。クリックで収穫するとお小遣いになる',8,14);else{fctx.textAlign='right';fctx.fillText(J.n+'の畑 · クリックで収穫',fv.width-10,14);}
   for(const s of S.field.slots){const cx=s.i*sw+sw/2;const sz=[10,16,24][s.stage];fctx.font=sz+'px sans-serif';fctx.textAlign='center';const wob=s.stage===2?Math.sin(now/300+s.i)*2:0;fctx.fillText(J.e,cx,FH-8+wob);
     if(s.stage===2){fctx.fillStyle='#ffcc4d';fctx.font='9px sans-serif';fctx.fillText('¥'+YIELD[2],cx+16,FH-18);fctx.fillStyle='rgba(255,255,255,.5)';}}
   for(let i=pops.length-1;i>=0;i--){const p=pops[i];p.t+=0.016;if(p.t>1){pops.splice(i,1);continue;}fctx.globalAlpha=1-p.t;fctx.fillStyle='#ffcc4d';fctx.font='bold 12px sans-serif';fctx.textAlign='center';fctx.fillText(p.text,p.x,FH-14-p.t*20);fctx.globalAlpha=1;}
@@ -548,7 +587,9 @@ function draw(now){const hr=hour(Date.now());const night=nightness(hr);
 
 /* ========== UI ========== */
 let tab=null;
-function openTab(t){if(tab===t){tab=null;panel.classList.add('hidden');return;}tab=t;panel.classList.remove('hidden');renderPanel();}
+const TAB_BTN={diary:'bDiary',wish:'bWish',friends:'bFriends',more:'bMore',plan:'bPlan',teach:'bTeach'};
+function syncTabs(){document.querySelectorAll('#btns button').forEach(b=>b.classList.toggle('act',!!tab&&TAB_BTN[tab]===b.id));}
+function openTab(t){if(tab===t){tab=null;panel.classList.add('hidden');syncTabs();return;}tab=t;panel.classList.remove('hidden');renderPanel();syncTabs();}
 $('bPlan').onclick=()=>openTab('plan');$('bTeach').onclick=()=>openTab('teach');
 $('bDiary').onclick=()=>openTab('diary');$('bWish').onclick=()=>openTab('wish');$('bFriends').onclick=()=>openTab('friends');$('bMore').onclick=()=>openTab('more');
 function gmaps(p){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.n+' '+(S.townName||''))+'&query_place_id=';}
@@ -558,17 +599,17 @@ function renderPanel(){if(!tab)return;let h='';
     const days={};S.diary.slice().reverse().forEach(e=>{(days[todayKey(e.t)]=days[todayKey(e.t)]||[]).push(e);});
     const keys=Object.keys(days).slice(0,3);if(!keys.length)h+='<div class="note">まだ何も。勤務時間になると家を出ます。</div>';
     for(const k of keys){const es=days[k];const spent=es.filter(e=>e.cost).reduce((a,e)=>a+e.cost,0);
-      h+=`<div class="row"><div><b>${fmtD(es[0].t)}</b><small>使った ¥${fmt(spent)} / 寄った ${es.filter(e=>e.kind==='visit').length}軒</small></div></div>`;
+      h+=`<div class="sec">${fmtD(es[0].t)}　<span style="font-weight:400">使った ¥${fmt(spent)} / 寄った ${es.filter(e=>e.kind==='visit').length}軒</span></div>`;
       h+='<div>'+es.filter(e=>e.kind==='visit').slice(0,6).map(e=>{const ph=S.photos[e.pk];const hasPic=ph&&ph.src;if(!ph&&typeof fetch==='function'&&e.pk)setTimeout(()=>fetchPhoto(e.pk),10);
         return `<div class="polaroid"><div class="pic" style="background:${e.color}">${hasPic?`<a href="${ph.url}" target="_blank" rel="noopener"><img src="${ph.src}" alt="${e.pn||''}" loading="lazy"></a>`:e.emoji}</div><div class="cap">${fmtT(e.t)} ${e.pn||''}${e.cost?'<br>¥'+fmt(e.cost):''}</div>${hasPic?`<div class="credit" title="${ph.credit}">${ph.credit}</div>`:''}</div>`;}).join('')+'</div>';
       h+=es.map(e=>{if(e.kind==='visit'){const p={n:e.pn,la:e.pla,lo:e.plo};return `<div class="receipt">${fmtT(e.t)} ${e.text}${e.mood?`<div style="color:#777;font-style:italic">— ${e.mood}</div>`:''}${e.cost?`<div style="text-align:right">¥${fmt(e.cost)}</div>`:''}<div style="margin-top:3px"><button data-wish="${e.pk}" class="${S.wish.includes(e.pk)?'on':''}">${S.wish.includes(e.pk)?'♥ 行きたい':'♡ 行きたい'}</button> ${e.lodging?hotelLinks(e.pn,e.town):`<a href="${gmapsLL(p)}" target="_blank" rel="noopener">Googleマップで開く</a>`}</div></div>`;}
-        return `<div style="font-size:11px;color:var(--dim);padding:2px 0">${fmtT(e.t)} ${e.text}</div>`;}).join('');}}
+        return `<div class="tl"><span class="tlt">${fmtT(e.t)}</span><span class="tle">${e.emoji||'・'}</span><span>${e.text}</span></div>`;}).join('');}}
   if(tab==='plan'){h+='<h3>旅程</h3>';
     const tr=S.trip;h+=`<div class="row"><div>いま<small>${statusText()} / 元気 ${Math.round(S.energy)}${tiredToday()?'(疲れている)':''}</small></div><b style="color:var(--acc)">${tr?tr.city:(S.townName||M.name)}</b></div>`;
     if(tr)h+=`<div class="row"><div>旅の途中<small>${fmtD(tr.since)}に出発 / ${tr.cities.join(' → ')} / ${Math.floor((Date.now()-tr.since)/86400000)+1}日目</small></div></div>`;
-    if(S.j.transit){h+='<div class="row"><div><b>今日の乗り継ぎ</b>'+S.j.transit.legs.map(l=>`<small>${fmtT(l.t0)} ${MODE_ICON[l.mode]||''} ${l.mode==='WALK'?'歩く':(l.agency?l.agency+' ':'')+(MODE_JA[l.mode]||'')+(l.route?' '+l.route:'')+(l.headsign?' '+l.headsign+'行き':'')} ${l.from.n} → ${l.to.n} (${fmtT(l.t1)}着)</small>`).join('')+'</div></div>';}
+    if(S.j.transit){h+='<div class="sec">いまの乗り継ぎ</div>'+S.j.transit.legs.map(l=>`<div class="tl"><span class="tlt">${fmtT(l.t0)}</span><span class="tle">${MODE_ICON[l.mode]||'・'}</span><span>${l.mode==='WALK'?'歩く':(l.agency?l.agency+' ':'')+(MODE_JA[l.mode]||'')+(l.route?' '+l.route:'')+(l.headsign?' '+l.headsign+'行き':'')}<br><small style="color:var(--ink2)">${l.from.n} → ${l.to.n}(${fmtT(l.t1)}着)</small></span></div>`).join('');}
     const today=todayKey();const es=S.diary.filter(e=>todayKey(e.t)===today);
-    h+='<div style="margin-top:6px"><b>今日の流れ</b>'+(es.length?es.map(e=>`<div style="font-size:12px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:var(--dim)">${fmtT(e.t)}</span> ${e.emoji||''} ${e.text}${e.cost?' <span style="color:var(--acc)">¥'+fmt(e.cost)+'</span>':''}</div>`).join(''):'<div class="note">まだ何も。</div>')+'</div>';
+    h+='<div class="sec">今日の流れ</div>'+(es.length?es.map(e=>`<div class="tl"><span class="tlt">${fmtT(e.t)}</span><span class="tle">${e.emoji||(e.kind==='note'?'・':'')}</span><span>${e.text}${e.cost?'<span class="tlc">¥'+fmt(e.cost)+'</span>':''}</span></div>`).join(''):'<div class="note">まだ何も。</div>');
     h+=`<div class="row" style="border:0;margin-top:6px"><div><b>行き先を指定する</b><small>次の朝に、ここへ向かう(勤務時間内に着ける範囲で)</small></div></div>
       <div style="display:flex;gap:4px;flex-wrap:wrap"><select id="rqCity"><option value="">街を選ぶ</option>${CITIES_JP.map(c=>`<option value="${c[0]}">${c[0]}</option>`).join('')}</select><input id="rqText" placeholder="または住所・駅名・施設名" style="flex:1;min-width:140px"><button id="rqGo">行ってほしい</button>${S.trip?'<button id="rqHome">帰ってきて</button>':''}</div>
       ${S.request?`<div class="note" style="color:var(--ok)">📌 次の朝: ${S.request.name} へ向かう予定 <button id="rqClear">取り消す</button></div>`:''}`;
@@ -606,7 +647,7 @@ function renderPanel(){if(!tab)return;let h='';
     h+=`<div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
     h+='<div class="note">版: v12 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
-  panel.innerHTML=h;
+  panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   panel.querySelectorAll('[data-wish]').forEach(b=>b.onclick=()=>{const k=b.dataset.wish;if(S.wish.includes(k))S.wish=S.wish.filter(x=>x!==k);else{S.wish.push(k);const p=poiOf(k);if(p)remember(p);}renderPanel();save();});
   panel.querySelectorAll('[data-unwish]').forEach(b=>b.onclick=()=>{const k=b.dataset.unwish;S.wish=S.wish.filter(x=>x!==k);renderPanel();save();});
   panel.querySelectorAll('[data-went]').forEach(b=>b.onclick=()=>{const k=b.dataset.went;S.went[k]=Date.now();S.stats.memories++;const p=poiOf(k)||{n:''};addDiary({kind:'note',text:'あなたが'+p.n+'に行ってきた! 同じ店の思い出がふたつになった',t:Date.now()});bubble={text:'あそこ行ったの? いいよね!',until:performance.now()+5000,next:20000};toast(S.name+'「'+p.n+'行ったの? いいよね!」','var(--acc)');renderPanel();save();});
@@ -696,7 +737,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 function frame(t){if(!M){last=t;requestAnimationFrame(frame);return;}const dt=Math.min(0.1,(t-last)/1000);last=t;const now=Date.now();
   tick();
   draw(t);
-  hudT+=dt;if(hudT>0.2){hudT=0;$('wallet').textContent='¥'+fmt(S.wallet);$('status').textContent=statusText();const d=new Date();$('clock').textContent=fmtT(d)+(inWork(now)?' 勤務中':'')+(S.weather&&Date.now()-S.weather.t<3*3600e3?(rainy()?' ☔':' '+Math.round(S.weather.temp)+'℃'):'');if(S.setup&&M)updateWeather();}
+  hudT+=dt;if(hudT>0.2){hudT=0;$('wallet').textContent='¥'+fmt(S.wallet);$('status').textContent=statusText();$('hudName').textContent=S.name;const d=new Date();$('clock').textContent=fmtT(d)+(inWork(now)?' 勤務中':'')+(S.weather&&Date.now()-S.weather.t<3*3600e3?(rainy()?' ☔':' '+Math.round(S.weather.temp)+'℃'):'');if(S.setup&&M)updateWeather();}
   requestAnimationFrame(frame);}
 fv.addEventListener('click',e=>harvestAt(e.clientX));
 cv.addEventListener('click',e=>{ // 店をクリックで行きたい
