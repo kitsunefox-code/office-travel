@@ -112,7 +112,7 @@ function townCachePut(town){try{let idx=JSON.parse(localStorage.getItem(TOWNS_KE
     catch(e){if(!idx.length)return false;const old=idx.shift();localStorage.removeItem('officetravel.town.'+old.id);localStorage.setItem(TOWNS_KEY,JSON.stringify(idx));}}}catch(e){}return false;}
 const TOWN_KEY='officetravel.town.v1';
 const OVERPASS=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
-async function overpass(q){let err;for(const ep of OVERPASS){try{const r=await fetch(ep,{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'}});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();return j.elements||[];}catch(e){err=e;}}throw err||new Error('地図サーバーに届きませんでした');}
+async function overpass(q,timeoutMs){let err;for(const ep of OVERPASS){const ac=new AbortController();const tm=setTimeout(()=>ac.abort(),timeoutMs||75000);try{const r=await fetch(ep,{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:ac.signal});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();clearTimeout(tm);return j.elements||[];}catch(e){err=e;}finally{clearTimeout(tm);}}throw err||new Error('地図サーバーに届きませんでした');}
 async function geocodeOnce(q){const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&accept-language=ja&countrycodes=jp&q='+encodeURIComponent(q));if(!r.ok)throw new Error('住所検索に失敗');return r.json();}
 function addrVariants(q){q=q.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[－‐―ー−]/g,'-').replace(/\s+/g,' ').trim();const out=[q];
   const m=q.match(/^(.*?)(\d+)-(\d+)(?:-(\d+))?$/);if(m){out.push(m[1]+m[2]+'丁目'+m[3]);out.push(m[1]+m[2]+'丁目');}
@@ -144,14 +144,21 @@ async function buildTown(la,lo,label,withWide,prog){const H=la+','+lo;
   const nearest=(a,b)=>{let best=0,bd=1e18;for(let i=0;i<nodes.length;i++){const d=(nodes[i][0]-a)**2+((nodes[i][1]-b)*0.81)**2;if(d<bd){bd=d;best=i;}}return best;};
   const pois=[],seen=new Set();
   for(const e of P){const p=poiFrom(e,false);if(!p)continue;const k=p.n+'|'+p.k;if(seen.has(k))continue;seen.add(k);p.nn=nearest(p.la,p.lo);pois.push(p);}
-  let wide=[];
-  if(withWide){prog('乗り物で行ける名所を探しています…');
-    try{const WR=await overpass(`[out:json][timeout:120];way(around:6000,${H})[highway~"^(motorway|trunk|primary|secondary|tertiary)$"];out geom;`);
-      for(const w of WR){const g=w.geometry||[];if(g.length<2)continue;const hw=w.tags.highway;const wd=(hw==='motorway'||hw==='trunk'||hw==='primary')?3:hw==='secondary'?2:1;wide.push([wd,g.filter((_,i)=>i%2===0||i===g.length-1).map(pt=>[+pt.lat.toFixed(5),+pt.lon.toFixed(5)])]);}
-      const WP=await overpass(`[out:json][timeout:120];(way(around:6000,${H})[leisure=park][name][wikidata];relation(around:6000,${H})[leisure=park][name][wikidata];node(around:6000,${H})[tourism~"^(attraction|museum|zoo|aquarium|theme_park|viewpoint|gallery)$"][name];way(around:6000,${H})[tourism~"^(attraction|museum|zoo|aquarium|theme_park)$"][name];node(around:6000,${H})[amenity~"^(cinema|theatre)$"][name];way(around:6000,${H})[shop~"^(mall|department_store)$"][name];node(around:6000,${H})[amenity~"^(restaurant|cafe)$"][name][wikidata];node(around:6000,${H})[amenity=place_of_worship][name][wikidata];way(around:6000,${H})[amenity=place_of_worship][name][wikidata];node(around:6000,${H})[name~"道の駅"];way(around:6000,${H})[name~"道の駅"];node(around:6000,${H})[amenity=public_bath][name][wikidata];way(around:6000,${H})[amenity=public_bath][name][wikidata];);out center tags;`);
-      for(const e of WP){const p=poiFrom(e,true);if(!p)continue;const k=p.n+'|'+p.k;if(seen.has(k)||dist([la,lo],[p.la,p.lo])<1150)continue;seen.add(k);pois.push(p);}
-    }catch(e){console.warn('wide failed',e);}}
-  return {name:label,center:[la,lo],home:[la,lo,nearest(la,lo)],nodes,edges,pois,wide};}
+  const town={name:label,center:[la,lo],home:[la,lo,nearest(la,lo)],nodes,edges,pois,wide:[],wideLoaded:!withWide};
+  if(withWide)setTimeout(()=>loadWideAsync(town,la,lo,seen),200);
+  return town;}
+async function loadWideAsync(town,la,lo,seen){const H=la+','+lo;seen=seen||new Set(town.pois.map(p=>p.n+'|'+p.k));
+  try{const WR=await overpass(`[out:json][timeout:90];way(around:5000,${H})[highway~"^(motorway|trunk|primary|secondary)$"];out geom;`,90000);
+    const wide=[];for(const w of WR){const g=w.geometry||[];if(g.length<2)continue;const hw=w.tags.highway;const wd=(hw==='motorway'||hw==='trunk'||hw==='primary')?3:2;wide.push([wd,g.filter((_,i)=>i%3===0||i===g.length-1).map(pt=>[+pt.lat.toFixed(5),+pt.lon.toFixed(5)])]);}
+    town.wide=wide;
+    const WP=await overpass(`[out:json][timeout:90];(way(around:6000,${H})[leisure=park][name][wikidata];relation(around:6000,${H})[leisure=park][name][wikidata];node(around:6000,${H})[tourism~"^(attraction|museum|zoo|aquarium|theme_park|viewpoint|gallery)$"][name];way(around:6000,${H})[tourism~"^(attraction|museum|zoo|aquarium|theme_park)$"][name];node(around:6000,${H})[amenity~"^(cinema|theatre)$"][name];way(around:6000,${H})[shop~"^(mall|department_store)$"][name];node(around:6000,${H})[amenity~"^(restaurant|cafe)$"][name][wikidata];node(around:6000,${H})[amenity=place_of_worship][name][wikidata];way(around:6000,${H})[amenity=place_of_worship][name][wikidata];node(around:6000,${H})[name~"道の駅"];way(around:6000,${H})[name~"道の駅"];node(around:6000,${H})[amenity=public_bath][name][wikidata];way(around:6000,${H})[amenity=public_bath][name][wikidata];);out center tags;`,90000);
+    let added=0;for(const e of WP){const p=poiFrom(e,true);if(!p)continue;const k=p.n+'|'+p.k;if(seen.has(k)||dist([la,lo],[p.la,p.lo])<1150)continue;seen.add(k);town.pois.push(p);added++;}
+    town.wideLoaded=true;
+    if(M===town){POIS=town.pois;}
+    const isHome=S.homeLL&&dist(S.homeLL,[la,lo])<400;if(isHome)saveTown(town);else townCachePut(town);
+    if(added)toast('遠くの名所 '+added+'件を追加で取り込んだ','var(--dim)');}
+  catch(e){console.warn('wide failed',e);town.wideLoaded=false;}}
+
 function saveTown(town){try{localStorage.setItem(TOWN_KEY,JSON.stringify(town));return true;}catch(e){console.warn('town too large to store',e);return false;}}
 function dist(a,b){const R=6371000,q=Math.PI/180;const dLa=(b[0]-a[0])*q,dLo=(b[1]-a[1])*q;const h=Math.sin(dLa/2)**2+Math.cos(a[0]*q)*Math.cos(b[0]*q)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
 function route(a,b){ // ダイクストラ(道路グラフ)
@@ -657,7 +664,7 @@ function showSetup(){const days='日月火水木金土';
     const prefs=[...document.querySelectorAll('.sPref:checked')].map(c=>c.value);if(!prefs.length){toast('好みを1つは','var(--ng)');return;}
     S.name=($('sName').value.trim()||'もう1人のあなた').slice(0,12);S.job=$('sJob').value;S.vehicle=$('sVeh').value;document.querySelectorAll('.sTrait').forEach(c=>{S.taught.habits[c.value]=c.checked;});S.work={start:st,end:en,days:daysSel};S.prefs=prefs.slice(0,3);
     const homeChanged=!S.homeLL||Math.abs(S.homeLL[0]-chosen.la)>1e-5||Math.abs(S.homeLL[1]-chosen.lo)>1e-5||!M;
-    if(homeChanged){const ok=$('sOk');ok.disabled=true;mbox.innerHTML=`<h2>街を用意しています</h2><p id="ldMsg">住所のまわりを調べています…</p><p style="color:var(--dim)">OpenStreetMap から道と店を取り込みます。1〜2分かかることがあります。</p>`;
+    if(homeChanged){const ok=$('sOk');ok.disabled=true;mbox.innerHTML=`<h2>街を用意しています</h2><p id="ldMsg">住所のまわりを調べています…</p><p style="color:var(--dim)">OpenStreetMap から道と店を取り込みます。30秒〜1分ほど。遠くの名所は始まってから後追いで足します。</p>`;
       try{let town;if(chosen.sample&&typeof KICHI!=='undefined')town=KICHI;else town=await buildTown(chosen.la,chosen.lo,chosen.label,true,m=>{const el=$('ldMsg');if(el)el.textContent=m;});
         initTown(town);saveTown(town);S.homeLL=[chosen.la,chosen.lo];S.homeAddr=chosen.addr;S.townName=chosen.label;
         S.trip=null;S.j={t:Date.now(),state:'home',pos:[HOME.la,HOME.lo],at:-1,path:[],seg:0,segPos:0,target:-1,until:0,lastReport:0,straight:null};
@@ -701,7 +708,7 @@ resize();
   if(S.trip){let away=null;try{const a=JSON.parse(localStorage.getItem(AWAY_KEY)||'null');if(a&&a.name===S.trip.city)away=a.nodes?a:townCacheGet(a.name,a.la,a.lo);}catch(e){}if(away)town=away;}
   const j=S.j;j.planning=null;j.cityTarget=null;const wasLoading=j.loadingTown;j.loadingTown=null;
   let awayMissing=false;if(S.trip&&(!town||town.name!==S.trip.city)){awayMissing=true;}
-  if(town){initTown(town);}else if(typeof KICHI!=='undefined'){initTown(KICHI);}
+  if(town){initTown(town);if(town.wideLoaded===false||(town.wide&&!town.wide.length&&!town.wideLoaded))setTimeout(()=>loadWideAsync(town,town.center[0],town.center[1]),3000);}else if(typeof KICHI!=='undefined'){initTown(KICHI);}
   if(S.setup&&M&&(awayMissing||wasLoading)&&S.trip){const c=CITIES_JP.find(x=>x[0]===S.trip.city);const la=c?c[1]:(j.pos?j.pos[0]:M.center[0]),lo=c?c[2]:(j.pos?j.pos[1]:M.center[1]);
     j.state='stay';j.until=Date.now()+60000;setTimeout(()=>arriveCity({name:S.trip.city,la,lo,resume:true},Date.now()),500);}
   if(!S.setup||!M)showSetup();
