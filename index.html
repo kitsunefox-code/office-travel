@@ -711,6 +711,9 @@ resize();
   if(town){initTown(town);if(town.wideLoaded===false||(town.wide&&!town.wide.length&&!town.wideLoaded))setTimeout(()=>loadWideAsync(town,town.center[0],town.center[1]),3000);}else if(typeof KICHI!=='undefined'){initTown(KICHI);}
   if(S.setup&&M&&(awayMissing||wasLoading)&&S.trip){const c=CITIES_JP.find(x=>x[0]===S.trip.city);const la=c?c[1]:(j.pos?j.pos[0]:M.center[0]),lo=c?c[2]:(j.pos?j.pos[1]:M.center[1]);
     j.state='stay';j.until=Date.now()+60000;setTimeout(()=>arriveCity({name:S.trip.city,la,lo,resume:true},Date.now()),500);}
+  // 家の街が保存されていない(容量不足・別ブラウザ等)のに設定済みなら、裏で取り直す
+  if(S.setup&&S.homeLL&&!S.trip&&(!town||dist([town.center[0],town.center[1]],S.homeLL)>400)){const [la,lo]=S.homeLL;toast('家のまわりの地図を取り直しています…','var(--dim)');
+    buildTown(la,lo,S.townName||'家のまわり',true,()=>{}).then(tn=>{initTown(tn);saveTown(tn);if(!j.pos||dist(j.pos,[la,lo])>3000){j.at=-1;j.pos=[la,lo];}toast('家のまわりの店・場所 '+POIS.length+'件','var(--acc)');}).catch(e=>{toast('地図を取り直せなかった。設定から家を選び直してください','var(--ng)');});}
   if(!S.setup||!M)showSetup();
   requestAnimationFrame(frame);})();
 </script>
