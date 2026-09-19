@@ -296,15 +296,15 @@ function goCity(city,t){const j=S.j;j.state='stay';j.until=t+90000;j.cityTarget=
       addDiary({kind:'note',text:city.name+'へ。飛行機で行く。'+plan.legs.find(l=>l.mode==='AIRPLANE').from.n+' '+fmtT(plan.flight.dep)+'発 '+plan.flight.op+' '+plan.flight.fn+'便、'+plan.legs.find(l=>l.mode==='AIRPLANE').to.n+' '+fmtT(plan.legs.find(l=>l.mode==='AIRPLANE').t1)+'着',t});
       toast(S.name+'は'+city.name+'へ飛ぶ('+plan.flight.op+' '+plan.flight.fn+')','var(--acc)');}).catch(()=>{if(j.planning&&j.planning.token===token){requestTransit(-1,t,[city.la,city.lo],city);}});return;}
   requestTransit(-1,t,[city.la,city.lo],city);}
-async function arriveCity(city,t){const j=S.j;j.cityTarget=null;S.stats.visits++;
+async function arriveCity(city,t){const j=S.j;j.cityTarget=null;if(!city.resume)S.stats.visits++;
   if(city.home){addDiary({kind:'note',text:'家の街に帰ってきた('+fmtT(t)+')',t});S.trip=null;let town=null;try{town=JSON.parse(localStorage.getItem(TOWN_KEY)||'null');}catch(e){}if(!town&&typeof KICHI!=='undefined')town=KICHI;if(town)initTown(town);j.at=-1;j.pos=[HOME.la,HOME.lo];j.state='stay';j.until=t+5*60000;save();return;}
-  S.cities[city.name]=(S.cities[city.name]||0)+1;if(!S.trip)S.trip={since:t,cities:[]};S.trip.city=city.name;S.trip.cities.push(city.name);
-  addDiary({kind:'note',text:city.name+'に着いた('+fmtT(t)+')。まず駅のまわりを見てみる',t});
+  if(!city.resume){S.cities[city.name]=(S.cities[city.name]||0)+1;if(!S.trip)S.trip={since:t,cities:[]};S.trip.city=city.name;S.trip.cities.push(city.name);
+  addDiary({kind:'note',text:city.name+'に着いた('+fmtT(t)+')。まず駅のまわりを見てみる',t});}
   j.state='stay';j.until=t+8*60000;j.loadingTown=city.name;
   try{let town=townCacheGet(city.name,city.la,city.lo);
     if(!town){town=await buildTown(city.la,city.lo,city.name,true,()=>{});townCachePut(town);}
     try{localStorage.setItem(AWAY_KEY,JSON.stringify({name:town.name,la:town.center[0],lo:town.center[1]}));}catch(e){}
-    initTown(town);j.at=-1;j.pos=[city.la,city.lo];toast(city.name+'の店・場所 '+POIS.length+'件を取り込んだ','var(--acc)');}
+    initTown(town);if(!city.resume){j.at=-1;j.pos=[city.la,city.lo];}else{if(!j.pos)j.pos=[city.la,city.lo];if(j.at>=0&&!POIS[j.at])j.at=-1;}toast(city.name+'の店・場所 '+POIS.length+'件を取り込んだ','var(--acc)');}
   catch(e){addDiary({kind:'note',text:city.name+'の地図が取れなかった。駅のまわりでのんびりする',t:Date.now()});}
   j.loadingTown=null;save();}
 function go(toPoi,t){const j=S.j;
@@ -588,7 +588,9 @@ function renderPanel(){if(!tab)return;let h='';
     h+=`<div class="row"><div>お小遣いを渡す<small>手持ち ¥${fmt(S.wallet)}。収穫のほかに、直接渡すこともできる(試作用)</small></div><button id="bGive">+¥1,000</button></div>`;
     h+=`<div class="row"><div>統計<small>収穫 ¥${fmt(S.stats.harvest)} / 使った ¥${fmt(S.stats.spent)} / 寄った ${S.stats.visits}軒 / 友達 ${S.friends.length}人</small></div></div>`;
     h+=`<div class="row"><div>小窓で開く<small>横長の別ウィンドウ</small></div><button id="bPop">開く</button></div>`;
+    h+=`<div class="row"><div>詰まったとき<small>旅を中断して家に戻す。日記・友達・行きたいは残る</small></div><button id="bHomeNow">家に戻す</button></div>`;
     h+=`<div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
+    h+='<div class="note">版: v12 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML=h;
   panel.querySelectorAll('[data-wish]').forEach(b=>b.onclick=()=>{const k=b.dataset.wish;if(S.wish.includes(k))S.wish=S.wish.filter(x=>x!==k);else{S.wish.push(k);const p=poiOf(k);if(p)remember(p);}renderPanel();save();});
@@ -618,6 +620,7 @@ function renderPanel(){if(!tab)return;let h='';
   const ba=$('bAff');if(ba)ba.onclick=()=>{const r=prompt('楽天アフィリエイトID(例: 1a2b3c4d.5e6f7g8h.…)。空で解除',S.keys.rakutenAff||'');if(r!==null)S.keys.rakutenAff=r.trim();const sid=prompt('バリューコマース sid(じゃらん用)。空で解除',S.keys.vcSid||'');if(sid!==null)S.keys.vcSid=sid.trim();if(S.keys.vcSid){const pid=prompt('バリューコマース pid',S.keys.vcPid||'');if(pid!==null)S.keys.vcPid=pid.trim();}toast('アフィリエイト設定を保存');renderPanel();save();};
   const bs=$('bSetup');if(bs)bs.onclick=showSetup;const bm=$('bMly');if(bm)bm.onclick=()=>{const v=prompt('Mapillary のアクセストークン(MLY|… で始まる)。空にすると解除',S.mlyToken||'');if(v!==null){S.mlyToken=v.trim();toast(S.mlyToken?'Mapillaryを使います':'Mapillaryを解除');renderPanel();save();}};const bg=$('bGive');if(bg)bg.onclick=()=>{S.wallet+=1000;S.allowance+=1000;toast('お小遣い +¥1,000','var(--acc)');renderPanel();save();};
   const bp=$('bPop');if(bp)bp.onclick=()=>window.open(location.href,'officetravel','width=1100,height=300,menubar=no,toolbar=no,location=no,status=no');
+  const bh=$('bHomeNow');if(bh)bh.onclick=()=>{if(!confirm('旅を中断して家に戻しますか?'))return;const j=S.j;j.transit=null;j.straight=null;j.planning=null;j.cityTarget=null;j.loadingTown=null;j.path=[];S.trip=null;S.request=null;let town=null;try{town=JSON.parse(localStorage.getItem(TOWN_KEY)||'null');}catch(e){}if(!town&&typeof KICHI!=='undefined')town=KICHI;if(town)initTown(town);j.at=-1;j.pos=[HOME.la,HOME.lo];j.state=inWork(Date.now())?'stay':'home';j.until=Date.now();addDiary({kind:'note',text:'(あなたの操作で家に戻した)',t:Date.now()});toast('家に戻した');renderPanel();save();};
   const br=$('bReset');if(br)br.onclick=()=>{if(confirm('本当に全部消す?')){localStorage.removeItem(KEY);location.reload();}};}
 function showSetup(){const days='日月火水木金土';
   mbox.innerHTML=`<h2>オフィストラベル</h2><p>あなたが働いている間、もう1人のあなたが家のまわりを歩きます。仕事の"収穫"がお小遣いになります。</p>
@@ -689,7 +692,11 @@ setInterval(save,5000);addEventListener('beforeunload',save);
 resize();
 (function boot(){let town=null;try{const raw=localStorage.getItem(TOWN_KEY);if(raw)town=JSON.parse(raw);}catch(e){}
   if(S.trip){let away=null;try{const a=JSON.parse(localStorage.getItem(AWAY_KEY)||'null');if(a&&a.name===S.trip.city)away=a.nodes?a:townCacheGet(a.name,a.la,a.lo);}catch(e){}if(away)town=away;}
+  const j=S.j;j.planning=null;j.cityTarget=null;const wasLoading=j.loadingTown;j.loadingTown=null;
+  let awayMissing=false;if(S.trip&&(!town||town.name!==S.trip.city)){awayMissing=true;}
   if(town){initTown(town);}else if(typeof KICHI!=='undefined'){initTown(KICHI);}
+  if(S.setup&&M&&(awayMissing||wasLoading)&&S.trip){const c=CITIES_JP.find(x=>x[0]===S.trip.city);const la=c?c[1]:(j.pos?j.pos[0]:M.center[0]),lo=c?c[2]:(j.pos?j.pos[1]:M.center[1]);
+    j.state='stay';j.until=Date.now()+60000;setTimeout(()=>arriveCity({name:S.trip.city,la,lo,resume:true},Date.now()),500);}
   if(!S.setup||!M)showSetup();
   requestAnimationFrame(frame);})();
 </script>
