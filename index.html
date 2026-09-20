@@ -422,16 +422,16 @@ function rideSceneSVG(kind){const L=curTransitLeg()||{};const now=Date.now();con
     g+=`<rect x="24" y="30" width="150" height="34" rx="6" fill="#f2c744"/><text x="99" y="53" text-anchor="middle" font-size="15" font-weight="700" fill="#2a2f3a" font-family="Zen Maru Gothic,Noto Sans JP,sans-serif">TAXI / 配車</text>`;
     g+=`<rect x="0" y="320" width="480" height="70" rx="12" fill="#5a5a68"/>`;
     g+=seatedSVG(300,392,1.02,'#5a5a68');
-    g+=`<rect x="0" y="440" width="480" height="30" rx="8" fill="#4a4a55"/><text x="240" y="600" text-anchor="middle" font-size="13" fill="#bbb" font-family="Noto Sans JP,sans-serif">${esc((L.from&&L.from.n||'')+' → '+(L.to&&L.to.n||''))}</text>`;}
+    g+=`<rect x="0" y="440" width="480" height="30" rx="8" fill="#4a4a55"/>`;}
   else if(kind==='plane'){g+=`<rect x="-1200" y="-800" width="2880" height="1240" fill="#e9e7e1"/><rect x="-1200" y="480" width="2880" height="1000" fill="#3a4658"/>`;
     g+=`<rect x="-20" y="30" width="520" height="90" rx="14" fill="#d3cfc6"/><rect x="-20" y="112" width="520" height="8" fill="#b8b3a8"/><rect x="40" y="46" width="180" height="50" rx="8" fill="#c4bfb4"/><rect x="260" y="46" width="180" height="50" rx="8" fill="#c4bfb4"/>`;
-    g+=`<rect x="120" y="70" width="60" height="14" rx="3" fill="#1e2230"/><text x="150" y="81" text-anchor="middle" font-size="9" fill="#ffb347" font-family="sans-serif">FASTEN SEAT BELT</text>`;
+    g+=`<rect x="92" y="68" width="116" height="16" rx="3" fill="#1e2230"/><text x="150" y="80" text-anchor="middle" font-size="9" fill="#ffb347" font-family="sans-serif">FASTEN SEAT BELT</text>`;
     g+=planeWindow(60,150,90,120)+planeWindow(330,150,90,120);
     g+=`<rect x="200" y="140" width="80" height="140" rx="6" fill="#dcd8cf"/>`;
     g+=`<rect x="120" y="300" width="240" height="140" rx="16" fill="#3f5a8a"/><rect x="150" y="286" width="180" height="36" rx="10" fill="#4e6a9b"/>`;
     g+=seatedSVG(240,430,1.05,'#3f5a8a');
     g+=`<rect x="0" y="478" width="480" height="16" rx="6" fill="#2f3a4a"/>`;
-    g+=`<rect x="90" y="520" width="300" height="52" rx="10" fill="#1e2230"/><text x="240" y="541" text-anchor="middle" font-size="13" fill="#9fb3d9" font-family="Noto Sans JP,sans-serif">${esc((L.route||'')+(L.agency?' '+L.agency:''))}</text><text x="240" y="562" text-anchor="middle" font-size="15" font-weight="700" fill="#fff" font-family="Zen Maru Gothic,Noto Sans JP,sans-serif">${esc((L.to&&L.to.n||'')+' '+(L.t1?fmtT(L.t1)+'着':''))}</text>`;}
+    g+=`<rect x="266" y="58" width="176" height="42" rx="6" fill="#1e2230"/><text x="354" y="74" text-anchor="middle" font-size="10" fill="#9fb3d9" font-family="Noto Sans JP,sans-serif">${esc((L.route||'')+(L.agency?' '+L.agency:''))}</text><text x="354" y="92" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" font-family="Zen Maru Gothic,Noto Sans JP,sans-serif">${esc((L.to&&L.to.n||'')+' '+(L.t1?fmtT(L.t1)+'着':''))}</text>`;}
   else if(kind==='lounge'){g+=`<rect x="-1200" y="-800" width="2880" height="1240" fill="#f4f1ea"/><rect x="-1200" y="460" width="2880" height="1000" fill="#d9d4c8"/>`;
     g+=sceneryWindow(20,140,440,180,60,'plane')+`<rect x="20" y="140" width="440" height="180" rx="4" fill="none" stroke="#c9c3b6" stroke-width="8"/><line x1="240" y1="140" x2="240" y2="320" stroke="#c9c3b6" stroke-width="6"/>`;
     g+=`<g transform="translate(140 292)"><path d="M0 0 h110 l14 -6 l-20 -8 h-104z" fill="#e8e6e1" stroke="#9aa" stroke-width="1"/><path d="M40 -6 l-14 -16 h22 l6 16z" fill="#c8503c"/></g>`;
