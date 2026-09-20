@@ -106,7 +106,12 @@
   #hud .meta{font:500 12px/1.4 var(--fb);color:var(--ink2);margin-top:3px}
   #hfoot{position:absolute;left:10px;right:10px;bottom:14px;margin:0 auto;max-width:560px;background:rgba(250,246,238,.97);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:9px 12px;box-sizing:border-box}
   #hfoot.hidden{display:none}
-  #bViewMe{position:absolute;right:10px;bottom:164px;padding:8px 12px;font:700 13px var(--fd);border-radius:999px;background:var(--ink);color:#fff;box-shadow:var(--shadow)}
+  #mapLoad{position:absolute;left:10px;right:10px;top:50%;transform:translateY(-50%);margin:0 auto;max-width:360px;background:rgba(250,246,238,.97);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);z-index:5;text-align:center}
+#mapLoad.hidden{display:none}
+#mapLoad .q{font:700 15px var(--fd);margin-bottom:6px}
+#mapLoad .opts{display:flex;gap:6px;justify-content:center;margin-top:8px}
+body.vhome #mapLoad{display:none!important}
+#bViewMe{position:absolute;right:10px;bottom:164px;padding:8px 12px;font:700 13px var(--fd);border-radius:999px;background:var(--ink);color:#fff;box-shadow:var(--shadow)}
 #bViewMe.hidden{display:none}
 body.vhome #bViewMe{display:none!important}
 #bViewHome{position:absolute;right:10px;bottom:120px;padding:8px 12px;font:700 13px var(--fd);border-radius:999px;background:rgba(250,246,238,.97);box-shadow:var(--shadow)}
@@ -216,6 +221,7 @@ body.vhome #bViewMe{display:none!important}
 <div id="hfoot" class="hidden"></div>
 <button id="bViewHome" class="hidden" title="家を見る">🏠 家</button>
 <button id="bViewMe" class="hidden" title="本人のところへ">👤 本人へ</button>
+<div id="mapLoad" class="hidden"><div class="q">地図を読み込んでいます…</div><div class="note" id="mapLoadNote">数秒待っても出ないときは、軽い画像地図に切り替えられます。</div><div class="opts"><button id="bMapCanvas">画像地図に切り替える</button><button id="bMapRetry">読み直す</button></div></div>
 <div id="morning" class="hidden"></div>
 <div id="ask" class="hidden"></div>
 <div id="poiCard" class="hidden"></div>
@@ -252,7 +258,7 @@ const JOBS={
 const VEHICLES={walk:{n:'徒歩だけ',e:'🚶',speed:1.15,range:1150,farRange:0,prep:0,park:0},bike:{n:'自転車がある',e:'🚲',speed:3.8,range:1150,farRange:3200,prep:2,park:2},car:{n:'車がある',e:'🚗',speed:7.5,range:1150,farRange:6500,prep:3,park:5}};
 function V(){return VEHICLES[S.vehicle]||VEHICLES.walk;}
 const PREF_LIST=[['onsen','温泉'],['michinoeki','道の駅・産直'],['sweets','甘いもの'],['coffee','コーヒー'],['ramen','ラーメン'],['sushi','お寿司'],['books','本屋'],['park','公園'],['art','美術・映画'],['shrine','神社・お寺'],['pub','居酒屋'],['shop','雑貨']];
-function fresh(){return{setup:false,name:'もう1人のあなた',job:'other',prefs:['coffee','park'],vehicle:'walk',wallet:1500,homeAddr:'',homeLL:null,townName:'',photos:{},mlyToken:'',weather:null,book:{},trip:null,cities:{},request:null,recs:[],plan:null,asks:[],bucket:null,stamps:{},souvenirs:[],outfit:{top:'#d97f5a',hat:null,glasses:false,bag:null,shoes:'#5a4634'},wardrobe:[],wantClothes:null,look:{hair:'short',hairC:'#2a2f3a',skin:'#f6d5b8'},taught:{shops:{},routes:[],fares:[],habits:{noRain:false,coffee:false,cheap:false,train:false,wander:false,sea:false,foodie:false},memo:''},energy:80,energyDay:'',keys:{odpt:'',rakutenAff:'',vcSid:'',vcPid:'',airlabs:'',aerodatabox:'',travelpayouts:'',tpToken:''},allowance:0,work:{start:540,end:1080,days:[1,2,3,4,5]},
+function fresh(){return{setup:false,name:'もう1人のあなた',job:'other',prefs:['coffee','park'],vehicle:'walk',wallet:1500,homeAddr:'',homeLL:null,townName:'',photos:{},mlyToken:'',weather:null,book:{},trip:null,cities:{},request:null,recs:[],plan:null,asks:[],bucket:null,stamps:{},souvenirs:[],outfit:{top:'#d97f5a',hat:null,glasses:false,bag:null,shoes:'#5a4634'},wardrobe:[],wantClothes:null,look:{hair:'short',hairC:'#2a2f3a',skin:'#f6d5b8'},mapMode:'auto',taught:{shops:{},routes:[],fares:[],habits:{noRain:false,coffee:false,cheap:false,train:false,wander:false,sea:false,foodie:false},memo:''},energy:80,energyDay:'',keys:{odpt:'',rakutenAff:'',vcSid:'',vcPid:'',airlabs:'',aerodatabox:'',travelpayouts:'',tpToken:''},allowance:0,work:{start:540,end:1080,days:[1,2,3,4,5]},
   j:{t:0,state:'home',pos:null,at:-1,path:[],seg:0,segPos:0,target:-1,until:0,lastReport:0,straight:null,transit:null,planning:null},
   diary:[],wish:[],went:{},friends:[],visited:{},field:{slots:[],lastSprout:0},stats:{spent:0,harvest:0,visits:0,memories:0},lastTick:Date.now()};}
 let S=fresh();
@@ -907,14 +913,18 @@ function drawRasterBase(){const lat=cam.la,lon=cam.lo;const mpp=1/Math.max(1e-6,
   for(let dy=-4;dy<=4;dy++)for(let dx=-5;dx<=5;dx++){const tx=cx+dx,ty=cy+dy;if(ty<0||ty>=n)continue;const [la1,lo1]=t2ll(tx,ty),[la2,lo2]=t2ll(tx+1,ty+1);const [x1,y1]=px(la1,lo1),[x2,y2]=px(la2,lo2);if(x2<0||x1>W||y2<0||y1>H)continue;
     const im=tileImg(z,((tx%n)+n)%n,ty);if(im&&im.ok){try{ctx.drawImage(im,x1,y1,x2-x1+0.6,y2-y1+0.6);drawn++;}catch(e){}}}
   ctx.fillStyle='rgba(255,255,255,.75)';ctx.fillRect(0,H-14,150,14);ctx.fillStyle='#555';ctx.font='9px sans-serif';ctx.textAlign='left';ctx.fillText('© OpenStreetMap contributors',4,H-4);return drawn>0;}
-function initBasemap(){if(MAPBASE||typeof maplibregl==='undefined')return;try{const t=document.createElement('canvas');if(!(t.getContext('webgl')||t.getContext('experimental-webgl'))){console.warn('WebGLなし: 画像タイルで描く');return;}}catch(e){return;}try{
+let rasterStyle=false,tileErr=0,lastRasterOk=false;
+const RASTER_STYLE={version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,maxzoom:19,attribution:'© OpenStreetMap contributors'}},layers:[{id:'osm',type:'raster',source:'osm'}]};
+function switchRaster(why){if(!MAPBASE||rasterStyle)return;rasterStyle=true;try{MAPBASE.setStyle(RASTER_STYLE);MAPBASE.once('load',()=>{basemapReady=true;});MAPBASE.once('idle',()=>{basemapReady=true;});toast('地図を画像タイルに切り替えました'+(why?'('+why+')':''));}catch(e){console.warn(e);}}
+function initBasemap(){if(MAPBASE||typeof maplibregl==='undefined')return;if(S.mapMode==='canvas'){console.warn('設定: 画像タイルをキャンバスに描く');return;}try{const t=document.createElement('canvas');if(!(t.getContext('webgl')||t.getContext('experimental-webgl'))){console.warn('WebGLなし: 画像タイルで描く');return;}}catch(e){return;}try{
   MAPBASE=new maplibregl.Map({container:'basemap',style:'https://tiles.openfreemap.org/styles/liberty',center:[HOME.lo,HOME.la],zoom:16.2,attributionControl:{compact:true},dragRotate:false,pitchWithRotate:false,touchPitch:false});
-  MAPBASE.on('error',e=>{console.warn('basemap',e&&e.error&&e.error.message);});
+  MAPBASE.on('error',e=>{const msg=String(e&&e.error&&e.error.message||'');console.warn('basemap',msg);if(e&&(e.tile||e.sourceId||/tile|fetch|status|504|502|503|429/i.test(msg))){tileErr++;if(tileErr>=4&&!rasterStyle)switchRaster('地図の配信元が不調');}});
   ['dragstart','zoomstart'].forEach(ev=>MAPBASE.on(ev,e=>{if(e.originalEvent)followPauseUntil=Date.now()+25000;}));
   MAPBASE.on('click',e=>onMapClick(e.point.x,e.point.y));
-  MAPBASE.on('load',()=>{basemapReady=true;});
+  MAPBASE.on('load',()=>{basemapReady=true;setTimeout(()=>{try{if(MAPBASE&&!rasterStyle&&!MAPBASE.areTilesLoaded())switchRaster('読み込みが終わらない');}catch(e){}},18000);});
   // 保険: ベクトル地図が来なければ OpenStreetMap の画像タイルに切り替える
-  setTimeout(()=>{if(!basemapReady&&MAPBASE){try{MAPBASE.setStyle({version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,maxzoom:19,attribution:'© OpenStreetMap contributors'}},layers:[{id:'osm',type:'raster',source:'osm'}]});MAPBASE.once('load',()=>{basemapReady=true;});MAPBASE.once('idle',()=>{basemapReady=true;});}catch(e){}}},12000);
+  setTimeout(()=>{if(!basemapReady&&MAPBASE)switchRaster('ベクトル地図が届かない');},10000);
+  setTimeout(()=>{if(!basemapReady&&MAPBASE){try{MAPBASE.remove();}catch(e){}MAPBASE=null;basemapReady=false;toast('地図をキャンバス描画に切り替えました','var(--ng)');}},24000);
   }catch(e){console.warn('basemap init failed',e);MAPBASE=null;}}
 addEventListener('resize',resize);
 function px(la,lo){if(MAPBASE&&basemapReady){const p=MAPBASE.project([lo,la]);return [p.x,p.y];}return [W/2+(lo-cam.lo)*111320*COSL*SCALE, H/2-(la-cam.la)*110540*SCALE];}
@@ -929,7 +939,7 @@ function draw(now){const hr=hour(Date.now());const night=nightness(hr);
     if(nowMs>followPauseUntil&&nowMs-lastEase>600){const cur=MAPBASE.project([target[1],target[0]]);const off=Math.hypot(cur.x-W/2,cur.y-H/2);const zd=Math.abs(MAPBASE.getZoom()-zt);
       if(off>28||zd>0.35){lastEase=nowMs;try{MAPBASE.easeTo({center:[target[1],target[0]],zoom:zt,duration:zd>1.5?1200:650,essential:true});}catch(e){}}}}
   ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);
-  let RASTER=false;if(!BASE){RASTER=drawRasterBase();if(!RASTER){ctx.fillStyle=night>0.5?'#2a2e3a':'#f3efe6';ctx.fillRect(0,0,W,H);}}
+  let RASTER=false;if(!BASE){RASTER=drawRasterBase();lastRasterOk=!!RASTER;if(!RASTER){ctx.fillStyle=night>0.5?'#2a2e3a':'#f3efe6';ctx.fillRect(0,0,W,H);}}
   // 公園(下地が無いときだけ)
   if(!BASE&&!RASTER)for(const p of POIS){if(p.k!=='park')continue;const [x,y]=px(p.la,p.lo);const r=p.n.includes('恩賜')||p.n==='井の頭公園'?170:28;ctx.fillStyle=night>0.5?'#2f4a3a':'#cfe8c4';ctx.beginPath();ctx.ellipse(x,y+(r>100?60:0),r*SCALE*1.6,r*SCALE*1.1,0,0,7);ctx.fill();}
   // 道
@@ -1152,6 +1162,9 @@ function homeLine(now,w){const A=S.name;const hr=hour(now);if(hr<6.5||hr>=23)ret
 
 function syncTabs(){document.querySelectorAll('#btns button').forEach(b=>b.classList.toggle('act',!!tab&&TAB_BTN[tab]===b.id));}
 function openTab(t){if(tab===t){tab=null;panel.classList.add('hidden');syncTabs();updateMorning();renderAsk();return;}tab=t;panel.classList.remove('hidden');renderPanel();syncTabs();updateMorning();renderAsk();$('poiCard').classList.add('hidden');}
+let mapLoadShownAt=0;const bootAt=Date.now();
+function checkMapLoad(){const el=$('mapLoad');if(!el)return;const ok=(MAPBASE&&basemapReady)||lastRasterOk;const late=Date.now()-bootAt>6000;const show=view==='map'&&S.setup&&!ok&&late;el.classList.toggle('hidden',!show);if(show&&!mapLoadShownAt){mapLoadShownAt=Date.now();if(/claude\.ai|artifact/i.test(location.hostname)){$('mapLoadNote').innerHTML='この画面(artifact)では外部の地図を読み込めません。<a href="https://kusayakyu-navi.com/office-travel/" target="_blank" rel="noopener">公開サイトで開く</a>と地図が出ます。';}}}
+$('bMapCanvas').onclick=()=>{S.mapMode='canvas';save();location.reload();};$('bMapRetry').onclick=()=>{location.reload();};
 let viewHomeUntil=0;$('bViewHome').onclick=()=>{viewHomeUntil=Date.now()+8000;followPauseUntil=0;};
 $('bViewMe').onclick=()=>{viewHomeUntil=0;followPauseUntil=0;lastEase=0;const p=S.j.pos||[HOME.la,HOME.lo];try{if(MAPBASE&&basemapReady)MAPBASE.easeTo({center:[p[1],p[0]],zoom:Math.max(16.4,MAPBASE.getZoom()),duration:500});}catch(e){}cam.la=p[0];cam.lo=p[1];};
 $('bPlan').onclick=()=>openTab('plan');$('bTeach').onclick=()=>openTab('teach');$('bFarm').onclick=()=>openTab('farm');
@@ -1218,12 +1231,12 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>飛行機(Aviasales の便データ)<small>実在の便・出発時刻・最安値。国内も海外も。データは GitHub が6時間ごとに取り直す。${FLIGHTS_STATIC?'最終更新 '+esc(String(FLIGHTS_STATIC.updated).replace('T',' ').slice(0,16))+'・'+FLIGHTS_STATIC.pairs.length+'路線':FLIGHTS_STATIC===false?'まだ届いていない(GitHub の TP_TOKEN を設定すると始まる)':'確認中'} / 紹介 marker ${S.keys.travelpayouts?'あり':'未設定'}</small></div><span><button id="bTpM">${S.keys.travelpayouts?'marker 変更':'marker'}</button> <button id="bTp" style="font-size:11px">token(直接)</button></span></div>`;
     h+=`<div class="sec">収益化</div><div class="row"><div>アフィリエイト<small>楽天アフィリエイトID、じゃらん(バリューコマース)のsid/pid。入れると宿リンクが成果の入る形になる。${S.keys.rakutenAff?'楽天: 設定済 ':''}${S.keys.vcSid?'じゃらん: 設定済':''}</small></div><button id="bAff">設定</button></div>`;
     h+=`<div class="row"><div>写真<small>近くで撮られた本物の写真をWikimedia Commonsから。Mapillaryの無料トークンを入れると街角の写真も(任意)</small></div><button id="bMly">${S.mlyToken?'設定済':'トークン'}</button></div>`;
-    h+=`<div class="sec">その他</div><div class="row"><div>お小遣いを渡す<small>手持ち ¥${fmt(S.wallet)}。収穫のほかに、直接渡すこともできる(試作用)</small></div><button id="bGive">+¥1,000</button></div>`;
+    h+=`<div class="sec">その他</div><div class="row"><div>地図の描き方<small>${S.mapMode==='canvas'?'画像タイル(軽い・WebGL不要)':'自動(ベクトル地図。届かなければ画像タイル)'}${rasterStyle?' / いまは画像タイルで表示中':''}</small></div><button id="bMapMode">${S.mapMode==='canvas'?'自動に戻す':'画像タイルにする'}</button></div><div class="row"><div>お小遣いを渡す<small>手持ち ¥${fmt(S.wallet)}。収穫のほかに、直接渡すこともできる(試作用)</small></div><button id="bGive">+¥1,000</button></div>`;
     h+=`<div class="row"><div>統計<small>収穫 ¥${fmt(S.stats.harvest)} / 使った ¥${fmt(S.stats.spent)} / 寄った ${S.stats.visits}軒 / 友達 ${S.friends.length}人</small></div></div>`;
     h+=`<div class="row"><div>小窓で開く<small>横長の別ウィンドウ</small></div><button id="bPop">開く</button></div>`;
     h+=`<div class="row"><div>詰まったとき<small>旅を中断して家に戻す。日記・友達・行きたいは残る</small></div><button id="bHomeNow">家に戻す</button></div>`;
     h+=`<div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v43 (2026-09-19)</div>';
+    h+='<div class="note">版: v44 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
@@ -1258,6 +1271,7 @@ function renderPanel(){if(!tab)return;let h='';
   const cpy=(days)=>{const since=Date.now()-days*86400000;const es=S.diary.filter(e=>e.t>=since);const lines=[];let cur='';for(const e of es){const dk=fmtD(e.t);if(dk!==cur){cur=dk;lines.push('','## '+dk);}lines.push(fmtT(e.t)+' '+e.text+(e.cost?' ¥'+fmt(e.cost):'')+(e.mood?' — '+e.mood:''));}const txt=('# '+S.name+'の日記('+S.homeAddr+')\n'+lines.join('\n')).trim();navigator.clipboard.writeText(txt).then(()=>toast(es.length+'行をコピーした。そのまま貼って見せてください','var(--acc)')).catch(()=>{showText('コピーできなかったので、ここから選択してコピー',txt);});};
   const cd=$('bCopyDay');if(cd)cd.onclick=()=>cpy(1);const cw=$('bCopyWeek');if(cw)cw.onclick=()=>cpy(7);
   const kAl=$('bAirlabs');if(kAl)kAl.onclick=async()=>{const v=await askText('AirLabs の API key(airlabs.co で発行)。空で解除',S.keys.airlabs||'');if(v!==null){S.keys.airlabs=v.trim();save();renderPanel();toast(S.keys.airlabs?'保存した。国際線の便を探せるようにします':'解除した');}};const kAd=$('bAdb');if(kAd)kAd.onclick=async()=>{const v=await askText('AeroDataBox の RapidAPI key。空で解除',S.keys.aerodatabox||'');if(v!==null){S.keys.aerodatabox=v.trim();save();renderPanel();toast(S.keys.aerodatabox?'保存した':'解除した');}};const kTp=$('bTp');if(kTp)kTp.onclick=async()=>{const v=await askText('Travelpayouts の API token(app.travelpayouts.com → 設定 → API token)。空で解除',S.keys.tpToken||'');if(v!==null){S.keys.tpToken=v.trim();tpCache={};save();renderPanel();if(S.keys.tpToken){toast('保存した。試しに羽田→新千歳の便を取ります…');tpFlights('HND','CTS',ymd(Date.now()+86400000)).then(list=>{const f=list[0];toast(list.length?'Travelpayouts OK: 明日の羽田→新千歳 '+list.length+'便(最安 '+(AIRLINE_JA[f.al]||f.al)+' ¥'+fmt(f.price)+')':'つながったが便が0件でした','var(--acc)');console.log('travelpayouts sample',list.slice(0,3));}).catch(e=>{toast('Travelpayouts に接続できません: '+e.message,'var(--ng)');console.warn(e);});}else toast('解除した');}};const kTpM=$('bTpM');if(kTpM)kTpM.onclick=async()=>{const v=await askText('Travelpayouts の marker(数字)。空で解除',S.keys.travelpayouts||'');if(v!==null){S.keys.travelpayouts=v.trim();save();renderPanel();}};
+  const bmm=$('bMapMode');if(bmm)bmm.onclick=()=>{S.mapMode=S.mapMode==='canvas'?'auto':'canvas';save();location.reload();};
   const bo=$('bOdpt');if(bo)bo.onclick=async()=>{const v=await askText('ODPT アクセストークン(developer.odpt.org で発行)。空で解除',S.keys.odpt||'');if(v!==null){S.keys.odpt=v.trim();FLIGHTS=null;try{localStorage.removeItem(FL_KEY);}catch(e){}if(S.keys.odpt){toast('便データを読み込みます');loadFlights().then(f=>{toast(f?'JAL・ANAの便 '+f.length+'件を読み込んだ':'便データを読み込めなかった(鍵を確認)','var(--acc)');renderPanel();});}renderPanel();save();}};
   const ba=$('bAff');if(ba)ba.onclick=async()=>{const r=await askText('楽天アフィリエイトID(例: 1a2b3c4d.5e6f7g8h.…)。空で解除',S.keys.rakutenAff||'');if(r!==null)S.keys.rakutenAff=r.trim();const sid=await askText('バリューコマース sid(じゃらん用)。空で解除',S.keys.vcSid||'');if(sid!==null)S.keys.vcSid=sid.trim();if(S.keys.vcSid){const pid=await askText('バリューコマース pid',S.keys.vcPid||'');if(pid!==null)S.keys.vcPid=pid.trim();}toast('アフィリエイト設定を保存');renderPanel();save();};
   const bs=$('bSetup');if(bs)bs.onclick=showSetup;const bm=$('bMly');if(bm)bm.onclick=async()=>{const v=await askText('Mapillary のアクセストークン(MLY|… で始まる)。空にすると解除',S.mlyToken||'');if(v!==null){S.mlyToken=v.trim();toast(S.mlyToken?'Mapillaryを使います':'Mapillaryを解除');renderPanel();save();}};const bg=$('bGive');if(bg)bg.onclick=()=>{S.wallet+=1000;S.allowance+=1000;toast('お小遣い +¥1,000','var(--acc)');renderPanel();save();};
@@ -1335,7 +1349,7 @@ function frameBody(t){if(!M){last=t;return;}const dt=Math.min(0.1,(t-last)/1000)
       else if(fState==='walk'&&atHomeF){bubble={text:'ただいま',until:t+6000,next:20000};roomSay('ただいま',6000);if(Date.now()-manualViewAt>120000&&view!=='home')setView('home');}
       fState=st;}}
   if(view==='home'){homeT+=dt;if(homeT>=0.05){homeT=0;fitRoom();drawScene();renderHome(false);}if(leaveRoom&&Date.now()-leaveRoom.t0>leaveRoom.dur+400){leaveRoom=null;homeSig='';if(Date.now()-manualViewAt>120000||true)setView('map');}const fh=$('fieldHome');if(fh&&fh.offsetParent!==null)drawFieldOn(fh,t);}else draw(t);
-  hudT+=dt;if(hudT>0.25){hudT=0;{const ready=S.field.slots.filter(x=>x.stage===2).length;$('bFarm').innerHTML='<i>🌱</i><span>畑</span>'+(ready?'<span class="cnt">'+ready+'</span>':'');}updateMorning();renderHud();renderFoot();if(S.setup&&M)updateWeather();}}
+  hudT+=dt;if(hudT>0.25){hudT=0;{const ready=S.field.slots.filter(x=>x.stage===2).length;$('bFarm').innerHTML='<i>🌱</i><span>畑</span>'+(ready?'<span class="cnt">'+ready+'</span>':'');}updateMorning();renderHud();renderFoot();checkMapLoad();if(S.setup&&M)updateWeather();}}
 function onMapClick(cx,cy){ // 店をタップで行きたい
   let best=-1,bd=18;const e={clientX:cx,clientY:cy};for(let i=0;i<POIS.length;i++){const [x,y]=px(POIS[i].la,POIS[i].lo);const d=Math.hypot(x-e.clientX,y-e.clientY);if(d<bd){bd=d;best=i;}}
   if(best>=0)showPoiCard(best);else $('poiCard').classList.add('hidden');}
