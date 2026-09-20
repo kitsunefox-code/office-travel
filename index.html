@@ -40,8 +40,8 @@
   #room{position:absolute;inset:0}
   #fieldHome{display:none;position:absolute;left:8px;width:calc(100% - 16px);bottom:8px;height:132px;border-radius:14px;box-shadow:var(--shadow);border:2px solid rgba(255,255,255,.7);cursor:pointer;touch-action:manipulation}
   @media (max-width:760px){#fieldHome{display:block}}
-  body.vhome #basemap,body.vhome #map{visibility:hidden}
-  body.vhome #basemap *{visibility:hidden!important}
+  body.vhome #basemap,body.vhome #map{opacity:0;pointer-events:none}
+  
   body.vhome #hfoot,body.vhome #bViewHome,body.vhome #poiCard{display:none!important}
   .room .bubble{font-size:1.05em;padding:.55em .8em;border-radius:1em}
   .room .bubble:after{left:45%}
@@ -1150,14 +1150,15 @@ const RASTER_STYLE={version:8,sources:{osm:{type:'raster',tiles:['https://tile.o
 function switchRaster(why){if(!MAPBASE||rasterStyle)return;rasterStyle=true;try{MAPBASE.setStyle(RASTER_STYLE);MAPBASE.once('load',()=>{basemapReady=true;});MAPBASE.once('idle',()=>{basemapReady=true;});toast('地図を画像タイルに切り替えました'+(why?'('+why+')':''));}catch(e){console.warn(e);}}
 function initBasemap(){if(MAPBASE||typeof maplibregl==='undefined')return;if(S.mapMode==='canvas'){console.warn('設定: 画像タイルをキャンバスに描く');return;}try{const t=document.createElement('canvas');if(!(t.getContext('webgl')||t.getContext('experimental-webgl'))){console.warn('WebGLなし: 画像タイルで描く');return;}}catch(e){return;}try{
   MAPBASE=new maplibregl.Map({container:'basemap',style:'https://tiles.openfreemap.org/styles/liberty',center:[HOME.lo,HOME.la],zoom:16.2,maxZoom:20.5,minZoom:3,attributionControl:{compact:true},dragRotate:false,pitchWithRotate:false,touchPitch:false});
-  MAPBASE.on('error',e=>{const msg=String(e&&e.error&&e.error.message||'');console.warn('basemap',msg);if(e&&(e.tile||e.sourceId||/tile|fetch|status|504|502|503|429/i.test(msg))){tileErr++;if(tileErr>=4&&!rasterStyle)switchRaster('地図の配信元が不調');}});
+  MAPBASE.on('error',e=>{const msg=String(e&&e.error&&e.error.message||'');console.warn('basemap',msg);if(e&&(e.tile||e.sourceId||/tile|fetch|status|504|502|503|429/i.test(msg))){tileErr++;let sl=false;try{sl=MAPBASE.isStyleLoaded()&&MAPBASE.areTilesLoaded();}catch(x){}if(tileErr>=8&&!rasterStyle&&!sl)switchRaster('地図の配信元が不調');}});
   ['dragstart','zoomstart'].forEach(ev=>MAPBASE.on(ev,e=>{if(e.originalEvent)followPauseUntil=Date.now()+25000;}));
   MAPBASE.on('zoomend',e=>{if(e.originalEvent||followPauseUntil>Date.now()){userZoomDelta=Math.max(-4,Math.min(4.3,MAPBASE.getZoom()-lastTargetZoom));}});
   MAPBASE.on('click',e=>onMapClick(e.point.x,e.point.y));
-  MAPBASE.on('load',()=>{basemapReady=true;setTimeout(()=>{try{if(MAPBASE&&!rasterStyle&&!MAPBASE.areTilesLoaded())switchRaster('読み込みが終わらない');}catch(e){}},18000);});
+  MAPBASE.on('load',()=>{basemapReady=true;try{MAPBASE.resize();}catch(e){}});
+  MAPBASE.on('styleimagemissing',e=>{try{if(!MAPBASE.hasImage(e.id))MAPBASE.addImage(e.id,{width:1,height:1,data:new Uint8Array(4)});}catch(err){}});
   // 保険: ベクトル地図が来なければ OpenStreetMap の画像タイルに切り替える
-  setTimeout(()=>{if(!basemapReady&&MAPBASE)switchRaster('ベクトル地図が届かない');},10000);
-  setTimeout(()=>{if(!basemapReady&&MAPBASE){try{MAPBASE.remove();}catch(e){}MAPBASE=null;basemapReady=false;toast('地図をキャンバス描画に切り替えました','var(--ng)');}},24000);
+  // 保険(画像タイル / キャンバス描画への切替)は checkMapLoad で「地図を見せ始めてから」数える
+
   }catch(e){console.warn('basemap init failed',e);MAPBASE=null;}}
 addEventListener('resize',resize);
 /* 画像地図(MapLibre 無し)のときはキャンバスがホイール/ピンチを受ける */
@@ -1417,7 +1418,13 @@ function homeLine(now,w){const A=S.name;const hr=hour(now);if(hr<6.5||hr>=23)ret
 function syncTabs(){document.querySelectorAll('#btns button').forEach(b=>b.classList.toggle('act',!!tab&&TAB_BTN[tab]===b.id));}
 function openTab(t){if(tab===t){tab=null;panel.classList.add('hidden');syncTabs();updateMorning();renderAsk();return;}tab=t;panel.classList.remove('hidden');renderPanel();syncTabs();updateMorning();renderAsk();$('poiCard').classList.add('hidden');}
 let mapLoadShownAt=0;const bootAt=Date.now();
-function checkMapLoad(){const el=$('mapLoad');if(!el)return;const ok=(MAPBASE&&basemapReady)||lastRasterOk;const late=Date.now()-bootAt>6000;const show=view==='map'&&S.setup&&!ok&&late;el.classList.toggle('hidden',!show);if(show&&!mapLoadShownAt){mapLoadShownAt=Date.now();if(/claude\.ai|artifact/i.test(location.hostname)){$('mapLoadNote').innerHTML='この画面(artifact)では外部の地図を読み込めません。<a href="https://kusayakyu-navi.com/office-travel/" target="_blank" rel="noopener">公開サイトで開く</a>と地図が出ます。';}}}
+let mapShownAt=0;
+function checkMapLoad(){const el=$('mapLoad');if(!el)return;if(view==='map'&&S.setup&&!mapShownAt)mapShownAt=Date.now();
+  if(MAPBASE&&!basemapReady){try{if(MAPBASE.loaded()||(MAPBASE.isStyleLoaded()&&MAPBASE.areTilesLoaded()))basemapReady=true;}catch(e){}}
+  const shown=mapShownAt?Date.now()-mapShownAt:0;
+  if(MAPBASE&&!basemapReady&&!rasterStyle&&shown>15000){let sl=false;try{sl=MAPBASE.isStyleLoaded();}catch(e){}if(!sl)switchRaster('ベクトル地図が届かない');}
+  if(MAPBASE&&!basemapReady&&shown>40000){try{MAPBASE.remove();}catch(e){}MAPBASE=null;basemapReady=false;toast('地図をキャンバス描画に切り替えました','var(--ng)');}
+  const ok=(MAPBASE&&basemapReady)||lastRasterOk;const late=shown>7000;const show=view==='map'&&S.setup&&!ok&&late;el.classList.toggle('hidden',!show);if(show&&!mapLoadShownAt){mapLoadShownAt=Date.now();if(/claude\.ai|artifact/i.test(location.hostname)){$('mapLoadNote').innerHTML='この画面(artifact)では外部の地図を読み込めません。<a href="https://kusayakyu-navi.com/office-travel/" target="_blank" rel="noopener">公開サイトで開く</a>と地図が出ます。';}}}
 $('bMapCanvas').onclick=()=>{S.mapMode='canvas';save();location.reload();};$('bMapRetry').onclick=()=>{location.reload();};
 let viewHomeUntil=0;$('bViewHome').onclick=()=>{viewHomeUntil=Date.now()+8000;followPauseUntil=0;};
 $('bViewMe').onclick=()=>{viewHomeUntil=0;followPauseUntil=0;lastEase=0;const p=S.j.pos||[HOME.la,HOME.lo];try{if(MAPBASE&&basemapReady)MAPBASE.easeTo({center:[p[1],p[0]],zoom:Math.max(16.4,MAPBASE.getZoom()),duration:500});}catch(e){}cam.la=p[0];cam.lo=p[1];};
@@ -1507,7 +1514,7 @@ function renderPanel(){if(!tab)return;let h='';
     h+=`<div class="row"><div>小窓で開く<small>横長の別ウィンドウ</small></div><button id="bPop">開く</button></div>`;
     h+=`<div class="row"><div>詰まったとき<small>旅を中断して家に戻す。日記・友達・行きたいは残る</small></div><button id="bHomeNow">家に戻す</button></div>`;
     h+=`<div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v49 (2026-09-19)</div>';
+    h+='<div class="note">版: v50 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
