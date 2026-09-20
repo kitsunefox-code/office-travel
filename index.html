@@ -248,7 +248,7 @@ function fresh(){return{setup:false,name:'もう1人のあなた',job:'other',pr
   j:{t:0,state:'home',pos:null,at:-1,path:[],seg:0,segPos:0,target:-1,until:0,lastReport:0,straight:null,transit:null,planning:null},
   diary:[],wish:[],went:{},friends:[],visited:{},field:{slots:[],lastSprout:0},stats:{spent:0,harvest:0,visits:0,memories:0},lastTick:Date.now()};}
 let S=fresh();
-try{const raw=localStorage.getItem(KEY);if(raw){S=Object.assign(fresh(),JSON.parse(raw));S.j=Object.assign(fresh().j,S.j||{});S.work=Object.assign(fresh().work,S.work||{});S.field=Object.assign(fresh().field,S.field||{});S.taught=Object.assign(fresh().taught,S.taught||{});S.taught.habits=Object.assign(fresh().taught.habits,S.taught.habits||{});if(!Array.isArray(S.taught.fares))S.taught.fares=[];S.keys=Object.assign(fresh().keys,S.keys||{});S.outfit=Object.assign(fresh().outfit,S.outfit||{});S.wardrobe=S.wardrobe||[];S.look=Object.assign(fresh().look,S.look||{});if(typeof S.energy!=='number')S.energy=80;if(Array.isArray(S.wish)&&S.wish.some(x=>typeof x==='number'))S.wish=[];}}catch(e){}
+try{const raw=localStorage.getItem(KEY);if(raw){S=Object.assign(fresh(),JSON.parse(raw));S.j=Object.assign(fresh().j,S.j||{});S.work=Object.assign(fresh().work,S.work||{});S.field=Object.assign(fresh().field,S.field||{});S.taught=Object.assign(fresh().taught,S.taught||{});S.taught.habits=Object.assign(fresh().taught.habits,S.taught.habits||{});if(!Array.isArray(S.taught.fares))S.taught.fares=[];S.keys=Object.assign(fresh().keys,S.keys||{});S.outfit=Object.assign(fresh().outfit,S.outfit||{});S.wardrobe=S.wardrobe||[];S.look=Object.assign(fresh().look,S.look||{});try{S.diary=collapseHarvest(S.diary||[]);}catch(e){}if(typeof S.energy!=='number')S.energy=80;if(Array.isArray(S.wish)&&S.wish.some(x=>typeof x==='number'))S.wish=[];}}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 const $=id=>document.getElementById(id);
 const panel=$('panel'),modal=$('modal'),mbox=$('mbox');
@@ -407,8 +407,14 @@ const SLOTS=8,GROW_MS=[0,150000,300000],SPROUT_MS=95000,YIELD=[60,220,600];
 function fieldTick(now){const F=S.field;if(!F.lastSprout)F.lastSprout=now;
   while(now-F.lastSprout>=SPROUT_MS){F.lastSprout+=SPROUT_MS;if(F.slots.length<SLOTS){const used=new Set(F.slots.map(s=>s.i));let i=0;while(used.has(i))i++;F.slots.push({i,born:F.lastSprout,stage:0});}}
   for(const s of F.slots){const age=now-s.born;s.stage=age>=GROW_MS[2]?2:age>=GROW_MS[1]?1:0;
-    if(age>GROW_MS[2]+20*60000){const g=Math.round(YIELD[2]*0.5);S.wallet+=g;S.allowance+=g;S.stats.harvest+=g;s.dead=true;addDiary({kind:'harvest',text:JOBS[S.job].item+'がひとつ、勝手に片づいていた(+¥'+g+')',t:now});}}
+    if(age>GROW_MS[2]+20*60000){const g=Math.round(YIELD[2]*0.5);S.wallet+=g;S.allowance+=g;S.stats.harvest+=g;s.dead=true;noteAutoHarvest(g,now);}}
   F.slots=F.slots.filter(s=>!s.dead);}
+/* 勝手に片づいた収穫は、日記に1日1行だけ(件数と合計を更新) */
+function noteAutoHarvest(g,now){const k=todayKey(now);let e=null;for(let i=S.diary.length-1;i>=0;i--){const d=S.diary[i];if(d.kind==='harvest'&&todayKey(d.t)===k){e=d;break;}if(d.t<now-86400e3)break;}
+  if(e){e.n=(e.n||1)+1;e.sum=(e.sum||0)+g;e.t=now;}else{e={kind:'harvest',n:1,sum:g,t:now};S.diary.push(e);if(S.diary.length>400)S.diary.splice(0,S.diary.length-400);}
+  e.text=JOBS[S.job].item+'が'+e.n+'つ、収穫されないまま片づいていた(+¥'+fmt(e.sum)+'、半額)。';}
+function collapseHarvest(list){const out=[];const byDay={};for(const d of list){if(d.kind==='harvest'){const k=todayKey(d.t);const m=/\+¥([\d,]+)/.exec(d.text||'');const g=m?+m[1].replace(/,/g,''):0;if(byDay[k]){byDay[k].n=(byDay[k].n||1)+(d.n||1);byDay[k].sum=(byDay[k].sum||0)+(d.sum!=null?d.sum:g);byDay[k].t=Math.max(byDay[k].t,d.t);continue;}d.n=d.n||1;d.sum=d.sum!=null?d.sum:g;byDay[k]=d;}out.push(d);}
+  for(const d of Object.values(byDay))if(d.n>1||!/収穫されないまま/.test(d.text||''))d.text=(JOBS[S.job]||JOBS.other).item+'が'+d.n+'つ、収穫されないまま片づいていた(+¥'+fmt(d.sum)+'、半額)。';return out;}
 function harvestAt(x){const fv=document.getElementById('field');const w=(fv?fv.clientWidth:innerWidth)/SLOTS;const i=Math.floor(x/w);const s=S.field.slots.find(s=>s.i===i);if(!s)return;
   const g=YIELD[s.stage];S.wallet+=g;S.allowance+=g;S.stats.harvest+=g;S.field.slots=S.field.slots.filter(q=>q!==s);
   toast(JOBS[S.job].item+'を'+JOBS[S.job].verb+'! お小遣い +¥'+g,'var(--acc)');pops.push({x:x,t:0,text:'+¥'+g});save();}
@@ -1149,7 +1155,7 @@ function renderPanel(){if(!tab)return;let h='';
     h+=`<div class="row"><div>小窓で開く<small>横長の別ウィンドウ</small></div><button id="bPop">開く</button></div>`;
     h+=`<div class="row"><div>詰まったとき<small>旅を中断して家に戻す。日記・友達・行きたいは残る</small></div><button id="bHomeNow">家に戻す</button></div>`;
     h+=`<div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v33 (2026-09-19)</div>';
+    h+='<div class="note">版: v34 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
