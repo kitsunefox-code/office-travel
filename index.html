@@ -507,14 +507,19 @@ function calMatches(cal,d){const wd=d.getDay();if(!cal)return true;if(/Weekday/.
 function nearestAirport(la,lo,codes){let best=null,bd=1e18;for(const c of (codes||Object.keys(AIRPORTS))){const a=AIRPORTS[c];if(!a)continue;const d=dist([la,lo],[a[1],a[2]]);if(d<bd){bd=d;best=c;}}return best?{code:best,d:bd}:null;}
 function hm(t,hhmm){const [h,m]=hhmm.split(':').map(Number);const d=new Date(t);d.setHours(h,m,0,0);return d.getTime();}
 /* Travelpayouts(Aviasales) v3 prices_for_dates: 検索結果のキャッシュから、日付ごとの最安便(航空会社・便名・出発時刻・所要・乗継)。トークンはクエリで渡す(ブラウザから直接) */
+let FLIGHTS_STATIC=null;/* {updated,pairs,days} が読めれば便データあり */
+async function checkFlightsStatic(){try{const r=await fetch('data/flights/index.json',{cache:'no-store'});if(!r.ok){FLIGHTS_STATIC=false;return;}const j=await r.json();FLIGHTS_STATIC=j&&j.pairs&&j.pairs.length?j:false;}catch(e){FLIGHTS_STATIC=false;}}
+function flightsAvailable(){return !!(FLIGHTS_STATIC||S.keys.tpToken);}
 const TP_KEY='officetravel.tp.v1';function tpLoad(){try{return JSON.parse(localStorage.getItem(TP_KEY)||'{}');}catch(e){return {};}}let tpCache=null;function tpSave(){try{localStorage.setItem(TP_KEY,JSON.stringify(tpCache));}catch(e){}}
 async function tpFlights(orig,dest,dateStr){if(!tpCache)tpCache=tpLoad();const key=orig+'>'+dest+'@'+dateStr;const c=tpCache[key];if(c&&c.t>Date.now()-6*3600e3)return c.data;
+  try{const r=await fetch('data/flights/'+orig+'-'+dest+'.json',{cache:'no-store'});if(r.ok){const j=await r.json();const arr=j&&j.days&&j.days[dateStr];if(Array.isArray(arr)){const data=arr.map(x=>({price:+x.price,al:String(x.airline),fn:String(x.flight_number||''),dep:x.departure_at,dur:+(x.duration||0),tr:+(x.transfers||0),link:x.link||'',o:orig,d:dest}));tpCache[key]={t:Date.now(),data};tpSave();return data;}if(j&&j.days&&(dateStr in j.days))return [];}}catch(e){}
+  if(!S.keys.tpToken)throw new Error('便データがまだありません');
   const u='https://api.travelpayouts.com/aviasales/v3/prices_for_dates?origin='+orig+'&destination='+dest+'&departure_at='+dateStr+'&one_way=true&direct=false&sorting=price&limit=30&currency=jpy&token='+encodeURIComponent(S.keys.tpToken);
   const r=await fetch(u);if(!r.ok)throw new Error('travelpayouts '+r.status);const j=await r.json();if(!j.success&&!j.data)throw new Error('travelpayouts: '+JSON.stringify(j).slice(0,120));
   const data=(j.data||[]).filter(x=>x&&x.departure_at&&x.airline).map(x=>({price:+x.price,al:String(x.airline),fn:String(x.flight_number||''),dep:x.departure_at,dur:+(x.duration_to||x.duration||0),tr:+(x.transfers||0),link:x.link||'',o:x.origin_airport||orig,d:x.destination_airport||dest}));
   tpCache[key]={t:Date.now(),data};for(const k of Object.keys(tpCache))if(tpCache[k].t<Date.now()-2*86400e3)delete tpCache[k];tpSave();return data;}
 function ymd(t){const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-async function planIntlFlight(from,city,t){if(!S.keys.tpToken)return null;
+async function planIntlFlight(from,city,t){if(!flightsAvailable())return null;
   let destCode=city.ap||null;if(!destCode){const a=nearestAirport(city.la,city.lo);if(a&&a.d<120000)destCode=a.code;}if(!destCode||!AIRPORTS[destCode])return null;const B=AIRPORTS[destCode];
   const origs=Object.keys(AIRPORTS).filter(c=>AIRPORTS[c][3]!=='intl'&&c!==destCode).map(c=>({c,d:dist(from,[AIRPORTS[c][1],AIRPORTS[c][2]])})).sort((a,b)=>a.d-b.d).slice(0,2).filter(x=>x.d<150000).map(x=>x.c);if(!origs.length)return null;
   let best=null;
@@ -535,7 +540,7 @@ async function planIntlFlight(from,city,t){if(!S.keys.tpToken)return null;
   else legs.push({mode:'BUS',route:'',agency:'',headsign:city.name,from:{n:B[0],la:B[1],lo:B[2]},to:{n:city.name,la:city.la,lo:city.lo},t0:arr+45*60000,t1:arr+45*60000+Math.round(dAp/9)*1000,line:'空港からの乗り物(時刻は概算)'});
   legs.forEach(l=>{l.logged=false;});return {legs,dur:(legs[legs.length-1].t1-t)/1000,flight:{op,fn,dep,arr,price:f.price,url,transfers:f.tr},fareKm:dist([A[1],A[2]],[B[1],B[2]])/1000,price:f.price};}
 /* 飛行機: ODPT(国内JAL/ANA)→Travelpayouts の順 */
-async function planAnyFlight(from,city,t){let plan=null;if(S.keys.odpt&&!city.ap){try{plan=await planFlightTrip(from,city,t);}catch(e){console.warn(e);}}if(!plan&&S.keys.tpToken){try{plan=await planIntlFlight(from,city,t);}catch(e){console.warn(e);}}return plan;}
+async function planAnyFlight(from,city,t){let plan=null;if(S.keys.odpt&&!city.ap){try{plan=await planFlightTrip(from,city,t);}catch(e){console.warn(e);}}if(!plan&&flightsAvailable()){try{plan=await planIntlFlight(from,city,t);}catch(e){console.warn(e);}}return plan;}
 async function planFlightTrip(from,city,t){const fl=await loadFlights();if(!fl)return null;
   const destAp=nearestAirport(city.la,city.lo);if(!destAp||destAp.d>90000)return null;const destsSet=new Set(fl.filter(f=>f.d===destAp.code).map(f=>f.o));if(!destsSet.size)return null;
   const origAp=nearestAirport(from[0],from[1],[...destsSet]);if(!origAp||origAp.d>120000)return null;
@@ -566,7 +571,7 @@ function requestNow(rq){const t=Date.now();const j=S.j;if(j.state==='hotel'){S.r
   const here=j.pos||[HOME.la,HOME.lo];const km=dist(here,[rq.la,rq.lo])/1000;const hereName=S.trip?S.trip.city:(S.townName||'家');
   if(rq.home&&!S.trip&&km<3){toast('もう家の近くにいます');j.state='stay';j.target=-1;go(-1,t);save();return;}
   if(km<3&&!rq.home){addDiary({kind:'note',text:'あなたに「'+rq.name+'へ」と言われた。近いので歩いて行く。',t});const near=POIS.map((p,i)=>[dist([p.la,p.lo],[rq.la,rq.lo]),i]).sort((a,b)=>a[0]-b[0])[0];if(near&&near[0]<400)go(near[1],t);save();return;}
-  const ffq=fareFor(hereName,rq.name,km);const fare=ffq.fare;if(!rq.home&&!rq.ap&&fare>S.wallet){addDiary({kind:'note',text:rq.name+'へ行ってほしいと言われたが、切符代(推定 ¥'+fmt(fare)+')が足りない。お小遣いが貯まったら。',t});toast('切符代が足りません(推定 ¥'+fmt(fare)+')','var(--ng)');save();return;}if(rq.ap&&!S.keys.tpToken){toast('海外は Travelpayouts の鍵を「…」に貼ると飛べます','var(--ng)');return;}
+  const ffq=fareFor(hereName,rq.name,km);const fare=ffq.fare;if(!rq.home&&!rq.ap&&fare>S.wallet){addDiary({kind:'note',text:rq.name+'へ行ってほしいと言われたが、切符代(推定 ¥'+fmt(fare)+')が足りない。お小遣いが貯まったら。',t});toast('切符代が足りません(推定 ¥'+fmt(fare)+')','var(--ng)');save();return;}if(rq.ap&&!flightsAvailable()){toast('便データがまだ届いていません(6時間ごとに更新)','var(--ng)');return;}
   addDiary({kind:'note',text:'あなたに「'+rq.name+'へ」と言われたので、いまから向かう。',t});goCity({name:rq.name,la:rq.la,lo:rq.lo,fare:rq.home?0:fare,fareTaught:ffq.taught,home:!!rq.home,ap:rq.ap},t);if(view==='home'&&Date.now()-manualViewAt>120000)setView('map');save();}
 function maybeLongTrip(t){const j=S.j;energyMorning(t);ensureBucket(t);if(tiredToday()){if(j.tiredNoted!==todayKey(t)){j.tiredNoted=todayKey(t);addDiary({kind:'note',text:'今日は少し疲れている。遠出はやめて、近所をぶらぶらするだけにする',t});}return false;}
   if(!TRANSIT_OK||j.longTripTried===todayKey(t))return false;j.longTripTried=todayKey(t);
@@ -581,7 +586,7 @@ function maybeLongTrip(t){const j=S.j;energyMorning(t);ensureBucket(t);if(tiredT
 function goCity(city,t){const j=S.j;if(city.home)buySouvenir(t);j.state='stay';j.until=t+90000;j.cityTarget=city;
   addDiary({kind:'note',text:(city.home?'そろそろ家に帰る。':'今日は'+city.name+'まで行ってみる。')+'乗換案内で経路を調べる。',t});
   const from=j.pos||[HOME.la,HOME.lo];const km=dist(from,[city.la,city.lo])/1000;
-  if((S.keys.odpt||S.keys.tpToken)&&(km>350||city.ap)){const token=Math.random();j.planning={to:-1,token,city};
+  if((S.keys.odpt||flightsAvailable())&&(km>350||city.ap)){const token=Math.random();j.planning={to:-1,token,city};
     planAnyFlight(from,city,t).then(plan=>{if(!j.planning||j.planning.token!==token)return;
       if(!plan){requestTransit(-1,t,[city.la,city.lo],city);return;}
       j.planning=null;const last=plan.legs[plan.legs.length-1];{const startName=j.at>=0&&POIS[j.at]?POIS[j.at].n:(S.trip?'泊まった所':'家');plan.legs.forEach(l=>{if(l.from.n==='START')l.from.n=startName;if(l.to.n==='END')l.to.n=city.name+'駅前';});}
@@ -1093,7 +1098,7 @@ function renderPanel(){if(!tab)return;let h='';
     const pend=S.asks.filter(a=>!a.done);if(pend.length)h+='<div class="sec">相談中</div>'+pend.map(a=>`<div class="row" style="display:block"><div>${S.name}「${a.text}」</div><div class="opts" style="display:flex;gap:6px;margin-top:6px">${a.opts.map(o=>`<button data-ansp="${a.id}|${o.key}">${o.label}</button>`).join('')}</div></div>`).join('');
     h+=`<div class="sec">今日の予定</div><div style="display:flex;flex-wrap:wrap;gap:6px">${Object.entries(PLAN_LABEL).map(([k,v])=>`<button data-plan2="${k}" class="${todayPlan(Date.now())===k?'on':''}">${v}</button>`).join('')}</div>`;
     h+=`<div class="row" style="border:0;margin-top:6px"><div><b>行き先を指定する</b><small>いまから、ここへ向かう(勤務時間外でも出発。切符代は財布から)</small></div></div>
-      <div style="display:flex;gap:4px;flex-wrap:wrap"><select id="rqCity"><option value="">街を選ぶ</option><optgroup label="国内">${CITIES_JP.map(c=>`<option value="${c[0]}">${c[0]}</option>`).join('')}</optgroup><optgroup label="海外${S.keys.tpToken?'':'(Travelpayoutsの鍵が要る)'}">${CITIES_WORLD.map(c=>`<option value="${c[0]}" ${S.keys.tpToken?'':'disabled'}>${c[0]}</option>`).join('')}</optgroup></select><input id="rqText" placeholder="または住所・駅名・施設名" style="flex:1;min-width:140px"><button id="rqGo">行ってほしい</button>${S.trip?'<button id="rqHome">帰ってきて</button>':''}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap"><select id="rqCity"><option value="">街を選ぶ</option><optgroup label="国内">${CITIES_JP.map(c=>`<option value="${c[0]}">${c[0]}</option>`).join('')}</optgroup><optgroup label="海外${flightsAvailable()?'':'(便データの準備中)'}">${CITIES_WORLD.map(c=>`<option value="${c[0]}" ${flightsAvailable()?'':'disabled'}>${c[0]}</option>`).join('')}</optgroup></select><input id="rqText" placeholder="または住所・駅名・施設名" style="flex:1;min-width:140px"><button id="rqGo">行ってほしい</button>${S.trip?'<button id="rqHome">帰ってきて</button>':''}</div>
       ${S.request?`<div class="note" style="color:var(--ok)">📌 次の朝: ${S.request.name} へ向かう予定 <button id="rqClear">取り消す</button></div>`:''}`;
     h+=`<div class="note">遠出: 朝に気分と財布で決める。移動は乗換案内の実ダイヤ(新幹線・特急も本物の列車名)。飛行機は時刻表データがまだ無いので乗らない。訪ねた街: ${Object.keys(S.cities).join('、')||'まだなし'}</div>`;}
   if(tab==='teach'){const T=S.taught;h+='<h3>教える</h3><div class="note">乗換案内に無い土地勘、店の好み、癖をあなたが教える。教えたことは機械の経路案内より優先される。</div>';
@@ -1121,7 +1126,7 @@ function renderPanel(){if(!tab)return;let h='';
     h+=`<div class="row"><div>設定<small>${S.name} / ${JOBS[S.job].n} / ${V().e}${V().n} / 勤務 ${fmtHM(S.work.start)}〜${fmtHM(S.work.end)} / 好み: ${S.prefs.map(k=>PREF_LIST.find(x=>x[0]===k)[1]).join('・')}</small></div><button id="bSetup">変える</button></div>`;
     h+=`<div class="row"><div>飛行機<small>公共交通オープンデータセンター(ODPT)のアクセストークンを貼ると、JAL・ANA国内線の実ダイヤで飛ぶ。${S.keys.odpt?(FLIGHTS?'便データ '+FLIGHTS.length+'件 読み込み済み':'鍵あり(次の遠出で読み込み)'):'未設定(それまでは鉄道だけ)'}</small></div><button id="bOdpt">${S.keys.odpt?'変更':'鍵を貼る'}</button></div>
       <div class="row"><div>国際線の時刻表<small>どれか1つで飛べる。AirLabs(airlabs.co、無料枠 月1,000回)か AeroDataBox(RapidAPI、無料枠あり)。${S.keys.airlabs?'AirLabs 鍵あり':S.keys.aerodatabox?'AeroDataBox 鍵あり':'未設定'}</small></div><span><button id="bAirlabs">${S.keys.airlabs?'AirLabs 変更':'AirLabs'}</button> <button id="bAdb">${S.keys.aerodatabox?'AeroDataBox 変更':'AeroDataBox'}</button></span></div>
-      <div class="row"><div>Travelpayouts(Aviasales)<small>飛行機はここから: 実在の便・出発時刻・最安値。国内も海外も。API token と marker(紹介用)を貼る。${S.keys.tpToken?'token あり':'token 未設定'} / ${S.keys.travelpayouts?'marker あり':'marker 未設定'}</small></div><span><button id="bTp">${S.keys.tpToken?'token 変更':'token'}</button> <button id="bTpM">${S.keys.travelpayouts?'marker 変更':'marker'}</button></span></div>`;
+      <div class="row"><div>飛行機(Aviasales の便データ)<small>実在の便・出発時刻・最安値。国内も海外も。データは GitHub が6時間ごとに取り直す。${FLIGHTS_STATIC?'最終更新 '+esc(String(FLIGHTS_STATIC.updated).replace('T',' ').slice(0,16))+'・'+FLIGHTS_STATIC.pairs.length+'路線':FLIGHTS_STATIC===false?'まだ届いていない(GitHub の TP_TOKEN を設定すると始まる)':'確認中'} / 紹介 marker ${S.keys.travelpayouts?'あり':'未設定'}</small></div><span><button id="bTpM">${S.keys.travelpayouts?'marker 変更':'marker'}</button> <button id="bTp" style="font-size:11px">token(直接)</button></span></div>`;
     h+=`<div class="row"><div>アフィリエイト<small>楽天アフィリエイトID、じゃらん(バリューコマース)のsid/pid。入れると宿リンクが成果の入る形になる。${S.keys.rakutenAff?'楽天: 設定済 ':''}${S.keys.vcSid?'じゃらん: 設定済':''}</small></div><button id="bAff">設定</button></div>`;
     h+=`<div class="row"><div>写真<small>近くで撮られた本物の写真をWikimedia Commonsから。Mapillaryの無料トークンを入れると街角の写真も(任意)</small></div><button id="bMly">${S.mlyToken?'設定済':'トークン'}</button></div>`;
     h+=`<div class="row"><div>お小遣いを渡す<small>手持ち ¥${fmt(S.wallet)}。収穫のほかに、直接渡すこともできる(試作用)</small></div><button id="bGive">+¥1,000</button></div>`;
@@ -1129,7 +1134,7 @@ function renderPanel(){if(!tab)return;let h='';
     h+=`<div class="row"><div>小窓で開く<small>横長の別ウィンドウ</small></div><button id="bPop">開く</button></div>`;
     h+=`<div class="row"><div>詰まったとき<small>旅を中断して家に戻す。日記・友達・行きたいは残る</small></div><button id="bHomeNow">家に戻す</button></div>`;
     h+=`<div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v31 (2026-09-19)</div>';
+    h+='<div class="note">版: v32 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
@@ -1265,7 +1270,7 @@ resize();
   if(S.setup&&S.homeLL&&!S.trip&&(!town||dist([town.center[0],town.center[1]],S.homeLL)>400)){const [la,lo]=S.homeLL;toast('家のまわりの地図を取り直しています…','var(--dim)');
     buildTown(la,lo,S.townName||'家のまわり',true,()=>{}).then(tn=>{initTown(tn);saveTown(tn);if(!j.pos||dist(j.pos,[la,lo])>3000){j.at=-1;j.pos=[la,lo];}toast('家のまわりの店・場所 '+POIS.length+'件','var(--acc)');}).catch(e=>{toast('地図を取り直せなかった。設定から家を選び直してください','var(--ng)');});}
   if(!S.setup||!M)showSetup();
-  viewHomeUntil=Date.now()+2500;fState=S.j.state;setView((S.j.at===-1&&S.j.state!=='walk'&&!S.j.transit&&!S.trip)?'home':'map');
+  viewHomeUntil=Date.now()+2500;checkFlightsStatic();fState=S.j.state;setView((S.j.at===-1&&S.j.state!=='walk'&&!S.j.transit&&!S.trip)?'home':'map');
   requestAnimationFrame(frame);})();
 </script>
 </body>
