@@ -342,7 +342,7 @@ async function buildTown(la,lo,label,withWide,prog){const H=la+','+lo;
   const nearest=(a,b)=>{let best=0,bd=1e18;for(let i=0;i<nodes.length;i++){const d=(nodes[i][0]-a)**2+((nodes[i][1]-b)*0.81)**2;if(d<bd){bd=d;best=i;}}return best;};
   const pois=[],seen=new Set();
   for(const e of P){const p=poiFrom(e,false);if(!p)continue;const k=p.n+'|'+p.k;if(seen.has(k))continue;seen.add(k);p.nn=nearest(p.la,p.lo);pois.push(p);}
-  const town={name:label,center:[la,lo],home:[la,lo,nearest(la,lo)],nodes,edges,pois,names,wide:[],wideLoaded:!withWide};
+  const town={name:label,center:[la,lo],home:[la,lo,nearest(la,lo)],nodes,edges,pois,names,wide:[],wideLoaded:!withWide,pv:POI_V};
   if(withWide)setTimeout(()=>loadWideAsync(town,la,lo,seen),200);
   return town;}
 async function loadWideAsync(town,la,lo,seen){const H=la+','+lo;seen=seen||new Set(town.pois.map(p=>p.n+'|'+p.k));
@@ -482,6 +482,14 @@ function topColor(){return (S.outfit&&S.outfit.top)||'#d97f5a';}
 function closetHTML(){const ws=S.wardrobe.slice().reverse();const tag=x=>`<button data-wear="${S.wardrobe.indexOf(x)}" title="${esc(x.shop)} ${fmtD(x.t)}" style="display:inline-flex;align-items:center;gap:6px;margin:0 6px 6px 0"><span style="width:12px;height:12px;border-radius:50%;background:${x.color.c};border:1px solid rgba(0,0,0,.2);display:inline-block"></span>${esc(x.color.n)}の${esc(x.name)}<small style="color:var(--dim)">${esc(x.shop)}</small></button>`;
   return `<div class="sec">クローゼット(${ws.length})</div><div style="margin-bottom:6px">${ws.length?ws.map(tag).join(''):'<span class="note">まだ何も。街の服屋で、お小遣いに余裕がある時に買います</span>'}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><button id="bGoClothes" class="${S.wantClothes===todayKey()?'on':''}">${S.wantClothes===todayKey()?'今日は服を買いに行く':'服を買いに行かせる'}</button>${S.outfit.hat||S.outfit.glasses||S.outfit.bag?'<button id="bStrip">帽子・メガネ・かばんを外す</button>':''}</div>`;}
 function curRoadName(){const j=S.j;if(j.state!=='walk'||j.transit||j.straight||!j.path||j.seg>=j.path.length-1)return null;const a=j.path[j.seg],b=j.path[j.seg+1];return EDGE_NAME.get(Math.min(a,b)+'-'+Math.max(a,b))||null;}
+/* 店の取り込み方が新しくなったら、保存済みの街の店だけを静かに入れ替える(家にいる間だけ。道はそのまま) */
+const POI_V=2;
+async function refreshTownPois(){try{const j=S.j;if(!M||M.pv===POI_V||S.trip||j.loadingTown||j.transit||j.state==='walk'||j.at>=0||!navigator.onLine)return;
+  const name=M.name,c=M.center;const nt=await buildTown(c[0],c[1],name,false,()=>{});if(M!==M||M.name!==name)return;
+  const nearest=(a,b)=>{let best=0,bd=1e18;for(let i=0;i<M.nodes.length;i++){const d=(M.nodes[i][0]-a)**2+((M.nodes[i][1]-b)*0.81)**2;if(d<bd){bd=d;best=i;}}return best;};
+  const far=M.pois.filter(p=>p.far);const seen=new Set(far.map(p=>p.n+'|'+p.k));const fresh=nt.pois.filter(p=>!seen.has(p.n+'|'+p.k)).map(p=>({...p,nn:nearest(p.la,p.lo)}));
+  const before=M.pois.length;M.pois=fresh.concat(far);M.pv=POI_V;POIS=M.pois;if(j.at>=0)j.at=-1;j.target=-1;saveTown(M);
+  addDiary({kind:'note',tag:'note',text:name+'の店や場所をあらためて調べた。'+before+'件 → '+POIS.length+'件(宿は3kmまで)。',t:Date.now()});toast(name+'の店・場所を'+POIS.length+'件に増やした','var(--acc)');save();}catch(e){console.warn('refreshTownPois',e);}}
 function saveTown(town){try{localStorage.setItem(TOWN_KEY,JSON.stringify(town));return true;}catch(e){console.warn('town too large to store',e);return false;}}
 function dist(a,b){const R=6371000,q=Math.PI/180;const dLa=(b[0]-a[0])*q,dLo=(b[1]-a[1])*q;const h=Math.sin(dLa/2)**2+Math.cos(a[0]*q)*Math.cos(b[0]*q)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
 function route(a,b){ // ダイクストラ(道路グラフ)
@@ -1604,7 +1612,7 @@ function showPoiCard(i){const p=POIS[i];const k=remember(p);const price=priceOf(
 $('basemap').addEventListener('click',e=>{if(!MAPBASE)onMapClick(e.clientX,e.clientY);});
 setInterval(save,5000);addEventListener('beforeunload',save);
 resize();
-(function boot(){document.querySelectorAll('#btns i[data-ic]').forEach(i=>{i.innerHTML=ICON[i.dataset.ic]||'';});
+(function boot(){document.querySelectorAll('#btns i[data-ic]').forEach(i=>{i.innerHTML=ICON[i.dataset.ic]||'';});setTimeout(()=>{if(S.setup)refreshTownPois();},20000);setInterval(()=>{if(S.setup)refreshTownPois();},30*60000);
 let town=null;try{const raw=localStorage.getItem(TOWN_KEY);if(raw)town=JSON.parse(raw);}catch(e){}
   if(S.trip){let away=null;try{const a=JSON.parse(localStorage.getItem(AWAY_KEY)||'null');if(a&&a.name===S.trip.city)away=a.nodes?a:townCacheGet(a.name,a.la,a.lo);}catch(e){}if(away)town=away;}
   const j=S.j;j.planning=null;j.cityTarget=null;const wasLoading=j.loadingTown;j.loadingTown=null;
