@@ -1420,9 +1420,9 @@ function openTab(t){if(tab===t){tab=null;panel.classList.add('hidden');syncTabs(
 let mapLoadShownAt=0;const bootAt=Date.now();
 let mapShownAt=0;
 function checkMapLoad(){const el=$('mapLoad');if(!el)return;if(view==='map'&&S.setup&&!mapShownAt)mapShownAt=Date.now();
-  if(MAPBASE&&!basemapReady){try{if(MAPBASE.loaded()||(MAPBASE.isStyleLoaded()&&MAPBASE.areTilesLoaded()))basemapReady=true;}catch(e){}}
+  if(MAPBASE&&!basemapReady){try{const stl=!!(MAPBASE.style&&MAPBASE.style._loaded);if(MAPBASE.loaded()||MAPBASE.isStyleLoaded()||(stl&&MAPBASE.areTilesLoaded()))basemapReady=true;}catch(e){}}
   const shown=mapShownAt?Date.now()-mapShownAt:0;
-  if(MAPBASE&&!basemapReady&&!rasterStyle&&shown>15000){let sl=false;try{sl=MAPBASE.isStyleLoaded();}catch(e){}if(!sl)switchRaster('ベクトル地図が届かない');}
+  if(MAPBASE&&!basemapReady&&!rasterStyle&&shown>15000){let sl=false;try{sl=MAPBASE.isStyleLoaded()||!!(MAPBASE.style&&MAPBASE.style._loaded);}catch(e){}if(!sl)switchRaster('ベクトル地図が届かない');}
   if(MAPBASE&&!basemapReady&&shown>40000){try{MAPBASE.remove();}catch(e){}MAPBASE=null;basemapReady=false;toast('地図をキャンバス描画に切り替えました','var(--ng)');}
   const ok=(MAPBASE&&basemapReady)||lastRasterOk;const late=shown>7000;const show=view==='map'&&S.setup&&!ok&&late;el.classList.toggle('hidden',!show);if(show&&!mapLoadShownAt){mapLoadShownAt=Date.now();if(/claude\.ai|artifact/i.test(location.hostname)){$('mapLoadNote').innerHTML='この画面(artifact)では外部の地図を読み込めません。<a href="https://kusayakyu-navi.com/office-travel/" target="_blank" rel="noopener">公開サイトで開く</a>と地図が出ます。';}}}
 $('bMapCanvas').onclick=()=>{S.mapMode='canvas';save();location.reload();};$('bMapRetry').onclick=()=>{location.reload();};
