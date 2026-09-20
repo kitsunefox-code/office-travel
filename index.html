@@ -106,7 +106,10 @@
   #hud .meta{font:500 12px/1.4 var(--fb);color:var(--ink2);margin-top:3px}
   #hfoot{position:absolute;left:10px;right:10px;bottom:14px;margin:0 auto;max-width:560px;background:rgba(250,246,238,.97);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:9px 12px;box-sizing:border-box}
   #hfoot.hidden{display:none}
-  #bViewHome{position:absolute;right:10px;bottom:120px;padding:8px 12px;font:700 13px var(--fd);border-radius:999px;background:rgba(250,246,238,.97);box-shadow:var(--shadow)}
+  #bViewMe{position:absolute;right:10px;bottom:164px;padding:8px 12px;font:700 13px var(--fd);border-radius:999px;background:var(--ink);color:#fff;box-shadow:var(--shadow)}
+#bViewMe.hidden{display:none}
+body.vhome #bViewMe{display:none!important}
+#bViewHome{position:absolute;right:10px;bottom:120px;padding:8px 12px;font:700 13px var(--fd);border-radius:999px;background:rgba(250,246,238,.97);box-shadow:var(--shadow)}
   #bViewHome.hidden{display:none}
   #hfoot .two{display:flex;gap:8px}
   #hfoot .big{flex:1;background:var(--paper2);border:1px solid var(--line);border-radius:12px;padding:7px 12px;cursor:pointer;min-width:0}
@@ -188,6 +191,7 @@
     #hfoot{bottom:calc(76px + env(safe-area-inset-bottom));left:8px;right:8px;padding:8px 10px}
     #home{bottom:calc(52px + env(safe-area-inset-bottom))}
     #bViewHome{right:8px;bottom:calc(196px + env(safe-area-inset-bottom))}
+    #bViewMe{right:8px;bottom:calc(240px + env(safe-area-inset-bottom))}
     #basemap .maplibregl-ctrl-attrib{font-size:9px;line-height:18px;padding:0 6px}
     #hud .card{padding:6px 10px;gap:8px}
     #btns{top:auto;bottom:0;left:0;right:0;border-radius:0;border:0;border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));justify-content:space-around;background:rgba(250,246,238,.98)}
@@ -211,6 +215,7 @@
 <div id="home" class="hidden"><div class="room" id="room"><svg id="scene" viewBox="0 0 480 640" preserveAspectRatio="none"></svg><div id="ov"></div></div><canvas id="fieldHome"></canvas></div>
 <div id="hfoot" class="hidden"></div>
 <button id="bViewHome" class="hidden" title="家を見る">🏠 家</button>
+<button id="bViewMe" class="hidden" title="本人のところへ">👤 本人へ</button>
 <div id="morning" class="hidden"></div>
 <div id="ask" class="hidden"></div>
 <div id="poiCard" class="hidden"></div>
@@ -1128,7 +1133,7 @@ function showText(label,txt){const el=$('dlg');el.innerHTML=`<div class="q">${es
 let hudSig='',footSig='';
 function renderHud(){const el=$('hud');if(!el)return;const now=Date.now();const d=new Date(now);const w=workWindow(now);const st=statusText();const temp=S.weather&&now-S.weather.t<3*3600e3?Math.round(S.weather.temp)+'℃':'';
   const road=curRoadName()||nextStopText();const sig=[st,road,rainLater(),JSON.stringify(S.outfit),S.look&&(S.look.hair+S.look.hairC+S.look.skin),Math.floor(now/60000),temp,S.name,S.townName,S.trip&&S.trip.city].join('|');if(sig===hudSig)return;hudSig=sig;
-  const wd=['日','月','火','水','木','金','土'][d.getDay()];$('bViewHome').classList.toggle('hidden',view==='home'||!S.setup||(S.j.at===-1&&S.j.state!=='walk'&&!S.j.transit&&!S.trip)||!!tab);
+  const wd=['日','月','火','水','木','金','土'][d.getDay()];{const pz=S.j.pos?px(S.j.pos[0],S.j.pos[1]):[0,0];const off=pz[0]<0||pz[1]<0||pz[0]>innerWidth||pz[1]>innerHeight;$('bViewMe').classList.toggle('hidden',view==='home'||!S.setup||!(off||Date.now()<followPauseUntil));}$('bViewHome').classList.toggle('hidden',view==='home'||!S.setup||(S.j.at===-1&&S.j.state!=='walk'&&!S.j.transit&&!S.trip)||!!tab);
   el.innerHTML=`<div class="face"><svg viewBox="196 364 88 92">${charSVG(240,561,{still:true})}</svg></div><div class="hbody"><div class="now"><span>いま · ${S.name?esc(S.name):'もう1人のあなた'}</span><b>${fmtT(now)}${inWork(now)?' 勤務中':''}${wxNow()?' '+(rainy()?'☔':'')+wxText(wxNow().code):''}${temp?' '+temp:''}</b></div><div class="st">${esc(st)}${road?' <small style="font:500 12px var(--fb);color:var(--ink2)">'+esc(road)+'</small>':''}</div><div class="meta">${d.getMonth()+1}月${d.getDate()}日(${wd}) · ${w?'勤務 '+fmtHM(S.work.start)+'–'+fmtHM(S.work.end):'仕事は休み'} · ${esc(S.trip?S.trip.city+'に滞在中':(S.townName||'家'))}${rainLater()!=null?' · '+rainLater()+'時ごろから雨':''}</div></div>`;}
 /* 下「今日」カード: 予定・お小遣い・帳面。朝の選択や相談カードが出ている間は隠す */
 function renderFoot(){const el=$('hfoot');if(!el)return;const now=Date.now();const busy=view==='home'||tab||!$('dlg').classList.contains('hidden')||!$('morning').classList.contains('hidden')||!$('ask').classList.contains('hidden')||!$('poiCard').classList.contains('hidden')||!S.setup;
@@ -1148,6 +1153,7 @@ function homeLine(now,w){const A=S.name;const hr=hour(now);if(hr<6.5||hr>=23)ret
 function syncTabs(){document.querySelectorAll('#btns button').forEach(b=>b.classList.toggle('act',!!tab&&TAB_BTN[tab]===b.id));}
 function openTab(t){if(tab===t){tab=null;panel.classList.add('hidden');syncTabs();updateMorning();renderAsk();return;}tab=t;panel.classList.remove('hidden');renderPanel();syncTabs();updateMorning();renderAsk();$('poiCard').classList.add('hidden');}
 let viewHomeUntil=0;$('bViewHome').onclick=()=>{viewHomeUntil=Date.now()+8000;followPauseUntil=0;};
+$('bViewMe').onclick=()=>{viewHomeUntil=0;followPauseUntil=0;lastEase=0;const p=S.j.pos||[HOME.la,HOME.lo];try{if(MAPBASE&&basemapReady)MAPBASE.easeTo({center:[p[1],p[0]],zoom:Math.max(16.4,MAPBASE.getZoom()),duration:500});}catch(e){}cam.la=p[0];cam.lo=p[1];};
 $('bPlan').onclick=()=>openTab('plan');$('bTeach').onclick=()=>openTab('teach');$('bFarm').onclick=()=>openTab('farm');
 $('bDiary').onclick=()=>openTab('diary');$('bWish').onclick=()=>openTab('wish');$('bFriends').onclick=()=>openTab('friends');$('bMore').onclick=()=>openTab('more');
 function gmaps(p){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.n+' '+(S.townName||''))+'&query_place_id=';}
@@ -1217,7 +1223,7 @@ function renderPanel(){if(!tab)return;let h='';
     h+=`<div class="row"><div>小窓で開く<small>横長の別ウィンドウ</small></div><button id="bPop">開く</button></div>`;
     h+=`<div class="row"><div>詰まったとき<small>旅を中断して家に戻す。日記・友達・行きたいは残る</small></div><button id="bHomeNow">家に戻す</button></div>`;
     h+=`<div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v42 (2026-09-19)</div>';
+    h+='<div class="note">版: v43 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
