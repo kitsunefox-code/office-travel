@@ -605,7 +605,7 @@ function kickNow(t){const w=workWindow(t);if(w&&t>=w.st&&t<w.en)return;const d=n
 /* いま出かけて: 家にいる本人を今すぐ外へ(勤務時間外でも) */
 function goOutNow(){const t=Date.now();const j=S.j;const atHome=j.at===-1&&j.state!=='walk'&&!j.transit&&!S.trip;if(!atHome){toast(S.name+'はもう外にいます');return false;}
   kickNow(t);if(!(S.plan&&S.plan.k===todayKey(t))||S.plan.mode==='rest')S.plan={k:todayKey(t),mode:'auto'};j.state='home';j.until=0;j.longTripTried=null;j.rainStayDay=null;S.taught.habits.noRainToday=todayKey(t);
-  addDiary({kind:'note',text:'あなたに「出かけて」と言われて、支度をする。',t});roomSay('いってきます!',5000);save();return true;}
+  addDiary({kind:'note',text:'あなたに「出かけて」と言われて、支度をする。',t});roomSay('いってきます!',5000);if(view!=='home'){manualViewAt=0;setView('home');}save();return true;}
 /* 行き先を選んだら、見積もりを見せて「決定」で出発 */
 async function confirmGo(rq){const j=S.j;const here=j.pos||[HOME.la,HOME.lo];const km=dist(here,[rq.la,rq.lo])/1000;let cost;
   if(rq.home)cost='';else if(rq.ap||km>350){const codes=Object.keys(AIRPORTS).filter(c=>AIRPORTS[c][3]!=='intl');cost=flightsAvailable()?'飛行機(便データの最安値で買います)':(S.keys.odpt?'飛行機(JAL/ANA 実ダイヤ)':'鉄道(推定 ¥'+fmt(fareFor(S.trip?S.trip.city:(S.townName||'家'),rq.name,km).fare)+')');}
@@ -986,7 +986,7 @@ function draw(now){const hr=hour(Date.now());const night=nightness(hr);
 let tab=null;
 const TAB_BTN={diary:'bDiary',wish:'bWish',friends:'bFriends',more:'bMore',plan:'bPlan',teach:'bTeach',farm:'bFarm'};
 /* ========== 表示: うち / 地図 ========== */
-let planMore={jp:false,w:false};
+let planMore={jp:false,w:false};let leaveRoom=null;/* {t0,dur}: 部屋からドアへ歩いて出る演出 */
 let view='home',homeSig='',homeT=9,manualViewAt=0,fState='',roomSayText='',roomSayUntil=0;
 function setView(v){view=v;document.body.classList.toggle('vhome',v==='home');$('home').classList.toggle('hidden',v!=='home');$('bHome').classList.toggle('act',v==='home');$('bMap').classList.toggle('act',v==='map');
   if(v==='map'){try{if(MAPBASE)MAPBASE.resize();}catch(e){}}else{homeSig='';fitRoom();drawScene();renderHome(true);}
@@ -1042,7 +1042,9 @@ function drawScene(){const now=new Date();const hr=hour(now.getTime());const n=n
      <text x="346" y="232" text-anchor="middle" font-size="50" font-weight="700" fill="#2a2f3a" font-family="Zen Maru Gothic,Noto Sans JP,sans-serif">${d.getDate()}</text>
      <text x="346" y="254" text-anchor="middle" font-size="13" font-weight="700" fill="${d.getDay()===0?'#c8503c':d.getDay()===6?'#3a78b5':'#5b6270'}" font-family="Zen Maru Gothic,Noto Sans JP,sans-serif">${wd}曜日${ww?'・仕事':'・休み'}</text></g>`;}
   // ドア
-  g+=`<rect x="404" y="286" width="66" height="146" rx="3" fill="#8d6a47"/><rect x="411" y="294" width="52" height="130" rx="2" fill="#a9835a"/><rect x="418" y="302" width="38" height="50" rx="2" fill="#b98f66"/><rect x="418" y="360" width="38" height="56" rx="2" fill="#b98f66"/><circle cx="416" cy="362" r="3.5" fill="#f2d16b"/>`;
+  {const lk=leaveRoom?Math.min(1,(Date.now()-leaveRoom.t0)/leaveRoom.dur):0;
+   if(lk>0.45){const op=Math.min(1,(lk-0.45)/0.25);g+=`<rect x="404" y="286" width="66" height="146" rx="3" fill="#8d6a47"/><rect x="408" y="290" width="58" height="140" rx="2" fill="${mix('#c9d8e8','#1b2233',n)}"/><rect x="408" y="290" width="58" height="140" fill="#fff" opacity="${(0.35*(1-n)).toFixed(2)}"/><g transform="translate(408 290) skewY(${(-14*op).toFixed(1)}) scale(${(1-0.78*op).toFixed(3)} 1)"><rect x="0" y="0" width="58" height="140" rx="2" fill="#a9835a"/><rect x="7" y="8" width="42" height="50" rx="2" fill="#b98f66"/><rect x="7" y="66" width="42" height="56" rx="2" fill="#b98f66"/></g>`;}
+   else g+=`<rect x="404" y="286" width="66" height="146" rx="3" fill="#8d6a47"/><rect x="411" y="294" width="52" height="130" rx="2" fill="#a9835a"/><rect x="418" y="302" width="38" height="50" rx="2" fill="#b98f66"/><rect x="418" y="360" width="38" height="56" rx="2" fill="#b98f66"/><circle cx="416" cy="362" r="3.5" fill="#f2d16b"/>`;}
   // 観葉植物
   g+=`<rect x="24" y="398" width="34" height="34" rx="4" fill="#c86b4a"/><g fill="#5f9a5a"><ellipse cx="41" cy="382" rx="12" ry="22"/><ellipse cx="28" cy="388" rx="9" ry="18" transform="rotate(-25 28 388)"/><ellipse cx="55" cy="388" rx="9" ry="18" transform="rotate(25 55 388)"/></g>`;
   // ラグ
@@ -1053,7 +1055,9 @@ function drawScene(){const now=new Date();const hr=hour(now.getTime());const n=n
   // ちゃぶ台(左)
   g+=`<ellipse cx="112" cy="552" rx="84" ry="23" fill="#b98f66"/><ellipse cx="112" cy="548" rx="84" ry="21" fill="#d1a877"/><rect x="52" y="562" width="8" height="32" fill="#8d6a47"/><rect x="166" y="562" width="8" height="32" fill="#8d6a47"/><rect x="108" y="568" width="8" height="28" fill="#8d6a47"/>`;
   // 本人
-  if(atHome){const col='#2a2f3a';if(asleep){g+=`<g><ellipse cx="350" cy="492" rx="42" ry="18" fill="#f7efdc"/><circle cx="318" cy="482" r="15" fill="${S.look.skin||'#f6d5b8'}"/><path d="M308 478 q10 -14 22 -4" fill="none" stroke="${S.look.hair==='bald'?'none':(S.look.hairC||col)}" stroke-width="3"/><text x="332" y="452" font-size="16" fill="${col}" font-family="var(--fd)">z</text><text x="344" y="440" font-size="12" fill="${col}" font-family="var(--fd)">z</text></g>`;}
+  if(leaveRoom){const k=Math.min(1,(Date.now()-leaveRoom.t0)/leaveRoom.dur);const e=k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2;const cx=300+(437-300)*e,fy=591+(438-591)*e,sc=1-0.52*e;const bob=Math.abs(Math.sin(k*Math.PI*7))*3;
+    if(k<0.93)g+=`<g transform="translate(${cx.toFixed(1)} ${fy.toFixed(1)}) scale(${sc.toFixed(3)}) translate(${(-cx).toFixed(1)} ${(-fy).toFixed(1)})" opacity="${k>0.8?((0.93-k)/0.13).toFixed(2):1}">`+charSVG(cx,fy-bob,{still:true,walkFace:true})+'</g>';}
+  else if(atHome){const col='#2a2f3a';if(asleep){g+=`<g><ellipse cx="350" cy="492" rx="42" ry="18" fill="#f7efdc"/><circle cx="318" cy="482" r="15" fill="${S.look.skin||'#f6d5b8'}"/><path d="M308 478 q10 -14 22 -4" fill="none" stroke="${S.look.hair==='bald'?'none':(S.look.hairC||col)}" stroke-width="3"/><text x="332" y="452" font-size="16" fill="${col}" font-family="var(--fd)">z</text><text x="344" y="440" font-size="12" fill="${col}" font-family="var(--fd)">z</text></g>`;}
     else{g+=charSVG(300,591,{});}}
   else{g+=`<g opacity=".9"><rect x="330" y="478" width="60" height="18" rx="5" fill="#f7efdc" transform="rotate(-6 360 487)"/></g>`;}
   // 玄関の靴
@@ -1065,7 +1069,7 @@ function renderHome(force){if(view!=='home')return;const now=Date.now();const j0
   const atHome=j0.at===-1&&j0.state!=='walk'&&j0.state!=='hotel'&&!j0.transit&&!S.trip;
   const showPick=S.setup&&atHome&&j0.state==='home'&&w&&now<w.en&&!(S.plan&&S.plan.k===todayKey(now))&&!S.asks.some(a=>!a.done);
   const say=roomSayUntil>now?roomSayText:homeLine(now,w);
-  const sig=[showPick,say,S.plan&&S.plan.mode,st,Math.floor(now/60000),S.souvenirs.length,Object.keys(S.stamps).length,ph&&ph[0],last&&last.t,S.townName,S.weather&&S.weather.t,S.wish.length,ROOM.uw|0,atHome].join('|');
+  const sig=[showPick,say,!!leaveRoom,S.plan&&S.plan.mode,st,Math.floor(now/60000),S.souvenirs.length,Object.keys(S.stamps).length,ph&&ph[0],last&&last.t,S.townName,S.weather&&S.weather.t,S.wish.length,ROOM.uw|0,atHome].join('|');
   if(!force&&sig===homeSig)return;homeSig=sig;
   const temp=S.weather&&now-S.weather.t<3*3600e3?Math.round(S.weather.temp)+'℃':'';const gifts=S.souvenirs.slice(-4).reverse();const nst=Object.keys(S.stamps).length;const phP=ph?poiOf(ph[0]):null;
   let h='';
@@ -1076,6 +1080,7 @@ function renderHome(force){if(view!=='home')return;const now=Date.now();const j0
   if(atHome){h+=`<div class="ov bubble" style="${P(150,346)};width:48%">${esc(say)}</div><div class="ov charTap" data-say="1" style="${P(250,400)};width:21%;height:30%"></div>`;
     if(showPick)h+=`<div class="ov memo" style="${P(10,436)};width:44%"><div class="q">今日はどうする?</div>${Object.entries(PLAN_LABEL).map(([k,v])=>`<button data-plan="${k}">${v}</button>`).join('')}<button data-goout="1" class="buy" style="background:var(--acc);color:#fff;border-color:var(--acc)">いま出かけて</button></div>`;
     else h+=`<div class="ov tag tap" data-open="plan" style="${P(36,486)};background:#fdf3b5;border-color:#e2cf6a">今日: ${esc(PLAN_LABEL[todayPlan(now)]||'おまかせ')}</div>`;}
+  else if(leaveRoom){h+=`<div class="ov bubble" style="${P(220,300)};width:40%">${esc(roomSayUntil>now?roomSayText:'いってきます!')}</div>`;}
   else{h+=`<div class="ov memo tap" data-open="map" style="${P(120,330)};width:52%;transform:none"><div class="q">${esc(S.name)}は外出中</div>${esc(st)}${last?'<br><small style="color:var(--dim)">'+fmtT(last.t)+' '+esc(last.text.length>40?last.text.slice(0,40)+'…':last.text)+'</small>':''}<div style="margin-top:.4em;color:var(--acc);font-weight:700">地図で見る ›</div></div>`;}
   const ov=$('ov');ov.innerHTML=h;
   ov.querySelectorAll('[data-open]').forEach(el=>{el.onclick=e=>{e.stopPropagation();const k=el.dataset.open;if(k==='map'){manualViewAt=Date.now();setView('map');return;}openTab(k);};});
@@ -1212,7 +1217,7 @@ function renderPanel(){if(!tab)return;let h='';
     h+=`<div class="row"><div>小窓で開く<small>横長の別ウィンドウ</small></div><button id="bPop">開く</button></div>`;
     h+=`<div class="row"><div>詰まったとき<small>旅を中断して家に戻す。日記・友達・行きたいは残る</small></div><button id="bHomeNow">家に戻す</button></div>`;
     h+=`<div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v41 (2026-09-19)</div>';
+    h+='<div class="note">版: v42 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
@@ -1223,7 +1228,7 @@ function renderPanel(){if(!tab)return;let h='';
   {const g=$('bGoClothes');if(g)g.onclick=()=>{S.wantClothes=S.wantClothes===todayKey()?null:todayKey();save();renderPanel();toast(S.wantClothes?S.name+'は今日、服屋に寄ります(¥3,000以上あれば)':'取り消した');};const st=$('bStrip');if(st)st.onclick=()=>{S.outfit.hat=null;S.outfit.glasses=false;S.outfit.bag=null;homeSig='';save();renderPanel();};}
   panel.querySelectorAll('[data-tab2]').forEach(b=>b.onclick=()=>openTab(b.dataset.tab2));
   panel.querySelectorAll('[data-ansp]').forEach(b=>b.onclick=()=>{const [id,key]=b.dataset.ansp.split('|');const a=S.asks.find(x=>String(x.id)===id);if(a&&!a.done)resolveAsk(a,key,false);renderPanel();});
-  panel.querySelectorAll('[data-goout]').forEach(b=>b.onclick=()=>{if(goOutNow()){renderPanel();if(view==='home'&&Date.now()-manualViewAt>120000)setTimeout(()=>{if(S.j.state==='walk')setView('map');},3000);}});
+  panel.querySelectorAll('[data-goout]').forEach(b=>b.onclick=()=>{if(goOutNow()){tab=null;panel.classList.add('hidden');syncTabs();}});
   panel.querySelectorAll('[data-plan2]').forEach(b=>b.onclick=()=>{S.plan={k:todayKey(),mode:b.dataset.plan2};toast('今日は「'+PLAN_LABEL[b.dataset.plan2]+'」','var(--acc)');renderPanel();save();});
   panel.querySelectorAll('[data-city]').forEach(b=>b.onclick=()=>{$('rqCity').value=b.dataset.city;panel.querySelectorAll('[data-city]').forEach(x=>x.classList.toggle('on',x===b));$('rqGo').click();});panel.querySelectorAll('[data-morecity]').forEach(b=>b.onclick=()=>{planMore[b.dataset.morecity]=true;renderPanel();});
   const rq=$('rqGo');if(rq)rq.onclick=async()=>{let cityName=$('rqCity').value;const txt=$('rqText').value.trim();if(!cityName&&txt){const hit=CITIES_JP.find(x=>x[0]===txt)||CITIES_WORLD.find(x=>x[0]===txt);if(hit)cityName=hit[0];}
@@ -1320,10 +1325,10 @@ function frame(t){try{frameBody(t);}catch(e){console.error(e);if(!window.__frame
 function frameBody(t){if(!M){last=t;return;}const dt=Math.min(0.1,(t-last)/1000);last=t;const now=Date.now();
   tick();
   if(S.setup){const st=S.j.state;const atHomeF=S.j.at===-1&&st!=='walk'&&!S.j.transit&&!S.trip;
-    if(fState!==st){if(fState==='home'&&st==='walk'&&!S.trip){leaveAnim={t0:t};bubble={text:'いってきます',until:t+6000,next:20000};if(Date.now()-manualViewAt>120000&&view!=='map')setView('map');}
+    if(fState!==st){if(fState==='home'&&st==='walk'&&!S.trip){leaveAnim={t0:t};bubble={text:'いってきます',until:t+6000,next:20000};if(view==='home'){leaveRoom={t0:Date.now(),dur:3000};roomSay('いってきます!',3500);homeSig='';}else if(Date.now()-manualViewAt>120000&&view!=='map')setView('map');}
       else if(fState==='walk'&&atHomeF){bubble={text:'ただいま',until:t+6000,next:20000};roomSay('ただいま',6000);if(Date.now()-manualViewAt>120000&&view!=='home')setView('home');}
       fState=st;}}
-  if(view==='home'){homeT+=dt;if(homeT>=0.1){homeT=0;fitRoom();drawScene();renderHome(false);}const fh=$('fieldHome');if(fh&&fh.offsetParent!==null)drawFieldOn(fh,t);}else draw(t);
+  if(view==='home'){homeT+=dt;if(homeT>=0.05){homeT=0;fitRoom();drawScene();renderHome(false);}if(leaveRoom&&Date.now()-leaveRoom.t0>leaveRoom.dur+400){leaveRoom=null;homeSig='';if(Date.now()-manualViewAt>120000||true)setView('map');}const fh=$('fieldHome');if(fh&&fh.offsetParent!==null)drawFieldOn(fh,t);}else draw(t);
   hudT+=dt;if(hudT>0.25){hudT=0;{const ready=S.field.slots.filter(x=>x.stage===2).length;$('bFarm').innerHTML='<i>🌱</i><span>畑</span>'+(ready?'<span class="cnt">'+ready+'</span>':'');}updateMorning();renderHud();renderFoot();if(S.setup&&M)updateWeather();}}
 function onMapClick(cx,cy){ // 店をタップで行きたい
   let best=-1,bd=18;const e={clientX:cx,clientY:cy};for(let i=0;i<POIS.length;i++){const [x,y]=px(POIS[i].la,POIS[i].lo);const d=Math.hypot(x-e.clientX,y-e.clientY);if(d<bd){bd=d;best=i;}}
