@@ -1066,7 +1066,7 @@ function renderHome(force){if(view!=='home')return;const now=Date.now();const j0
   h+=`<div class="ov tag" style="${P(38,216)}">${esc(S.weather&&S.weather.town||S.townName||'家')}の空 ${wxNow()?wxText(wxNow().code):''}${temp?' '+temp:''}${rainLater()!=null?' · '+rainLater()+'時から雨':''}</div>`;
   h+=`<div class="ov shelfItems tap" data-open="friends" style="${PB(34,342)};width:46%">${phP?`<div class="frame"><img src="${esc(ph[1].src)}" alt=""><small>${esc(phP.n)}</small></div>`:''}<div class="stampbook">📮 ${nst}</div>${gifts.map(g=>`<div class="gift"><span>${esc(g.town)}</span></div>`).join('')}</div>`;
   h+=`<div class="ov doorTag tap" data-open="map" style="${P(392,444)}">${atHome?'外を見る 🚪':'外出中 🚪'}</div>`;
-  if(atHome)h+=`<div class="ov goTag tap" data-goout="1" style="${P(372,476)}">いま出かけて 🚶</div>`;
+  if(atHome)h+=`<div class="ov goTag tap" data-goout="1" style="${P(318,478)}">いま出かけて 🚶</div>`;
   if(atHome){h+=`<div class="ov bubble" style="${P(150,346)};width:48%">${esc(say)}</div><div class="ov charTap" data-say="1" style="${P(250,400)};width:21%;height:30%"></div>`;
     if(showPick)h+=`<div class="ov memo" style="${P(10,436)};width:44%"><div class="q">今日はどうする?</div>${Object.entries(PLAN_LABEL).map(([k,v])=>`<button data-plan="${k}">${v}</button>`).join('')}<button data-goout="1" class="buy" style="background:var(--acc);color:#fff;border-color:var(--acc)">いま出かけて</button></div>`;
     else h+=`<div class="ov tag tap" data-open="plan" style="${P(36,486)};background:#fdf3b5;border-color:#e2cf6a">今日: ${esc(PLAN_LABEL[todayPlan(now)]||'おまかせ')}</div>`;}
