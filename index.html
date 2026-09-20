@@ -380,6 +380,68 @@ function personaSummary(p){const L={coffee:'コーヒー',sweets:'甘いもの',
 const HAIRS={short:'ショート',bob:'ボブ',long:'ロング',bun:'おだんご',spiky:'ツンツン',bald:'なし'};
 const HAIR_COLORS=[{n:'黒',c:'#2a2f3a'},{n:'こげ茶',c:'#4a3226'},{n:'茶',c:'#7a4b2a'},{n:'栗',c:'#a8683a'},{n:'金',c:'#d9b25a'},{n:'グレー',c:'#8a9099'},{n:'赤',c:'#a13b3b'},{n:'青',c:'#2d3f6b'}];
 const SKINS=[{n:'明るい',c:'#f6d5b8'},{n:'ふつう',c:'#e8bf99'},{n:'小麦',c:'#c9956a'},{n:'濃い',c:'#8d5a3b'}];
+/* いま乗っている乗り物の種類(部屋の代わりに車内を描く)。CHECKIN は空港の待合 */
+function curRideKind(){const j=S.j;if(j.state!=='walk'||!j.transit)return null;const L=curTransitLeg();if(!L)return null;const now=Date.now();if(now<L.t0)return null;if(L.mode==='WALK'||L.mode==='BAGGAGE')return null;if(L.mode==='CHECKIN')return 'lounge';return vehKind(L.mode);}
+function skyNow(){const hr=hour(Date.now());const n=nightness(hr);const w=wxNow();const rain=rainy();const cloudy=!!(w&&w.code>=2);const dusk=(hr>=16.5&&hr<19)||(hr>=5&&hr<7.5);let top=mix('#8fc6e8','#1a2442',n),bot=mix('#dceffa','#3b4a72',n);if(cloudy||rain){top=mix('#9aa7b5','#1a2442',n);bot=mix('#cfd6dc','#3b4a72',n);}if(dusk&&!rain)bot=mix(bot,'#f0a870',0.55);return {top,bot,n,rain,cloudy};}
+/* 座っている本人: 立ち姿を描いてから座面で脚を隠し、曲げた脚を描く */
+function seatedSVG(cx,cy,sc,seatColor){sc=sc||1;const feetY=cy+37;const lk=S.look||{};const pants='#4a5568',shoe=(S.outfit&&S.outfit.shoes)||'#5a4634';
+  return `<g transform="translate(${cx} ${cy}) scale(${sc}) translate(${-cx} ${-cy})">${charSVG(cx,feetY,{still:true})}<rect x="${cx-44}" y="${cy-2}" width="88" height="46" rx="6" fill="${seatColor||'#5d7bb0'}"/><rect x="${cx-30}" y="${cy-8}" width="60" height="16" rx="7" fill="${pants}"/><rect x="${cx-27}" y="${cy+4}" width="12" height="36" rx="5" fill="${pants}"/><rect x="${cx+15}" y="${cy+4}" width="12" height="36" rx="5" fill="${pants}"/><rect x="${cx-31}" y="${cy+38}" width="20" height="9" rx="4" fill="${shoe}"/><rect x="${cx+11}" y="${cy+38}" width="20" height="9" rx="4" fill="${shoe}"/><rect x="${cx-22}" y="${cy-14}" width="44" height="10" rx="5" fill="${(S.outfit&&S.outfit.top)||'#d97f5a'}"/></g>`;}
+/* 窓の外: 空 + 流れる街並み(電車・バス・タクシー) */
+function sceneryWindow(x,y,w,h,speed,kind){const sk=skyNow();const off=(Date.now()/speed)%w;const id='sky'+Math.round(x)+'_'+Math.round(y);let g=`<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sk.top}"/><stop offset="1" stop-color="${sk.bot}"/></linearGradient><clipPath id="c${id}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/></clipPath></defs><g clip-path="url(#c${id})"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#${id})"/>`;
+  if(sk.n<0.9)g+=`<circle cx="${x+w*0.75}" cy="${y+h*0.25}" r="${h*0.09}" fill="#ffd98a" opacity="${(1-sk.n).toFixed(2)}"/>`;
+  if(sk.cloudy||sk.rain)for(let i=0;i<3;i++){const cxp=x+((i*w*0.4+off*0.3)%w);g+=`<g fill="${mix('#ffffff','#5a6478',sk.n*0.8)}" opacity=".85"><ellipse cx="${cxp}" cy="${y+h*0.22+i*6}" rx="${w*0.09}" ry="${h*0.06}"/><ellipse cx="${cxp+w*0.05}" cy="${y+h*0.18+i*6}" rx="${w*0.06}" ry="${h*0.07}"/></g>`;}
+  const col=mix('#7c8fa6','#141a2b',sk.n);const hs=[0.35,0.55,0.42,0.7,0.48,0.62,0.38,0.66,0.45,0.58,0.52,0.4];const bw=w/6;
+  for(let k=-1;k<8;k++){const i=(k+12)%hs.length;const bx=x+k*bw-off;const bh=h*hs[i]*(kind==='plane'?0:1);if(bh>0){g+=`<rect x="${bx.toFixed(1)}" y="${(y+h-bh).toFixed(1)}" width="${(bw-4).toFixed(1)}" height="${bh.toFixed(1)}" fill="${col}"/>`;if(sk.n>0.5)g+=`<rect x="${(bx+6).toFixed(1)}" y="${(y+h-bh+8).toFixed(1)}" width="5" height="6" fill="#ffe9a8" opacity="${((sk.n-0.5)*2).toFixed(2)}"/>`;}}
+  if(kind!=='plane'){for(let k=0;k<4;k++){const px_=x+((k*w/3-off*1.6)%w+w)%w;g+=`<rect x="${px_.toFixed(1)}" y="${y}" width="3" height="${h}" fill="${mix('#6b6b6b','#222',sk.n)}" opacity=".7"/>`;}g+=`<rect x="${x}" y="${y+h-6}" width="${w}" height="6" fill="${mix('#9a9a90','#333',sk.n)}"/>`;}
+  if(sk.rain){const ph=Math.floor(Date.now()/120)%12;for(let i=0;i<18;i++){const rx=x+(i*w/17+ph*3)%w,ry=y+((i*37+ph*13)%h);g+=`<line x1="${rx.toFixed(1)}" y1="${ry.toFixed(1)}" x2="${(rx-4).toFixed(1)}" y2="${(ry+8).toFixed(1)}" stroke="#dfe9f3" stroke-width="1.3" opacity=".8"/>`;}}
+  return g+'</g>';}
+function planeWindow(x,y,w,h){const sk=skyNow();const off=(Date.now()/90)%w;const id='pw'+Math.round(x);return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mix('#5aa6e0','#0d1630',sk.n)}"/><stop offset="1" stop-color="${mix('#cfe6f7','#2a3558',sk.n)}"/></linearGradient><clipPath id="c${id}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${w/2}"/></clipPath></defs><g clip-path="url(#c${id})"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#${id})"/>${sk.n<0.9?`<circle cx="${x+w*0.7}" cy="${y+h*0.28}" r="${w*0.13}" fill="#ffe3a0" opacity="${(1-sk.n).toFixed(2)}"/>`:''}<g fill="${mix('#ffffff','#7d86a3',sk.n)}"><ellipse cx="${x+((w*0.2-off*0.4)%w+w)%w}" cy="${y+h*0.72}" rx="${w*0.42}" ry="${h*0.12}"/><ellipse cx="${x+((w*0.75-off*0.4)%w+w)%w}" cy="${y+h*0.8}" rx="${w*0.36}" ry="${h*0.1}"/><ellipse cx="${x+w*0.5}" cy="${y+h*0.92}" rx="${w*0.7}" ry="${h*0.14}"/></g></g><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${w/2}" fill="none" stroke="#f4f1ea" stroke-width="7"/>`;}
+/* 乗り物の中のシーン */
+function rideSceneSVG(kind){const L=curTransitLeg()||{};const now=Date.now();const sk=skyNow();const nx=nextStopText()||'';const line=L.mode?rideName(L):'';
+  let g='';
+  if(kind==='train'){g+=`<rect x="-1200" y="-800" width="2880" height="1240" fill="#eceae4"/><rect x="-1200" y="440" width="2880" height="1000" fill="#b9b3a6"/><rect x="-1200" y="436" width="2880" height="6" fill="#8e887d"/>`;
+    for(let i=0;i<7;i++){const sx=30+i*70;g+=`<line x1="${sx}" y1="40" x2="${sx}" y2="86" stroke="#9a948a" stroke-width="3"/><ellipse cx="${sx}" cy="96" rx="10" ry="12" fill="none" stroke="#f4f1ea" stroke-width="4"/>`;}
+    g+=`<rect x="0" y="16" width="480" height="18" fill="#dcd8cf"/>`;
+    g+=sceneryWindow(28,124,200,150,28,'train')+sceneryWindow(252,124,200,150,28,'train');g+=`<rect x="28" y="124" width="200" height="150" rx="6" fill="none" stroke="#f4f1ea" stroke-width="8"/><rect x="252" y="124" width="200" height="150" rx="6" fill="none" stroke="#f4f1ea" stroke-width="8"/>`;
+    g+=`<rect x="-20" y="282" width="520" height="92" rx="10" fill="#6b88bd"/><rect x="-20" y="366" width="520" height="8" fill="#4e6a9b"/>`;
+    g+=`<rect x="120" y="40" width="240" height="44" rx="6" fill="#1e2230"/><text x="240" y="70" text-anchor="middle" font-size="19" font-weight="700" fill="#ffb347" font-family="Zen Maru Gothic,Noto Sans JP,sans-serif">${esc(nx||('→ '+(L.to&&L.to.n||'')))}</text>`;
+    g+=seatedSVG(240,372,1.05,'#5d7bb0');
+    g+=`<rect x="-20" y="418" width="520" height="24" rx="8" fill="#4e6a9b"/>`;
+    }
+  else if(kind==='bus'){g+=`<rect x="-1200" y="-800" width="2880" height="1240" fill="#f1ede4"/><rect x="-1200" y="450" width="2880" height="1000" fill="#7d7468"/><rect x="-1200" y="446" width="2880" height="6" fill="#5f574d"/>`;
+    g+=sceneryWindow(24,110,432,160,26,'bus')+`<rect x="24" y="110" width="432" height="160" rx="8" fill="none" stroke="#e8e2d4" stroke-width="10"/><rect x="236" y="110" width="8" height="160" fill="#e8e2d4"/>`;
+    g+=`<rect x="0" y="20" width="480" height="70" fill="#e3ddd0"/><rect x="60" y="34" width="360" height="42" rx="6" fill="#1e2230"/><text x="240" y="63" text-anchor="middle" font-size="18" font-weight="700" fill="#7CFC9A" font-family="Zen Maru Gothic,Noto Sans JP,sans-serif">${esc(nx||line)}</text>`;
+    g+=`<rect x="404" y="300" width="40" height="40" rx="8" fill="#e8e2d4"/><circle cx="424" cy="320" r="9" fill="#c8503c"/><text x="424" y="356" text-anchor="middle" font-size="9" fill="#6b655b" font-family="Noto Sans JP,sans-serif">とまります</text>`;
+    g+=`<rect x="0" y="290" width="400" height="92" rx="10" fill="#c96b4a"/><rect x="0" y="374" width="400" height="8" fill="#a3543a"/>`;
+    g+=seatedSVG(200,380,1.05,'#c96b4a');
+    }
+  else if(kind==='taxi'){g+=`<rect x="-1200" y="-800" width="2880" height="1240" fill="#2f2f36"/><rect x="-1200" y="470" width="2880" height="1000" fill="#3b3b44"/>`;
+    g+=sceneryWindow(60,120,360,170,20,'taxi')+`<path d="M60 120 h360 v170 h-360z" fill="none" stroke="#1a1a20" stroke-width="12"/><path d="M60 120 q-8 100 0 170" fill="none" stroke="#1a1a20" stroke-width="12"/>`;
+    g+=`<rect x="20" y="300" width="440" height="60" rx="10" fill="#4a4a55"/><rect x="0" y="300" width="480" height="180" fill="#3a3a44"/>`;
+    g+=`<rect x="330" y="30" width="126" height="70" rx="8" fill="#111"/><text x="393" y="56" text-anchor="middle" font-size="11" fill="#9aa" font-family="Noto Sans JP,sans-serif">${esc(L.mode==='TAXI'?'料金(概算)':'')}</text><text x="393" y="86" text-anchor="middle" font-size="22" font-weight="700" fill="#ff5a3c" font-family="Zen Maru Gothic,Noto Sans JP,sans-serif">¥${fmt(L.fare||0)}</text>`;
+    g+=`<rect x="24" y="30" width="150" height="34" rx="6" fill="#f2c744"/><text x="99" y="53" text-anchor="middle" font-size="15" font-weight="700" fill="#2a2f3a" font-family="Zen Maru Gothic,Noto Sans JP,sans-serif">TAXI / 配車</text>`;
+    g+=`<rect x="0" y="320" width="480" height="70" rx="12" fill="#5a5a68"/>`;
+    g+=seatedSVG(300,392,1.02,'#5a5a68');
+    g+=`<rect x="0" y="440" width="480" height="30" rx="8" fill="#4a4a55"/><text x="240" y="600" text-anchor="middle" font-size="13" fill="#bbb" font-family="Noto Sans JP,sans-serif">${esc((L.from&&L.from.n||'')+' → '+(L.to&&L.to.n||''))}</text>`;}
+  else if(kind==='plane'){g+=`<rect x="-1200" y="-800" width="2880" height="1240" fill="#e9e7e1"/><rect x="-1200" y="480" width="2880" height="1000" fill="#3a4658"/>`;
+    g+=`<rect x="-20" y="30" width="520" height="90" rx="14" fill="#d3cfc6"/><rect x="-20" y="112" width="520" height="8" fill="#b8b3a8"/><rect x="40" y="46" width="180" height="50" rx="8" fill="#c4bfb4"/><rect x="260" y="46" width="180" height="50" rx="8" fill="#c4bfb4"/>`;
+    g+=`<rect x="120" y="70" width="60" height="14" rx="3" fill="#1e2230"/><text x="150" y="81" text-anchor="middle" font-size="9" fill="#ffb347" font-family="sans-serif">FASTEN SEAT BELT</text>`;
+    g+=planeWindow(60,150,90,120)+planeWindow(330,150,90,120);
+    g+=`<rect x="200" y="140" width="80" height="140" rx="6" fill="#dcd8cf"/>`;
+    g+=`<rect x="120" y="300" width="240" height="140" rx="16" fill="#3f5a8a"/><rect x="150" y="286" width="180" height="36" rx="10" fill="#4e6a9b"/>`;
+    g+=seatedSVG(240,430,1.05,'#3f5a8a');
+    g+=`<rect x="0" y="478" width="480" height="16" rx="6" fill="#2f3a4a"/>`;
+    g+=`<rect x="90" y="520" width="300" height="52" rx="10" fill="#1e2230"/><text x="240" y="541" text-anchor="middle" font-size="13" fill="#9fb3d9" font-family="Noto Sans JP,sans-serif">${esc((L.route||'')+(L.agency?' '+L.agency:''))}</text><text x="240" y="562" text-anchor="middle" font-size="15" font-weight="700" fill="#fff" font-family="Zen Maru Gothic,Noto Sans JP,sans-serif">${esc((L.to&&L.to.n||'')+' '+(L.t1?fmtT(L.t1)+'着':''))}</text>`;}
+  else if(kind==='lounge'){g+=`<rect x="-1200" y="-800" width="2880" height="1240" fill="#f4f1ea"/><rect x="-1200" y="460" width="2880" height="1000" fill="#d9d4c8"/>`;
+    g+=sceneryWindow(20,140,440,180,60,'plane')+`<rect x="20" y="140" width="440" height="180" rx="4" fill="none" stroke="#c9c3b6" stroke-width="8"/><line x1="240" y1="140" x2="240" y2="320" stroke="#c9c3b6" stroke-width="6"/>`;
+    g+=`<g transform="translate(140 292)"><path d="M0 0 h110 l14 -6 l-20 -8 h-104z" fill="#e8e6e1" stroke="#9aa" stroke-width="1"/><path d="M40 -6 l-14 -16 h22 l6 16z" fill="#c8503c"/></g>`;
+    g+=`<rect x="60" y="40" width="360" height="80" rx="8" fill="#1e2230"/><text x="80" y="66" font-size="12" fill="#ffb347" font-family="Noto Sans JP,sans-serif">出発 DEPARTURES</text><text x="80" y="96" font-size="16" font-weight="700" fill="#fff" font-family="Zen Maru Gothic,Noto Sans JP,sans-serif">${esc(fmtT(L.t1||now)+'  '+(L.to&&L.to.n?L.to.n:'')+(S.j.transit&&S.j.transit.flight?'  '+S.j.transit.flight.fn:''))}</text>`;
+    g+=`<rect x="40" y="380" width="400" height="60" rx="10" fill="#8aa2c8"/><rect x="40" y="432" width="400" height="10" fill="#6d84a8"/>`;
+    g+=seatedSVG(240,440,1.05,'#8aa2c8');
+    g+=`<rect x="330" y="410" width="44" height="60" rx="6" fill="#5d7bb0"/><rect x="346" y="398" width="12" height="14" rx="3" fill="#4e6a9b"/>`;}
+  else{g+=`<rect x="-1200" y="-800" width="2880" height="1240" fill="#e6f0f6"/><rect x="-1200" y="440" width="2880" height="1000" fill="#7a8ca0"/>`;g+=sceneryWindow(40,120,400,160,50,'plane')+`<rect x="40" y="120" width="400" height="160" rx="10" fill="none" stroke="#f4f1ea" stroke-width="8"/><rect x="40" y="220" width="400" height="60" fill="#3a78b5" opacity=".7"/>`;g+=`<rect x="0" y="300" width="480" height="80" rx="10" fill="#3a78b5"/>`;g+=seatedSVG(240,380,1.05,'#3a78b5');}
+  return '<g transform="translate(0 70)">'+g+'</g>';}
+let lastRideKind=null;
 /* 立っている本人。基準: 中心 x=240、足元 y=561 の図を (cx,feetY) へ平行移動 */
 function charSVG(cx,feetY,o){o=o||{};const look=o.look||S.look||{};const out=o.outfit||S.outfit||{};const hc=look.hairC||'#2a2f3a',skin=look.skin||'#f6d5b8',col='#2a2f3a',top=out.top||'#d97f5a';const hairS=look.hair||'short';
   const still=!!o.still;const blink=!still&&(Date.now()%3800)<140;const talking=!still&&roomSayUntil>Date.now();const bobY=still?0:Math.sin(Date.now()/650)*2;const isHot=!still&&hot(),isCold=!still&&cold(),umb=!still&&(rainy()||rainLater()!=null);
@@ -1042,7 +1104,7 @@ const P=(x,y)=>'left:'+((x-ROOM.x0)/ROOM.uw*100).toFixed(2)+'%;top:'+((y-ROOM.y0
 const PB=(x,yb)=>'left:'+((x-ROOM.x0)/ROOM.uw*100).toFixed(2)+'%;bottom:'+((ROOM.uh-(yb-ROOM.y0))/ROOM.uh*100).toFixed(2)+'%';
 window.addEventListener('resize',()=>{if(view==='home')fitRoom();});
 /* 家の背景(窓の空・時計・家具・本人)。1秒ごとに描き直しても軽い */
-function drawScene(){const now=new Date();const hr=hour(now.getTime());const n=nightness(hr);const w=S.weather&&Date.now()-S.weather.t<3*3600e3?S.weather:null;const rain=rainy();const cloudy=w&&(w.code>=2);const snow=w&&[71,73,75,77,85,86].includes(w.code);
+function drawScene(){{const rk=curRideKind();if(rk&&!leaveRoom){$('scene').innerHTML=rideSceneSVG(rk);return;}}const now=new Date();const hr=hour(now.getTime());const n=nightness(hr);const w=S.weather&&Date.now()-S.weather.t<3*3600e3?S.weather:null;const rain=rainy();const cloudy=w&&(w.code>=2);const snow=w&&[71,73,75,77,85,86].includes(w.code);
   const dusk=(hr>=16.5&&hr<19)||(hr>=5&&hr<7.5);
   let top=mix('#8fc6e8','#1a2442',n),bot=mix('#dcefFA'.toLowerCase(),'#3b4a72',n);if(cloudy||rain){top=mix('#9aa7b5','#1a2442',n);bot=mix('#cfd6dc','#3b4a72',n);}if(dusk&&!rain){bot=mix(bot,'#f0a870',0.55);}
   const sunX=36+((hr-6)/12)*210,sunY=200-Math.sin(Math.PI*Math.max(0,Math.min(1,(hr-6)/12)))*130;const moonH=(hr+6)%24;const moonX=36+((moonH-6)/12)*210,moonY=200-Math.sin(Math.PI*Math.max(0,Math.min(1,(moonH-6)/12)))*130;
@@ -1106,10 +1168,12 @@ function renderHome(force){if(view!=='home')return;const now=Date.now();const j0
   const atHome=j0.at===-1&&j0.state!=='walk'&&j0.state!=='hotel'&&!j0.transit&&!S.trip;
   const showPick=S.setup&&atHome&&j0.state==='home'&&w&&now<w.en&&!(S.plan&&S.plan.k===todayKey(now))&&!S.asks.some(a=>!a.done);
   const say=roomSayUntil>now?roomSayText:homeLine(now,w);
-  const sig=[showPick,say,!!leaveRoom,S.plan&&S.plan.mode,st,Math.floor(now/60000),S.souvenirs.length,Object.keys(S.stamps).length,ph&&ph[0],last&&last.t,S.townName,S.weather&&S.weather.t,S.wish.length,ROOM.uw|0,atHome].join('|');
+  const rk=curRideKind();
+  const sig=[rk,showPick,say,!!leaveRoom,S.plan&&S.plan.mode,st,Math.floor(now/60000),S.souvenirs.length,Object.keys(S.stamps).length,ph&&ph[0],last&&last.t,S.townName,S.weather&&S.weather.t,S.wish.length,ROOM.uw|0,atHome].join('|');
   if(!force&&sig===homeSig)return;homeSig=sig;
   const temp=S.weather&&now-S.weather.t<3*3600e3?Math.round(S.weather.temp)+'℃':'';const gifts=S.souvenirs.slice(-4).reverse();const nst=Object.keys(S.stamps).length;const phP=ph?poiOf(ph[0]):null;
   let h='';
+  if(rk&&!leaveRoom){const nxt=nextStopText();const L=curTransitLeg();const who=rk==='plane'?'機内':rk==='lounge'?'搭乗待ち':'車内';const cxs={train:240,bus:200,taxi:300,plane:240,lounge:240,ferry:240};const seatY={train:372,bus:380,taxi:392,plane:430,lounge:440,ferry:380};const bx=(cxs[rk]||240)-105,by=(seatY[rk]||380)-232+70;h+=`<div class="ov bubble" style="${P(bx,by)};width:44%">${esc(nxt||(L&&L.to?L.to.n+'まで あと'+Math.max(1,Math.ceil((L.t1-now)/60000))+'分':'移動中'))}</div><div class="ov tag" style="${P(16,598)};max-width:62%;overflow:hidden;text-overflow:ellipsis">${who} · ${esc(st)}</div><div class="ov doorTag tap" data-open="map" style="${P(352,596)}">地図で見る 🗺️</div>`;const ov0=$('ov');ov0.innerHTML=h;ov0.querySelectorAll('[data-open]').forEach(el=>{el.onclick=e=>{e.stopPropagation();manualViewAt=Date.now();setView('map');};});return;}
   h+=`<div class="ov tag" style="${P(38,216)}">${esc(S.weather&&S.weather.town||S.townName||'家')}の空 ${wxNow()?wxText(wxNow().code):''}${temp?' '+temp:''}${rainLater()!=null?' · '+rainLater()+'時から雨':''}</div>`;
   h+=`<div class="ov shelfItems tap" data-open="friends" style="${PB(34,342)};width:46%">${phP?`<div class="frame"><img src="${esc(ph[1].src)}" alt=""><small>${esc(phP.n)}</small></div>`:''}<div class="stampbook">📮 ${nst}</div>${gifts.map(g=>`<div class="gift"><span>${esc(g.town)}</span></div>`).join('')}</div>`;
   h+=`<div class="ov doorTag tap" data-open="map" style="${P(392,444)}">${atHome?'外を見る 🚪':'外出中 🚪'}</div>`;
@@ -1165,6 +1229,7 @@ function showText(label,txt){const el=$('dlg');el.innerHTML=`<div class="q">${es
 let hudSig='',footSig='';
 function renderHud(){const el=$('hud');if(!el)return;const now=Date.now();const d=new Date(now);const w=workWindow(now);const st=statusText();const temp=S.weather&&now-S.weather.t<3*3600e3?Math.round(S.weather.temp)+'℃':'';
   const road=curRoadName()||nextStopText();const sig=[st,road,rainLater(),JSON.stringify(S.outfit),S.look&&(S.look.hair+S.look.hairC+S.look.skin),Math.floor(now/60000),temp,S.name,S.townName,S.trip&&S.trip.city].join('|');if(sig===hudSig)return;hudSig=sig;
+  {const rk=curRideKind();const sp=$('bHome').querySelector('span');if(sp){const lab=rk==='plane'?'機内':rk==='lounge'?'空港':rk?'車内':'うち';if(sp.textContent!==lab)sp.textContent=lab;}}
   const wd=['日','月','火','水','木','金','土'][d.getDay()];{const pz=S.j.pos?px(S.j.pos[0],S.j.pos[1]):[0,0];const off=pz[0]<0||pz[1]<0||pz[0]>innerWidth||pz[1]>innerHeight;$('bViewMe').classList.toggle('hidden',view==='home'||!S.setup||!(off||Date.now()<followPauseUntil));}$('bViewHome').classList.toggle('hidden',view==='home'||!S.setup||(S.j.at===-1&&S.j.state!=='walk'&&!S.j.transit&&!S.trip)||!!tab);
   el.innerHTML=`<div class="face"><svg viewBox="196 364 88 92">${charSVG(240,561,{still:true})}</svg></div><div class="hbody"><div class="now"><span>いま · ${S.name?esc(S.name):'もう1人のあなた'}</span><b>${fmtT(now)}${inWork(now)?' 勤務中':''}${wxNow()?' '+(rainy()?'☔':'')+wxText(wxNow().code):''}${temp?' '+temp:''}</b></div><div class="st">${esc(st)}${road?' <small style="font:500 12px var(--fb);color:var(--ink2)">'+esc(road)+'</small>':''}</div><div class="meta">${d.getMonth()+1}月${d.getDate()}日(${wd}) · ${w?'勤務 '+fmtHM(S.work.start)+'–'+fmtHM(S.work.end):'仕事は休み'} · ${esc(S.trip?S.trip.city+'に滞在中':(S.townName||'家'))}${rainLater()!=null?' · '+rainLater()+'時ごろから雨':''}</div></div>`;}
 /* 下「今日」カード: 予定・お小遣い・帳面。朝の選択や相談カードが出ている間は隠す */
@@ -1258,7 +1323,7 @@ function renderPanel(){if(!tab)return;let h='';
     h+=`<div class="row"><div>小窓で開く<small>横長の別ウィンドウ</small></div><button id="bPop">開く</button></div>`;
     h+=`<div class="row"><div>詰まったとき<small>旅を中断して家に戻す。日記・友達・行きたいは残る</small></div><button id="bHomeNow">家に戻す</button></div>`;
     h+=`<div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v45 (2026-09-19)</div>';
+    h+='<div class="note">版: v46 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
@@ -1372,6 +1437,7 @@ function frameBody(t){if(!M){last=t;return;}const dt=Math.min(0.1,(t-last)/1000)
     if(fState!==st){if(fState==='home'&&st==='walk'&&!S.trip){leaveAnim={t0:t};bubble={text:'いってきます',until:t+6000,next:20000};if(view==='home'){leaveRoom={t0:Date.now(),dur:3000};roomSay('いってきます!',3500);homeSig='';}else if(Date.now()-manualViewAt>120000&&view!=='map')setView('map');}
       else if(fState==='walk'&&atHomeF){bubble={text:'ただいま',until:t+6000,next:20000};roomSay('ただいま',6000);if(Date.now()-manualViewAt>120000&&view!=='home')setView('home');}
       fState=st;}}
+  {const rk=curRideKind();if(rk!==lastRideKind){if(rk&&!leaveRoom&&Date.now()-manualViewAt>120000&&view==='map')setView('home');else if(!rk&&lastRideKind&&Date.now()-manualViewAt>120000&&view==='home'&&!(S.j.at===-1&&S.j.state!=='walk'&&!S.j.transit))setView('map');lastRideKind=rk;homeSig='';}}
   if(view==='home'){homeT+=dt;if(homeT>=0.05){homeT=0;fitRoom();drawScene();renderHome(false);}if(leaveRoom&&Date.now()-leaveRoom.t0>leaveRoom.dur+400){leaveRoom=null;homeSig='';if(Date.now()-manualViewAt>120000||true)setView('map');}const fh=$('fieldHome');if(fh&&fh.offsetParent!==null)drawFieldOn(fh,t);}else draw(t);
   hudT+=dt;if(hudT>0.25){hudT=0;{const ready=S.field.slots.filter(x=>x.stage===2).length;$('bFarm').innerHTML='<i>🌱</i><span>畑</span>'+(ready?'<span class="cnt">'+ready+'</span>':'');}updateMorning();renderHud();renderFoot();checkMapLoad();if(S.setup&&M)updateWeather();}}
 function onMapClick(cx,cy){ // 店をタップで行きたい
