@@ -606,6 +606,12 @@ function kickNow(t){const w=workWindow(t);if(w&&t>=w.st&&t<w.en)return;const d=n
 function goOutNow(){const t=Date.now();const j=S.j;const atHome=j.at===-1&&j.state!=='walk'&&!j.transit&&!S.trip;if(!atHome){toast(S.name+'はもう外にいます');return false;}
   kickNow(t);if(!(S.plan&&S.plan.k===todayKey(t))||S.plan.mode==='rest')S.plan={k:todayKey(t),mode:'auto'};j.state='home';j.until=0;j.longTripTried=null;j.rainStayDay=null;S.taught.habits.noRainToday=todayKey(t);
   addDiary({kind:'note',text:'あなたに「出かけて」と言われて、支度をする。',t});roomSay('いってきます!',5000);save();return true;}
+/* 行き先を選んだら、見積もりを見せて「決定」で出発 */
+async function confirmGo(rq){const j=S.j;const here=j.pos||[HOME.la,HOME.lo];const km=dist(here,[rq.la,rq.lo])/1000;let cost;
+  if(rq.home)cost='';else if(rq.ap||km>350){const codes=Object.keys(AIRPORTS).filter(c=>AIRPORTS[c][3]!=='intl');cost=flightsAvailable()?'飛行機(便データの最安値で買います)':(S.keys.odpt?'飛行機(JAL/ANA 実ダイヤ)':'鉄道(推定 ¥'+fmt(fareFor(S.trip?S.trip.city:(S.townName||'家'),rq.name,km).fare)+')');}
+  else if(km<3)cost='歩いて約'+Math.max(5,Math.round(km*1000/80))+'分';else cost='電車・バスで、切符は推定 ¥'+fmt(fareFor(S.trip?S.trip.city:(S.townName||'家'),rq.name,km).fare);
+  const label=rq.home?(S.trip?S.trip.city+'から家に帰ります。いまから乗換案内で戻ります。':'家に帰ります。'):rq.name+'へ、いまから向かいます('+(km<100?km.toFixed(1):Math.round(km))+'km)。'+cost+'。財布は¥'+fmt(S.wallet)+'。';
+  return await askYes(label,'決定','やめる');}
 function requestNow(rq){const t=Date.now();const j=S.j;if(j.state==='hotel'){S.request=rq;toast('朝、宿を出てから'+rq.name+'へ向かいます');save();return;}
   kickNow(t);j.transit=null;j.straight=null;j.planning=null;j.cityTarget=null;j.loadingTown=null;j.longTripTried=null;if(j.state==='walk'){j.state='stay';j.path=[];}j.until=t;S.request=null;
   const here=j.pos||[HOME.la,HOME.lo];const km=dist(here,[rq.la,rq.lo])/1000;const hereName=S.trip?S.trip.city:(S.townName||'家');
@@ -1111,7 +1117,7 @@ function vehSVG(mode){const k=vehKind(mode);const c={train:'#5d7bb0',bus:'#e08a3
 /* 画面内ダイアログ(prompt/confirm の代わり) */
 function askText(label,cur){return new Promise(res=>{const el=$('dlg');el.innerHTML=`<div class="q">${esc(label)}</div><input id="dlgIn" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"><div class="opts"><button id="dlgOk" class="buy">保存</button><button id="dlgNo">取消</button></div>`;const inp=$('dlgIn');inp.value=cur||'';el.classList.remove('hidden');setTimeout(()=>{inp.focus();inp.select();},60);
   const done=v=>{el.classList.add('hidden');res(v);};$('dlgOk').onclick=()=>done(inp.value);$('dlgNo').onclick=()=>done(null);inp.onkeydown=e=>{if(e.key==='Enter')done(inp.value);if(e.key==='Escape')done(null);};});}
-function askYes(label){return new Promise(res=>{const el=$('dlg');el.innerHTML=`<div class="q">${esc(label)}</div><div class="opts"><button id="dlgOk" class="buy">はい</button><button id="dlgNo">いいえ</button></div>`;el.classList.remove('hidden');const done=v=>{el.classList.add('hidden');res(v);};$('dlgOk').onclick=()=>done(true);$('dlgNo').onclick=()=>done(false);});}
+function askYes(label,okText,noText){return new Promise(res=>{const el=$('dlg');el.innerHTML=`<div class="q">${esc(label)}</div><div class="opts"><button id="dlgOk" class="buy">${esc(okText||'はい')}</button><button id="dlgNo">${esc(noText||'いいえ')}</button></div>`;el.classList.remove('hidden');const done=v=>{el.classList.add('hidden');res(v);};$('dlgOk').onclick=()=>done(true);$('dlgNo').onclick=()=>done(false);});}
 function showText(label,txt){const el=$('dlg');el.innerHTML=`<div class="q">${esc(label)}</div><textarea id="dlgTa" readonly style="height:140px;font-size:12px"></textarea><div class="opts"><button id="dlgNo">閉じる</button></div>`;$('dlgTa').value=txt;el.classList.remove('hidden');$('dlgNo').onclick=()=>el.classList.add('hidden');setTimeout(()=>$('dlgTa').select(),60);}
 /* 左上「いま」カード: 状況を大きく1行、時刻・天気、日付・勤務・街 */
 let hudSig='',footSig='';
@@ -1206,7 +1212,7 @@ function renderPanel(){if(!tab)return;let h='';
     h+=`<div class="row"><div>小窓で開く<small>横長の別ウィンドウ</small></div><button id="bPop">開く</button></div>`;
     h+=`<div class="row"><div>詰まったとき<small>旅を中断して家に戻す。日記・友達・行きたいは残る</small></div><button id="bHomeNow">家に戻す</button></div>`;
     h+=`<div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v40 (2026-09-19)</div>';
+    h+='<div class="note">版: v41 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
@@ -1219,12 +1225,12 @@ function renderPanel(){if(!tab)return;let h='';
   panel.querySelectorAll('[data-ansp]').forEach(b=>b.onclick=()=>{const [id,key]=b.dataset.ansp.split('|');const a=S.asks.find(x=>String(x.id)===id);if(a&&!a.done)resolveAsk(a,key,false);renderPanel();});
   panel.querySelectorAll('[data-goout]').forEach(b=>b.onclick=()=>{if(goOutNow()){renderPanel();if(view==='home'&&Date.now()-manualViewAt>120000)setTimeout(()=>{if(S.j.state==='walk')setView('map');},3000);}});
   panel.querySelectorAll('[data-plan2]').forEach(b=>b.onclick=()=>{S.plan={k:todayKey(),mode:b.dataset.plan2};toast('今日は「'+PLAN_LABEL[b.dataset.plan2]+'」','var(--acc)');renderPanel();save();});
-  panel.querySelectorAll('[data-city]').forEach(b=>b.onclick=()=>{$('rqCity').value=b.dataset.city;$('rqGo').click();$('rqCity').value='';});panel.querySelectorAll('[data-morecity]').forEach(b=>b.onclick=()=>{planMore[b.dataset.morecity]=true;renderPanel();});
+  panel.querySelectorAll('[data-city]').forEach(b=>b.onclick=()=>{$('rqCity').value=b.dataset.city;panel.querySelectorAll('[data-city]').forEach(x=>x.classList.toggle('on',x===b));$('rqGo').click();});panel.querySelectorAll('[data-morecity]').forEach(b=>b.onclick=()=>{planMore[b.dataset.morecity]=true;renderPanel();});
   const rq=$('rqGo');if(rq)rq.onclick=async()=>{let cityName=$('rqCity').value;const txt=$('rqText').value.trim();if(!cityName&&txt){const hit=CITIES_JP.find(x=>x[0]===txt)||CITIES_WORLD.find(x=>x[0]===txt);if(hit)cityName=hit[0];}
-    if(cityName){const c=CITIES_JP.find(x=>x[0]===cityName)||CITIES_WORLD.find(x=>x[0]===cityName);requestNow({name:c[0],la:c[1],lo:c[2],ap:c[3]||undefined});toast('いまから'+c[0]+'へ向かいます','var(--acc)');renderPanel();return;}
+    if(cityName){const c=CITIES_JP.find(x=>x[0]===cityName)||CITIES_WORLD.find(x=>x[0]===cityName);$('rqCity').value='';const rqo={name:c[0],la:c[1],lo:c[2],ap:c[3]||undefined};if(!(await confirmGo(rqo))){panel.querySelectorAll('[data-city].on').forEach(x=>x.classList.remove('on'));return;}requestNow(rqo);toast('いまから'+c[0]+'へ向かいます','var(--acc)');renderPanel();return;}
     if(!txt){toast('街を選ぶか、場所を入れてください','var(--ng)');return;}
-    try{const rs=await geocode(txt);if(!rs.length){toast('見つかりませんでした','var(--ng)');return;}const r=rs[0];const nm=r.display_name.split(',')[0];requestNow({name:nm,la:+r.lat,lo:+r.lon});toast('いまから'+nm+'へ向かいます','var(--acc)');renderPanel();}catch(e){toast('住所検索に失敗','var(--ng)');}};
-  const rh=$('rqHome');if(rh)rh.onclick=()=>{requestNow({name:'家',la:HOME.la,lo:HOME.lo,home:true});toast('いまから家に帰ります','var(--acc)');renderPanel();};
+    try{const rs=await geocode(txt);if(!rs.length){toast('見つかりませんでした','var(--ng)');return;}const r=rs[0];const nm=r.display_name.split(',')[0];const rqo={name:nm,la:+r.lat,lo:+r.lon};if(!(await confirmGo(rqo)))return;requestNow(rqo);toast('いまから'+nm+'へ向かいます','var(--acc)');renderPanel();}catch(e){toast('住所検索に失敗','var(--ng)');}};
+  const rh=$('rqHome');if(rh)rh.onclick=async()=>{const rqo={name:'家',la:HOME.la,lo:HOME.lo,home:true};if(!(await confirmGo(rqo)))return;requestNow(rqo);toast('いまから家に帰ります','var(--acc)');renderPanel();};
   const rc=$('rqClear');if(rc)rc.onclick=()=>{S.request=null;renderPanel();save();};
   const tf=$('tShopFind');if(tf){const doFind=()=>{const q=$('tShop').value.trim();const res=$('tShopRes');if(!q){res.innerHTML='';return;}const hits=POIS.map((p,i)=>({p,i})).filter(x=>x.p.n.includes(q)).slice(0,6);
       res.innerHTML=hits.length?hits.map(x=>`<div class="row"><div>${info(x.p).e} ${x.p.n}<small>${x.p.c||info(x.p).label}</small></div><div><button data-like="${x.i}">👍 おすすめ</button><button data-avoid="${x.i}">🚫 行かない</button></div></div>`).join(''):'<div class="note">見つからない。この街の店だけ探せます</div>';
