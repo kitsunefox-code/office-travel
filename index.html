@@ -560,6 +560,7 @@ async function planIntlFlight(from,city,t){if(!flightsAvailable())return null;
     if(!toAp){const t0=Math.max(t,arriveAp-estDur);toAp={legs:[{mode:'BUS',route:'',agency:'',headsign:A[0],from:{n:'START',la:from[0],lo:from[1]},to:{n:A[0],la:A[1],lo:A[2]},t0,t1:arriveAp,line:'空港への乗り物(時刻は概算)'}]};}}
   const url='https://www.aviasales.com'+(f.link?(f.link.startsWith('/')?'':'/')+f.link:'/search/'+best.o+ymd(dep).slice(8,10)+ymd(dep).slice(5,7)+destCode+'1')+(S.keys.travelpayouts?(f.link&&f.link.includes('?')?'&':'?')+'marker='+encodeURIComponent(S.keys.travelpayouts):'');
   let fromCity=null;try{fromCity=await planTransit(await airportAccess(destCode),[city.la,city.lo],arr+45*60000);}catch(e){}
+  if(toAp)toAp.legs.forEach(l=>{if(l.to.n==='END')l.to.n=A[0];});if(fromCity)fromCity.legs.forEach(l=>{if(l.from.n==='START')l.from.n=B[0];});
   const legs=[];if(toAp)legs.push(...toAp.legs);
   legs.push({mode:'CHECKIN',route:'',agency:'',headsign:'',from:{n:A[0],la:A[1],lo:A[2]},to:{n:A[0],la:A[1],lo:A[2]},t0:arriveAp,t1:dep});
   legs.push({mode:'AIRPLANE',route:fn,agency:op,headsign:B[0],from:{n:A[0],la:A[1],lo:A[2]},to:{n:B[0],la:B[1],lo:B[2]},t0:dep,t1:arr,url,price:f.price,transfers:f.tr});
@@ -578,6 +579,7 @@ async function planFlightTrip(from,city,t){const fl=await loadFlights();if(!fl)r
   const day=new Date(t);const cands=fl.filter(f=>f.o===origAp.code&&f.d===destAp.code&&calMatches(f.cal,day)).map(f=>({...f,dep:hm(t,f.t0),arr:hm(t,f.t1)})).filter(f=>f.dep>=arriveAp+60*60000).sort((a,b)=>a.dep-b.dep);
   const f=cands[0];if(!f)return null;const arr=f.arr<f.dep?f.arr+86400000:f.arr;
   const fromCity=await planTransit(await airportAccess(destAp.code),[city.la,city.lo],arr+30*60000).catch(()=>null);
+  if(toAp)toAp.legs.forEach(l=>{if(l.to.n==='END')l.to.n=A[0];});if(fromCity)fromCity.legs.forEach(l=>{if(l.from.n==='START')l.from.n=B[0];});
   const legs=[];if(toAp)legs.push(...toAp.legs);
   legs.push({mode:'CHECKIN',route:'',agency:'',headsign:'',from:{n:A[0],la:A[1],lo:A[2]},to:{n:A[0],la:A[1],lo:A[2]},t0:arriveAp,t1:f.dep});
   legs.push({mode:'AIRPLANE',route:f.fn,agency:f.op,headsign:B[0],from:{n:A[0],la:A[1],lo:A[2]},to:{n:B[0],la:B[1],lo:B[2]},t0:f.dep,t1:arr});
@@ -1122,7 +1124,7 @@ function renderPanel(){if(!tab)return;let h='';
   if(tab==='plan'){h+='<h3>旅程</h3>';
     const tr=S.trip;h+=`<div class="row"><div>いま<small>${statusText()} / 元気 ${Math.round(S.energy)}${tiredToday()?'(疲れている)':''}</small></div><b style="color:var(--acc)">${tr?tr.city:(S.townName||M.name)}</b></div>`;
     if(tr)h+=`<div class="row"><div>旅の途中<small>${fmtD(tr.since)}に出発 / ${tr.cities.join(' → ')} / ${Math.floor((Date.now()-tr.since)/86400000)+1}日目</small></div></div>`;
-    if(S.j.transit){h+='<div class="sec">いまの乗り継ぎ</div>'+S.j.transit.legs.map(l=>`<div class="tl"><span class="tlt">${fmtT(l.t0)}</span><span class="tle">${MODE_ICON[l.mode]||'・'}</span><span>${l.mode==='WALK'?'歩く':(l.agency?l.agency+' ':'')+(MODE_JA[l.mode]||'')+(l.route?' '+l.route:'')+(l.headsign?' '+l.headsign+'行き':'')}<br><small style="color:var(--ink2)">${l.from.n} → ${l.to.n}(${fmtT(l.t1)}着)</small></span></div>`).join('');}
+    if(S.j.transit){h+='<div class="sec">いまの乗り継ぎ</div>'+S.j.transit.legs.map(l=>`<div class="tl"><span class="tlt">${fmtT(l.t0)}</span><span class="tle">${MODE_ICON[l.mode]||'・'}</span><span>${l.mode==='WALK'?'歩く':l.mode==='CHECKIN'?'搭乗手続き・保安検査':l.mode==='BAGGAGE'?'荷物を受け取る':rideName(l)}<br><small style="color:var(--ink2)">${l.from.n} → ${l.to.n}(${fmtT(l.t1)}着)</small></span></div>`).join('');}
     const today=todayKey();const es=S.diary.filter(e=>todayKey(e.t)===today);
     h+='<div class="sec">今日の流れ</div>'+(es.length?es.map(e=>`<div class="tl"><span class="tlt">${fmtT(e.t)}</span><span class="tle">${e.emoji||(e.kind==='note'?'・':'')}</span><span>${e.text}${e.cost?'<span class="tlc">¥'+fmt(e.cost)+'</span>':''}</span></div>`).join(''):'<div class="note">まだ何も。</div>');
     if(S.bucket){h+='<div class="sec">今週やりたいこと</div>'+S.bucket.items.map(i=>`<div class="row" style="display:block"><div style="display:flex;justify-content:space-between"><span>${i.done?'🎯 ':''}${i.text}</span><span style="color:var(--ink2)">${i.progress}/${i.target}</span></div><div class="bar"><i style="width:${Math.round(100*i.progress/i.target)}%"></i></div></div>`).join('');}
@@ -1167,7 +1169,7 @@ function renderPanel(){if(!tab)return;let h='';
     h+=`<div class="row"><div>小窓で開く<small>横長の別ウィンドウ</small></div><button id="bPop">開く</button></div>`;
     h+=`<div class="row"><div>詰まったとき<small>旅を中断して家に戻す。日記・友達・行きたいは残る</small></div><button id="bHomeNow">家に戻す</button></div>`;
     h+=`<div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v36 (2026-09-19)</div>';
+    h+='<div class="note">版: v37 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
