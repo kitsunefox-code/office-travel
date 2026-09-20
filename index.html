@@ -241,6 +241,7 @@ function nextWorkStart(t){for(let d=0;d<21;d++){const w=workWindow(t+d*86400000)
 /* ========== 地図データ ========== */
 let M=null,NODES=[],EDGES=[],POIS=[],adj=[],HOME={la:35.7012,lo:139.5672,nn:0},COSL=1;
 function initTown(m){M=m;NODES=m.nodes;EDGES=m.edges;POIS=m.pois;adj=NODES.map(()=>[]);EDGES.forEach(([a,b,len,wd])=>{adj[a].push([b,len]);adj[b].push([a,len]);});
+  ROADN=m.names||[];EDGE_NAME=new Map();EDGES.forEach(e=>{if(e.length>4&&e[4]>=0&&ROADN[e[4]])EDGE_NAME.set(e[0]+'-'+e[1],ROADN[e[4]]);});if(!m.names&&typeof fetch==='function'&&!roadNamesTried.has(m.name)){roadNamesTried.add(m.name);setTimeout(()=>ensureRoadNames(m).catch(()=>{}),8000);}
   const hl=S.homeLL||[m.home[0],m.home[1]];const isHomeTown=dist(hl,[m.center[0],m.center[1]])<400;
   HOME={la:hl[0],lo:hl[1],nn:isHomeTown?m.home[2]:-1};COSL=Math.cos(m.center[0]*Math.PI/180);cam={la:m.center[0],lo:m.center[1]};
   if(!MAPBASE)initBasemap();if(MAPBASE){try{MAPBASE.jumpTo({center:[m.center[1],m.center[0]],zoom:16.2});}catch(e){}}}
@@ -279,15 +280,15 @@ async function buildTown(la,lo,label,withWide,prog){const H=la+','+lo;
   const P=await overpass(`[out:json][timeout:90];(node(around:1200,${H})[amenity~"^(restaurant|cafe|fast_food|bar|pub|ice_cream|bakery|food_court)$"][name];way(around:1200,${H})[amenity~"^(restaurant|cafe|fast_food|bar)$"][name];node(around:1200,${H})[shop~"^(bakery|confectionery|books|tea|coffee|deli|pastry|chocolate|toys|music|variety_store|gift|stationery|second_hand|antiques|art|craft|convenience|supermarket)$"][name];node(around:1200,${H})[tourism][name];node(around:1500,${H})[amenity=public_bath][name];way(around:1500,${H})[amenity=public_bath][name];way(around:1500,${H})[tourism~"^(hotel|hostel|guest_house|motel)$"][name];node(around:1500,${H})[tourism~"^(hotel|hostel|guest_house|motel)$"][name];way(around:1300,${H})[leisure=park][name];relation(around:1300,${H})[leisure=park][name];node(around:1200,${H})[railway=station][name];node(around:1200,${H})[amenity~"^(place_of_worship|theatre|cinema|library|marketplace)$"][name];);out center tags;`);
   prog('道を読み込んでいます…');
   const W=await overpass(`[out:json][timeout:90];way(around:1200,${H})[highway~"^(primary|secondary|tertiary|residential|unclassified|living_street|pedestrian|footway|path|steps)$"];out geom;`);
-  const nodes=[],index=new Map(),edgeSet=new Map();const WIDTH={primary:3,secondary:3,tertiary:2,residential:2,unclassified:2,living_street:2,pedestrian:2,footway:1,path:1,steps:1};
+  const nodes=[],index=new Map(),edgeSet=new Map(),names=[],nameIdx=new Map();const WIDTH={primary:3,secondary:3,tertiary:2,residential:2,unclassified:2,living_street:2,pedestrian:2,footway:1,path:1,steps:1};
   const nid=(a,b)=>{const k=a.toFixed(6)+','+b.toFixed(6);let i=index.get(k);if(i===undefined){i=nodes.length;index.set(k,i);nodes.push([+a.toFixed(6),+b.toFixed(6)]);}return i;};
-  for(const w of W){const hw=w.tags&&w.tags.highway;if(!(hw in WIDTH))continue;let prev=null;for(const pt of (w.geometry||[])){const i=nid(pt.lat,pt.lon);if(prev!==null&&prev!==i){const a=Math.min(prev,i),b=Math.max(prev,i);edgeSet.set(a+'-'+b,[a,b,WIDTH[hw]]);}prev=i;}}
-  const edges=[...edgeSet.values()].map(([a,b,wd])=>[a,b,Math.round(dist(nodes[a],nodes[b])),wd]);
+  for(const w of W){const hw=w.tags&&w.tags.highway;if(!(hw in WIDTH))continue;const nm=w.tags.name;let ni=-1;if(nm){ni=nameIdx.get(nm);if(ni===undefined){ni=names.length;names.push(nm);nameIdx.set(nm,ni);}}let prev=null;for(const pt of (w.geometry||[])){const i=nid(pt.lat,pt.lon);if(prev!==null&&prev!==i){const a=Math.min(prev,i),b=Math.max(prev,i);edgeSet.set(a+'-'+b,[a,b,WIDTH[hw],ni]);}prev=i;}}
+  const edges=[...edgeSet.values()].map(([a,b,wd,ni])=>[a,b,Math.round(dist(nodes[a],nodes[b])),wd,ni]);
   if(nodes.length<30)throw new Error('この場所の道路データが少なすぎます。近くの駅や町名で試してください');
   const nearest=(a,b)=>{let best=0,bd=1e18;for(let i=0;i<nodes.length;i++){const d=(nodes[i][0]-a)**2+((nodes[i][1]-b)*0.81)**2;if(d<bd){bd=d;best=i;}}return best;};
   const pois=[],seen=new Set();
   for(const e of P){const p=poiFrom(e,false);if(!p)continue;const k=p.n+'|'+p.k;if(seen.has(k))continue;seen.add(k);p.nn=nearest(p.la,p.lo);pois.push(p);}
-  const town={name:label,center:[la,lo],home:[la,lo,nearest(la,lo)],nodes,edges,pois,wide:[],wideLoaded:!withWide};
+  const town={name:label,center:[la,lo],home:[la,lo,nearest(la,lo)],nodes,edges,pois,names,wide:[],wideLoaded:!withWide};
   if(withWide)setTimeout(()=>loadWideAsync(town,la,lo,seen),200);
   return town;}
 async function loadWideAsync(town,la,lo,seen){const H=la+','+lo;seen=seen||new Set(town.pois.map(p=>p.n+'|'+p.k));
@@ -302,6 +303,12 @@ async function loadWideAsync(town,la,lo,seen){const H=la+','+lo;seen=seen||new S
     if(added)toast('遠くの名所 '+added+'件を追加で取り込んだ','var(--dim)');}
   catch(e){console.warn('wide failed',e);town.wideLoaded=false;}}
 
+/* 古い町データ(道の名前なし)に、名前だけ後から足す */
+async function ensureRoadNames(m){const c=m.home||m.center;const W=await overpass(`[out:json][timeout:60];way(around:1200,${c[0]},${c[1]})[highway][name];out geom;`,40000);if(!W||M!==m)return;
+  const index=new Map();m.nodes.forEach((n,i)=>index.set(n[0].toFixed(6)+','+n[1].toFixed(6),i));const names=[],nameIdx=new Map();const byEdge=new Map();
+  for(const w of W){const nm=w.tags&&w.tags.name;if(!nm)continue;let ni=nameIdx.get(nm);if(ni===undefined){ni=names.length;names.push(nm);nameIdx.set(nm,ni);}let prev=null;for(const pt of (w.geometry||[])){const i=index.get((+pt.lat.toFixed(6)).toFixed(6)+','+(+pt.lon.toFixed(6)).toFixed(6));if(i===undefined){prev=null;continue;}if(prev!==null&&prev!==i){byEdge.set(Math.min(prev,i)+'-'+Math.max(prev,i),ni);}prev=i;}}
+  m.edges.forEach(e=>{const ni=byEdge.get(e[0]+'-'+e[1]);e[4]=ni===undefined?-1:ni;});m.names=names;ROADN=names;EDGE_NAME=new Map();m.edges.forEach(e=>{if(e[4]>=0)EDGE_NAME.set(e[0]+'-'+e[1],names[e[4]]);});if(!S.trip)saveTown(m);}
+function curRoadName(){const j=S.j;if(j.state!=='walk'||j.transit||j.straight||!j.path||j.seg>=j.path.length-1)return null;const a=j.path[j.seg],b=j.path[j.seg+1];return EDGE_NAME.get(Math.min(a,b)+'-'+Math.max(a,b))||null;}
 function saveTown(town){try{localStorage.setItem(TOWN_KEY,JSON.stringify(town));return true;}catch(e){console.warn('town too large to store',e);return false;}}
 function dist(a,b){const R=6371000,q=Math.PI/180;const dLa=(b[0]-a[0])*q,dLo=(b[1]-a[1])*q;const h=Math.sin(dLa/2)**2+Math.cos(a[0]*q)*Math.cos(b[0]*q)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
 function route(a,b){ // ダイクストラ(道路グラフ)
@@ -329,6 +336,7 @@ const NAMES_F=['さくら','みお','ゆい','ひな','あかり','りん','こ�
 const PHRASE={walk:['いい天気','この道すき','けやきがきれい','ねこがいた','お腹すいた','次はどこ行こう','路地に入ってみる'],stay:{cafe:['豆のにおいがいい','窓際とれた','ちょっと本を読む'],restaurant:['おいしそう','これは当たり','あなたにも食べてほしい'],pub:['一杯だけ','大将と話した','ビール冷えてる'],park:['池がきらきら','ベンチで昼寝','ボートに乗りたい'],books:['一冊買っちゃった','立ち読み中','装丁がいい'],shrine:['お参りした','あなたのぶんも祈った'],sweets:['甘い','幸せ'],default:['ふう','いいところ','写真撮った']},
   home:['ただいま','今日の話、聞いて','明日はどこ行こう','おやすみ'],hotel:['今日はここで泊まる','枕がふかふか','明日はどこ行こう','知らない街の夜'],rain:['雨だ','傘持ってきてよかった','雨の音がいい'],off:['今日は一緒に休み','ごろごろ','お茶いれるね'],drive:['ラジオつけよ','信号長い','いい道','窓あけた','遠出はいいね'],ride:['風がきもちいい','坂きつい','川沿い走ろう']};
 let bubble={text:'',until:0,next:12000};
+let ROADN=[],EDGE_NAME=new Map(),leaveAnim=null,prevJState='',roadNamesTried=new Set();
 
 /* お小遣い(収穫) */
 const SLOTS=8,GROW_MS=[0,150000,300000],SPROUT_MS=95000,YIELD=[60,220,600];
@@ -760,7 +768,10 @@ function draw(now){const hr=hour(Date.now());const night=nightness(hr);
   if(j.state==='walk'&&j.straight){const [x1,y1]=px(j.pos[0],j.pos[1]),[x2,y2]=px(j.straight.to[0],j.straight.to[1]);ctx.strokeStyle='rgba(70,120,220,.55)';ctx.lineWidth=2.5;ctx.setLineDash([6,6]);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.setLineDash([]);}
   if(j.state==='walk'&&!j.straight&&j.path.length>1){ctx.strokeStyle='rgba(70,120,220,.55)';ctx.lineWidth=2.5;ctx.setLineDash([5,5]);ctx.beginPath();for(let k=j.seg;k<j.path.length;k++){const [x,y]=px(NODES[j.path[k]][0],NODES[j.path[k]][1]);if(k===j.seg){const [cx,cy]=px(j.pos[0],j.pos[1]);ctx.moveTo(cx,cy);}else ctx.lineTo(x,y);}ctx.stroke();ctx.setLineDash([]);}
   // もう1人の自分
-  {let [x,y]=px(j.pos?j.pos[0]:HOME.la,j.pos?j.pos[1]:HOME.lo);if(j.at===-1&&j.state!=='walk'&&!j.transit){x+=18;y+=9;}const bob=j.state==='walk'?Math.sin(now/120)*1.2:0;
+  {let [x,y]=px(j.pos?j.pos[0]:HOME.la,j.pos?j.pos[1]:HOME.lo);if(j.at===-1&&j.state!=='walk'&&!j.transit){x+=18;y+=9;}
+    if(prevJState!==j.state){if(prevJState==='home'&&j.state==='walk'&&!S.trip){leaveAnim={t0:now};bubble={text:'いってきます',until:now+6000,next:20000};}else if(prevJState==='walk'&&j.at===-1&&j.state!=='walk'&&!j.transit&&!S.trip){bubble={text:'ただいま',until:now+6000,next:20000};}prevJState=j.state;}
+    if(leaveAnim){const k=Math.min(1,(now-leaveAnim.t0)/18000);const [hx,hy]=px(HOME.la,HOME.lo);const e=k*k*(3-2*k);x=hx+18+(x-hx-18)*e;y=hy+9+(y-hy-9)*e;if(k>=1)leaveAnim=null;}
+    const bob=j.state==='walk'?Math.sin(now/120)*1.2:0;
     ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();ctx.ellipse(x,y+14,10,3.5,0,0,7);ctx.fill();
     const ph=legPhase();const TL=curTransitLeg();const riding=TL&&TL.mode!=='WALK'&&now>=0&&Date.now()>=TL.t0;
     if(riding){ctx.font='26px sans-serif';ctx.textAlign='center';ctx.fillText(MODE_ICON[TL.mode]||'🚆',x,y+6);ctx.textAlign='left';}
@@ -772,7 +783,10 @@ function draw(now){const hr=hour(Date.now());const night=nightness(hr);
     if(j.state==='walk'&&!riding){ctx.fillStyle='#4a5568';ctx.fillRect(x-4+Math.sin(now/120)*3,y+10,3,5);ctx.fillRect(x+1-Math.sin(now/120)*3,y+10,3,5);}
     ctx.font='bold 12px sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,.9)';ctx.strokeText(S.name,x+13,y-8);ctx.fillStyle='#222';ctx.fillText(S.name,x+13,y-8);
     // つぶやき
-    if(now>bubble.until+bubble.next){const pool=j.state==='hotel'?PHRASE.hotel:(rainy()&&j.state==='walk'&&Math.random()<0.5)?PHRASE.rain:j.state==='home'?(workWindow(Date.now())?PHRASE.home:PHRASE.off):(j.state==='walk'&&j.transit&&curTransitLeg()&&curTransitLeg().mode!=='WALK')?(PHRASE.ride||PHRASE.walk):(j.state==='walk'&&j.straight)?(S.vehicle==='car'?PHRASE.drive:PHRASE.ride):j.state==='walk'?PHRASE.walk:(PHRASE.stay[POIS[j.at]?.k]||PHRASE.stay.default);bubble={text:pool[Math.floor(Math.random()*pool.length)],until:now+3800,next:14000+Math.random()*16000};}
+    {const W0=workWindow(Date.now());const atHomeB=j.at===-1&&j.state!=='walk'&&!j.transit&&!S.trip;const untilDep=atHomeB&&W0&&Date.now()<W0.st?W0.st-Date.now():-1;const road=curRoadName();
+    if(untilDep>0&&untilDep<=45*60000&&now>bubble.until){bubble={text:fmtHM(S.work.start)+'に出発。あと'+Math.max(1,Math.ceil(untilDep/60000))+'分',until:now+2500,next:0};}
+    else if(road&&now>bubble.until+bubble.next&&Math.random()<0.6){bubble={text:road+'を歩いている',until:now+4500,next:12000+Math.random()*10000};}
+    else if(now>bubble.until+bubble.next){const pool=j.state==='hotel'?PHRASE.hotel:(rainy()&&j.state==='walk'&&Math.random()<0.5)?PHRASE.rain:j.state==='home'?(workWindow(Date.now())?PHRASE.home:PHRASE.off):(j.state==='walk'&&j.transit&&curTransitLeg()&&curTransitLeg().mode!=='WALK')?(PHRASE.ride||PHRASE.walk):(j.state==='walk'&&j.straight)?(S.vehicle==='car'?PHRASE.drive:PHRASE.ride):j.state==='walk'?PHRASE.walk:(PHRASE.stay[POIS[j.at]?.k]||PHRASE.stay.default);bubble={text:pool[Math.floor(Math.random()*pool.length)],until:now+3800,next:14000+Math.random()*16000};}}
     if(now<bubble.until){ctx.font='500 12.5px sans-serif';const tw=ctx.measureText(bubble.text).width+16;ctx.fillStyle='#fff';ctx.strokeStyle='rgba(0,0,0,.15)';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(x-tw/2,y-48,tw,22,8);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(x-4,y-26);ctx.lineTo(x+4,y-26);ctx.lineTo(x,y-21);ctx.fill();ctx.fillStyle='#333';ctx.textAlign='center';ctx.fillText(bubble.text,x,y-32);ctx.textAlign='left';}}
   // 夜のトーン
   if(!BASE&&!RASTER&&night>0&&night<=0.5){ctx.fillStyle=`rgba(40,40,80,${night*0.35})`;ctx.fillRect(0,0,W,H);}
@@ -894,9 +908,9 @@ function renderHome(force){return;fitRoom();drawScene();const now=Date.now();con
 /* 左上「いま」カード: 状況を大きく1行、時刻・天気、日付・勤務・街 */
 let hudSig='',footSig='';
 function renderHud(){const el=$('hud');if(!el)return;const now=Date.now();const d=new Date(now);const w=workWindow(now);const st=statusText();const temp=S.weather&&now-S.weather.t<3*3600e3?Math.round(S.weather.temp)+'℃':'';
-  const sig=[st,Math.floor(now/60000),temp,S.name,S.townName,S.trip&&S.trip.city].join('|');if(sig===hudSig)return;hudSig=sig;
+  const road=curRoadName();const sig=[st,road,Math.floor(now/60000),temp,S.name,S.townName,S.trip&&S.trip.city].join('|');if(sig===hudSig)return;hudSig=sig;
   const wd=['日','月','火','水','木','金','土'][d.getDay()];
-  el.innerHTML=`<div class="now"><span>いま · ${S.name?esc(S.name):'もう1人のあなた'}</span><b>${fmtT(now)}${inWork(now)?' 勤務中':''}${rainy()?' ☔':''}${temp?' '+temp:''}</b></div><div class="st">${esc(st)}</div><div class="meta">${d.getMonth()+1}月${d.getDate()}日(${wd}) · ${w?'勤務 '+fmtHM(S.work.start)+'–'+fmtHM(S.work.end):'仕事は休み'} · ${esc(S.trip?S.trip.city+'に滞在中':(S.townName||'家'))}</div>`;}
+  el.innerHTML=`<div class="now"><span>いま · ${S.name?esc(S.name):'もう1人のあなた'}</span><b>${fmtT(now)}${inWork(now)?' 勤務中':''}${rainy()?' ☔':''}${temp?' '+temp:''}</b></div><div class="st">${esc(st)}${road?' <small style="font:500 12px var(--fb);color:var(--ink2)">'+esc(road)+'</small>':''}</div><div class="meta">${d.getMonth()+1}月${d.getDate()}日(${wd}) · ${w?'勤務 '+fmtHM(S.work.start)+'–'+fmtHM(S.work.end):'仕事は休み'} · ${esc(S.trip?S.trip.city+'に滞在中':(S.townName||'家'))}</div>`;}
 /* 下「今日」カード: 予定・お小遣い・帳面。朝の選択や相談カードが出ている間は隠す */
 function renderFoot(){const el=$('hfoot');if(!el)return;const now=Date.now();const busy=tab||!$('morning').classList.contains('hidden')||!$('ask').classList.contains('hidden')||!$('poiCard').classList.contains('hidden')||!S.setup;
   if(busy){el.classList.add('hidden');footSig='';return;}
@@ -975,7 +989,7 @@ function renderPanel(){if(!tab)return;let h='';
     h+=`<div class="row"><div>小窓で開く<small>横長の別ウィンドウ</small></div><button id="bPop">開く</button></div>`;
     h+=`<div class="row"><div>詰まったとき<small>旅を中断して家に戻す。日記・友達・行きたいは残る</small></div><button id="bHomeNow">家に戻す</button></div>`;
     h+=`<div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v21 (2026-09-19)</div>';
+    h+='<div class="note">版: v22 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
