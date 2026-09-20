@@ -514,6 +514,16 @@ function tripPlanTargets(t){const here=S.j.pos||[HOME.la,HOME.lo];const remain=(
     let sc=Math.random()*3-seen*3-(km/200);if(est>remain*0.6)sc-=20;if(fare>S.wallet*0.7)sc-=20;if(S.taught.habits.train)sc+=1;return {c,km,est,fare,sc};}).filter(x=>x.sc>-15).sort((a,b)=>b.sc-a.sc);}
 function energyMorning(t){if(S.energyDay===todayKey(t))return;S.energyDay=todayKey(t);S.energy=Math.min(100,S.energy+(S.j.state==='hotel'?30:45));}
 function tiredToday(){return S.energy<30;}
+/* いまから出発できるように、今日の「外にいてよい時間」を今から広げる */
+function kickNow(t){const w=workWindow(t);if(w&&t>=w.st&&t<w.en)return;const d=new Date(t);d.setHours(0,0,0,0);const en0=d.getTime()+S.work.end*60000;S.kick={k:todayKey(t),st:t-1000,en:Math.max(en0,t+4*3600e3)};}
+/* あなたの指定: いまから向かう */
+function requestNow(rq){const t=Date.now();const j=S.j;if(j.state==='hotel'){S.request=rq;toast('朝、宿を出てから'+rq.name+'へ向かいます');save();return;}
+  kickNow(t);j.transit=null;j.straight=null;j.planning=null;j.cityTarget=null;j.loadingTown=null;j.longTripTried=null;if(j.state==='walk'){j.state='stay';j.path=[];}j.until=t;S.request=null;
+  const here=j.pos||[HOME.la,HOME.lo];const km=dist(here,[rq.la,rq.lo])/1000;const hereName=S.trip?S.trip.city:(S.townName||'家');
+  if(rq.home&&!S.trip&&km<3){toast('もう家の近くにいます');j.state='stay';j.target=-1;go(-1,t);save();return;}
+  if(km<3&&!rq.home){addDiary({kind:'note',text:'あなたに「'+rq.name+'へ」と言われた。近いので歩いて行く。',t});const near=POIS.map((p,i)=>[dist([p.la,p.lo],[rq.la,rq.lo]),i]).sort((a,b)=>a[0]-b[0])[0];if(near&&near[0]<400)go(near[1],t);save();return;}
+  const ffq=fareFor(hereName,rq.name,km);const fare=ffq.fare;if(!rq.home&&fare>S.wallet){addDiary({kind:'note',text:rq.name+'へ行ってほしいと言われたが、切符代(推定 ¥'+fmt(fare)+')が足りない。お小遣いが貯まったら。',t});toast('切符代が足りません(推定 ¥'+fmt(fare)+')','var(--ng)');save();return;}
+  addDiary({kind:'note',text:'あなたに「'+rq.name+'へ」と言われたので、いまから向かう。',t});goCity({name:rq.name,la:rq.la,lo:rq.lo,fare:rq.home?0:fare,fareTaught:ffq.taught,home:!!rq.home},t);if(view==='home'&&Date.now()-manualViewAt>120000)setView('map');save();}
 function maybeLongTrip(t){const j=S.j;energyMorning(t);ensureBucket(t);if(tiredToday()){if(j.tiredNoted!==todayKey(t)){j.tiredNoted=todayKey(t);addDiary({kind:'note',text:'今日は少し疲れている。遠出はやめて、近所をぶらぶらするだけにする',t});}return false;}
   if(!TRANSIT_OK||j.longTripTried===todayKey(t))return false;j.longTripTried=todayKey(t);
   if(S.request){const rq=S.request;S.request=null;const km=dist(j.pos||[HOME.la,HOME.lo],[rq.la,rq.lo])/1000;if(km<3){addDiary({kind:'note',text:rq.name+'はすぐ近くなので、歩いて行ってみる',t});return false;}const hereName=S.trip?S.trip.city:(S.townName||'家');const ffq=fareFor(hereName,rq.name,km);const fare=ffq.fare;if(!rq.home&&fare>S.wallet){addDiary({kind:'note',text:rq.name+'へ行ってほしいと言われたけれど、切符代(推定 ¥'+fmt(fare)+')が足りない。お小遣いが貯まったら',t});return false;}addDiary({kind:'note',text:'あなたに「'+rq.name+'へ行ってほしい」と言われていたので、今日はそこへ',t});goCity({name:rq.name,la:rq.la,lo:rq.lo,fare:rq.home?0:fare,fareTaught:ffq.taught,home:!!rq.home},t);return true;}
@@ -619,7 +629,7 @@ function maybeInvite(t){const j=S.j;if(j.inviteDay===todayKey(t))return false;j.
 /* 今日はどうする? 家にいる朝に選べる */
 const PLAN_LABEL={auto:'おまかせ',near:'近所をぶらぶら',rest:'家でのんびり',wish:'行きたい店へ',trip:'遠出する'};
 function todayPlan(t){return S.plan&&S.plan.k===todayKey(t)?S.plan.mode:'auto';}
-function setPlan(mode){S.plan={k:todayKey(),mode};const j=S.j;
+function setPlan(mode){if(mode==='trip'){S.j.longTripTried=null;kickNow(Date.now());if(S.j.state==='stay'&&!S.j.cityTarget)S.j.until=Date.now();if(S.j.state==='home')S.j.until=Date.now();}S.plan={k:todayKey(),mode};const j=S.j;
   if(mode==='trip'){openTab('plan');toast('旅程の「行き先を指定する」で街を選んでください。選ばなければおまかせで遠出します','var(--acc)');}
   else toast('今日は「'+PLAN_LABEL[mode]+'」','var(--acc)');
   if(mode==='rest'&&inWork(Date.now())&&j.at===-1){j.state='stay';j.until=Date.now();}
@@ -776,7 +786,7 @@ function statusText(){const j=S.j;const A=S.name;
   if(j.state==='walk'&&j.straight){const v=V();const to=j.target>=0?POIS[j.target].n:'家';const ph=legPhase();const rem=Math.max(0,(j.eta-Date.now())/1000);
     if(j.straight.label)return (ph==='prep'?'🚏 '+j.straight.label+'を待つ':ph==='park'?'🚶 降りて歩く':'🚌 '+j.straight.label+'で'+to+'へ')+' あと'+Math.ceil(rem/60)+'分';
     return (ph==='prep'?v.e+' 出発の準備':ph==='park'?(S.vehicle==='car'?'🅿 駐車中':'🚲 とめている'):v.e+' '+to+'へ')+' あと'+Math.ceil(rem/60)+'分';}
-  if(j.state==='home'){const w=workWindow(Date.now());return !w?'🏠 今日はお休み':(Date.now()<w.st?'🏠 家 · '+fmtHM(S.work.start)+'に出発':'🏠 家');}
+  if(j.state==='home'){const w=workWindow(Date.now());return !w?'🏠 今日はお休み':(Date.now()<w.st?'🏠 家 · '+fmtT(w.st)+'に出発':'🏠 家');}
   if(j.state==='walk'){const to=j.target>=0?POIS[j.target].n:'家';const rem=Math.max(0,(j.eta-Date.now())/1000);return '🚶 '+to+'へ あと'+Math.ceil(rem/60)+'分';}
   if(j.state==='stay'){const p=POIS[j.at];return (p?info(p).e+' '+p.n+'で'+info(p).label:'🚶 '+(M?M.name:'')+'の駅のまわりを歩いている');}return '';}
 
@@ -1033,7 +1043,7 @@ function renderPanel(){if(!tab)return;let h='';
     if(S.bucket){h+='<div class="sec">今週やりたいこと</div>'+S.bucket.items.map(i=>`<div class="row" style="display:block"><div style="display:flex;justify-content:space-between"><span>${i.done?'🎯 ':''}${i.text}</span><span style="color:var(--ink2)">${i.progress}/${i.target}</span></div><div class="bar"><i style="width:${Math.round(100*i.progress/i.target)}%"></i></div></div>`).join('');}
     const pend=S.asks.filter(a=>!a.done);if(pend.length)h+='<div class="sec">相談中</div>'+pend.map(a=>`<div class="row" style="display:block"><div>${S.name}「${a.text}」</div><div class="opts" style="display:flex;gap:6px;margin-top:6px">${a.opts.map(o=>`<button data-ansp="${a.id}|${o.key}">${o.label}</button>`).join('')}</div></div>`).join('');
     h+=`<div class="sec">今日の予定</div><div style="display:flex;flex-wrap:wrap;gap:6px">${Object.entries(PLAN_LABEL).map(([k,v])=>`<button data-plan2="${k}" class="${todayPlan(Date.now())===k?'on':''}">${v}</button>`).join('')}</div>`;
-    h+=`<div class="row" style="border:0;margin-top:6px"><div><b>行き先を指定する</b><small>次の朝に、ここへ向かう(勤務時間内に着ける範囲で)</small></div></div>
+    h+=`<div class="row" style="border:0;margin-top:6px"><div><b>行き先を指定する</b><small>いまから、ここへ向かう(勤務時間外でも出発。切符代は財布から)</small></div></div>
       <div style="display:flex;gap:4px;flex-wrap:wrap"><select id="rqCity"><option value="">街を選ぶ</option>${CITIES_JP.map(c=>`<option value="${c[0]}">${c[0]}</option>`).join('')}</select><input id="rqText" placeholder="または住所・駅名・施設名" style="flex:1;min-width:140px"><button id="rqGo">行ってほしい</button>${S.trip?'<button id="rqHome">帰ってきて</button>':''}</div>
       ${S.request?`<div class="note" style="color:var(--ok)">📌 次の朝: ${S.request.name} へ向かう予定 <button id="rqClear">取り消す</button></div>`:''}`;
     h+=`<div class="note">遠出: 朝に気分と財布で決める。移動は乗換案内の実ダイヤ(新幹線・特急も本物の列車名)。飛行機は時刻表データがまだ無いので乗らない。訪ねた街: ${Object.keys(S.cities).join('、')||'まだなし'}</div>`;}
@@ -1068,7 +1078,7 @@ function renderPanel(){if(!tab)return;let h='';
     h+=`<div class="row"><div>小窓で開く<small>横長の別ウィンドウ</small></div><button id="bPop">開く</button></div>`;
     h+=`<div class="row"><div>詰まったとき<small>旅を中断して家に戻す。日記・友達・行きたいは残る</small></div><button id="bHomeNow">家に戻す</button></div>`;
     h+=`<div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v27 (2026-09-19)</div>';
+    h+='<div class="note">版: v28 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
@@ -1081,10 +1091,10 @@ function renderPanel(){if(!tab)return;let h='';
   panel.querySelectorAll('[data-ansp]').forEach(b=>b.onclick=()=>{const [id,key]=b.dataset.ansp.split('|');const a=S.asks.find(x=>String(x.id)===id);if(a&&!a.done)resolveAsk(a,key,false);renderPanel();});
   panel.querySelectorAll('[data-plan2]').forEach(b=>b.onclick=()=>{S.plan={k:todayKey(),mode:b.dataset.plan2};toast('今日は「'+PLAN_LABEL[b.dataset.plan2]+'」','var(--acc)');renderPanel();save();});
   const rq=$('rqGo');if(rq)rq.onclick=async()=>{const cityName=$('rqCity').value;const txt=$('rqText').value.trim();
-    if(cityName){const c=CITIES_JP.find(x=>x[0]===cityName);S.request={name:c[0],la:c[1],lo:c[2]};toast('次の朝、'+c[0]+'へ向かいます','var(--acc)');renderPanel();save();return;}
+    if(cityName){const c=CITIES_JP.find(x=>x[0]===cityName);requestNow({name:c[0],la:c[1],lo:c[2]});toast('いまから'+c[0]+'へ向かいます','var(--acc)');renderPanel();return;}
     if(!txt){toast('街を選ぶか、場所を入れてください','var(--ng)');return;}
-    try{const rs=await geocode(txt);if(!rs.length){toast('見つかりませんでした','var(--ng)');return;}const r=rs[0];S.request={name:r.display_name.split(',')[0],la:+r.lat,lo:+r.lon};toast('次の朝、'+S.request.name+'へ向かいます','var(--acc)');renderPanel();save();}catch(e){toast('住所検索に失敗','var(--ng)');}};
-  const rh=$('rqHome');if(rh)rh.onclick=()=>{S.request={name:'家',la:HOME.la,lo:HOME.lo,home:true};toast('次の朝、家に帰ります','var(--acc)');renderPanel();save();};
+    try{const rs=await geocode(txt);if(!rs.length){toast('見つかりませんでした','var(--ng)');return;}const r=rs[0];const nm=r.display_name.split(',')[0];requestNow({name:nm,la:+r.lat,lo:+r.lon});toast('いまから'+nm+'へ向かいます','var(--acc)');renderPanel();}catch(e){toast('住所検索に失敗','var(--ng)');}};
+  const rh=$('rqHome');if(rh)rh.onclick=()=>{requestNow({name:'家',la:HOME.la,lo:HOME.lo,home:true});toast('いまから家に帰ります','var(--acc)');renderPanel();};
   const rc=$('rqClear');if(rc)rc.onclick=()=>{S.request=null;renderPanel();save();};
   const tf=$('tShopFind');if(tf){const doFind=()=>{const q=$('tShop').value.trim();const res=$('tShopRes');if(!q){res.innerHTML='';return;}const hits=POIS.map((p,i)=>({p,i})).filter(x=>x.p.n.includes(q)).slice(0,6);
       res.innerHTML=hits.length?hits.map(x=>`<div class="row"><div>${info(x.p).e} ${x.p.n}<small>${x.p.c||info(x.p).label}</small></div><div><button data-like="${x.i}">👍 おすすめ</button><button data-avoid="${x.i}">🚫 行かない</button></div></div>`).join(''):'<div class="note">見つからない。この街の店だけ探せます</div>';
