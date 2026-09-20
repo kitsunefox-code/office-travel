@@ -48,6 +48,10 @@
   .room .memo .q{font:700 1.05em var(--fd);margin-bottom:.15em}
   .room .tag{font-size:.95em}
   .charTap{position:absolute;cursor:pointer}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}.chips button{padding:6px 11px;border-radius:999px;font-size:13px;background:#fff}.chips button:disabled{opacity:.45}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 10px}.grid3 button{padding:12px 6px;border-radius:12px;background:#fff;font-size:13px;line-height:1.3}.grid3 button i{display:block;font-style:normal;font-size:20px;margin-bottom:4px}
+  .row>div>small{display:block;color:var(--dim);font-size:11.5px;line-height:1.45;margin-top:2px;font-weight:400}
+  .row>div:first-child{font-weight:600;color:var(--ink)}
   .sw{display:inline-block;width:18px;height:18px;border-radius:50%;border:2px solid rgba(0,0,0,.08);margin:0 2px;vertical-align:middle;cursor:pointer}.sw.on{border-color:var(--ink);box-shadow:0 0 0 2px #fff inset}
   #home.hidden{display:none}
   .memo button{font:500 .8em/1.2 var(--fb);padding:.3em .55em;margin:.2em .2em 0 0;border-radius:.4em}
@@ -89,7 +93,10 @@
   #morning .opts button{padding:8px 12px;font-size:13px}
   #btns button .cnt{display:inline-block;min-width:16px;padding:0 4px;margin-left:3px;border-radius:8px;background:var(--acc);color:#fff;font-size:10px;line-height:16px;text-align:center}
   /* 上部: 今どこ */
-  #hud{position:absolute;left:10px;top:8px;width:400px;max-width:calc(100% - 440px);background:rgba(250,246,238,.97);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:10px 14px;box-sizing:border-box}
+  #hud{display:flex;gap:10px;align-items:flex-start;position:absolute;left:10px;top:8px;width:400px;max-width:calc(100% - 440px);background:rgba(250,246,238,.97);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:10px 14px;box-sizing:border-box}
+  #hud .face{flex:none;width:46px;height:48px;border-radius:50%;background:var(--paper2);border:1px solid var(--line);overflow:hidden}
+  #hud .face svg{width:100%;height:100%;display:block}
+  #hud .hbody{flex:1;min-width:0}
   #hud .now{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font:700 11.5px var(--fd);color:var(--dim);letter-spacing:.08em}
   #hud .now b{font:600 12.5px var(--fb);color:var(--ink2);letter-spacing:0}
   #hud .st{font:700 17px/1.3 var(--fd);color:var(--ink);margin-top:3px}
@@ -114,7 +121,9 @@
   #hud #clock{font-variant-numeric:tabular-nums}
   /* 右上: タブ */
   #btns{position:absolute;right:10px;top:8px;display:flex;gap:0;background:rgba(250,246,238,.94);border:1px solid var(--line);border-radius:12px;padding:3px;box-shadow:var(--shadow)}
-  #btns button{background:transparent;border:0;border-radius:9px;padding:5px 11px;font:500 13px/1.2 var(--fb);color:var(--ink2);cursor:pointer;box-shadow:none}
+  #btns button{background:transparent;border:0;border-radius:9px;padding:5px 10px;font:500 13px/1.2 var(--fb);color:var(--ink2);cursor:pointer;box-shadow:none;display:inline-flex;align-items:center;gap:5px;position:relative}
+#btns button i{font-style:normal;font-size:14px;line-height:1}
+#btns button .cnt{position:absolute;top:-2px;right:-2px}
   #btns button:hover{background:var(--paper2);color:var(--ink)}
   #btns button.act{background:var(--ink);color:#fff}
   button{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:5px 11px;font:500 13px/1.2 var(--fb);cursor:pointer}
@@ -179,7 +188,10 @@
     #basemap .maplibregl-ctrl-attrib{font-size:9px;line-height:18px;padding:0 6px}
     #hud .card{padding:6px 10px;gap:8px}
     #btns{top:auto;bottom:0;left:0;right:0;border-radius:0;border:0;border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));justify-content:space-around;background:rgba(250,246,238,.98)}
-    #btns button{padding:8px 3px;font-size:11.5px;min-width:40px;flex:1;white-space:nowrap}
+    #btns button{padding:5px 2px 4px;font-size:10.5px;min-width:40px;flex:1;white-space:nowrap;flex-direction:column;gap:2px}
+    #btns button i{font-size:19px}
+    #btns button.act{background:transparent;color:var(--ink)}#btns button.act i{background:var(--ink);border-radius:12px;padding:2px 10px;color:#fff}
+    #btns button .cnt{top:0;right:calc(50% - 22px)}
     #panel{left:0;right:0;width:auto;top:auto;bottom:calc(52px + env(safe-area-inset-bottom));height:60%;border-radius:16px 16px 0 0;padding:14px 14px 18px}
     #morning,#ask,#poiCard{bottom:calc(60px + env(safe-area-inset-bottom))}
     #basemap .maplibregl-ctrl-bottom-right,#basemap .maplibregl-ctrl-bottom-left{bottom:calc(52px + env(safe-area-inset-bottom))}
@@ -202,12 +214,12 @@
 <div id="dlg" class="hidden"></div>
 <div id="hud"></div>
 <div id="btns">
-  <button id="bHome">うち</button>
-  <button id="bMap">地図</button>
-  <button id="bPlan">旅程</button>
-  <button id="bDiary">日記</button>
-  <button id="bFarm">畑</button>
-  <button id="bMore">…</button>
+  <button id="bHome"><i>🏠</i><span>うち</span></button>
+  <button id="bMap"><i>🗺️</i><span>地図</span></button>
+  <button id="bPlan"><i>🧭</i><span>旅程</span></button>
+  <button id="bDiary"><i>📔</i><span>日記</span></button>
+  <button id="bFarm"><i>🌱</i><span>畑</span></button>
+  <button id="bMore"><i>⋯</i><span>設定</span></button>
   <button id="bTeach" class="sub">教える</button>
   <button id="bWish" class="sub">行きたい</button>
   <button id="bFriends" class="sub">友達</button>
@@ -946,6 +958,7 @@ function draw(now){const hr=hour(Date.now());const night=nightness(hr);
 let tab=null;
 const TAB_BTN={diary:'bDiary',wish:'bWish',friends:'bFriends',more:'bMore',plan:'bPlan',teach:'bTeach',farm:'bFarm'};
 /* ========== 表示: うち / 地図 ========== */
+let planMore={jp:false,w:false};
 let view='home',homeSig='',homeT=9,manualViewAt=0,fState='',roomSayText='',roomSayUntil=0;
 function setView(v){view=v;document.body.classList.toggle('vhome',v==='home');$('home').classList.toggle('hidden',v!=='home');$('bHome').classList.toggle('act',v==='home');$('bMap').classList.toggle('act',v==='map');
   if(v==='map'){try{if(MAPBASE)MAPBASE.resize();}catch(e){}}else{homeSig='';fitRoom();drawScene();renderHome(true);}
@@ -1046,9 +1059,9 @@ function showText(label,txt){const el=$('dlg');el.innerHTML=`<div class="q">${es
 /* 左上「いま」カード: 状況を大きく1行、時刻・天気、日付・勤務・街 */
 let hudSig='',footSig='';
 function renderHud(){const el=$('hud');if(!el)return;const now=Date.now();const d=new Date(now);const w=workWindow(now);const st=statusText();const temp=S.weather&&now-S.weather.t<3*3600e3?Math.round(S.weather.temp)+'℃':'';
-  const road=curRoadName()||nextStopText();const sig=[st,road,rainLater(),Math.floor(now/60000),temp,S.name,S.townName,S.trip&&S.trip.city].join('|');if(sig===hudSig)return;hudSig=sig;
+  const road=curRoadName()||nextStopText();const sig=[st,road,rainLater(),JSON.stringify(S.outfit),S.look&&(S.look.hair+S.look.hairC+S.look.skin),Math.floor(now/60000),temp,S.name,S.townName,S.trip&&S.trip.city].join('|');if(sig===hudSig)return;hudSig=sig;
   const wd=['日','月','火','水','木','金','土'][d.getDay()];$('bViewHome').classList.toggle('hidden',view==='home'||!S.setup||(S.j.at===-1&&S.j.state!=='walk'&&!S.j.transit&&!S.trip)||!!tab);
-  el.innerHTML=`<div class="now"><span>いま · ${S.name?esc(S.name):'もう1人のあなた'}</span><b>${fmtT(now)}${inWork(now)?' 勤務中':''}${wxNow()?' '+(rainy()?'☔':'')+wxText(wxNow().code):''}${temp?' '+temp:''}</b></div><div class="st">${esc(st)}${road?' <small style="font:500 12px var(--fb);color:var(--ink2)">'+esc(road)+'</small>':''}</div><div class="meta">${d.getMonth()+1}月${d.getDate()}日(${wd}) · ${w?'勤務 '+fmtHM(S.work.start)+'–'+fmtHM(S.work.end):'仕事は休み'} · ${esc(S.trip?S.trip.city+'に滞在中':(S.townName||'家'))}${rainLater()!=null?' · '+rainLater()+'時ごろから雨':''}</div>`;}
+  el.innerHTML=`<div class="face"><svg viewBox="196 364 88 92">${charSVG(240,561,{still:true})}</svg></div><div class="hbody"><div class="now"><span>いま · ${S.name?esc(S.name):'もう1人のあなた'}</span><b>${fmtT(now)}${inWork(now)?' 勤務中':''}${wxNow()?' '+(rainy()?'☔':'')+wxText(wxNow().code):''}${temp?' '+temp:''}</b></div><div class="st">${esc(st)}${road?' <small style="font:500 12px var(--fb);color:var(--ink2)">'+esc(road)+'</small>':''}</div><div class="meta">${d.getMonth()+1}月${d.getDate()}日(${wd}) · ${w?'勤務 '+fmtHM(S.work.start)+'–'+fmtHM(S.work.end):'仕事は休み'} · ${esc(S.trip?S.trip.city+'に滞在中':(S.townName||'家'))}${rainLater()!=null?' · '+rainLater()+'時ごろから雨':''}</div></div>`;}
 /* 下「今日」カード: 予定・お小遣い・帳面。朝の選択や相談カードが出ている間は隠す */
 function renderFoot(){const el=$('hfoot');if(!el)return;const now=Date.now();const busy=view==='home'||tab||!$('dlg').classList.contains('hidden')||!$('morning').classList.contains('hidden')||!$('ask').classList.contains('hidden')||!$('poiCard').classList.contains('hidden')||!S.setup;
   if(busy){el.classList.add('hidden');footSig='';return;}
@@ -1098,9 +1111,11 @@ function renderPanel(){if(!tab)return;let h='';
     const pend=S.asks.filter(a=>!a.done);if(pend.length)h+='<div class="sec">相談中</div>'+pend.map(a=>`<div class="row" style="display:block"><div>${S.name}「${a.text}」</div><div class="opts" style="display:flex;gap:6px;margin-top:6px">${a.opts.map(o=>`<button data-ansp="${a.id}|${o.key}">${o.label}</button>`).join('')}</div></div>`).join('');
     h+=`<div class="sec">今日の予定</div><div style="display:flex;flex-wrap:wrap;gap:6px">${Object.entries(PLAN_LABEL).map(([k,v])=>`<button data-plan2="${k}" class="${todayPlan(Date.now())===k?'on':''}">${v}</button>`).join('')}</div>`;
     h+=`<div class="row" style="border:0;margin-top:6px"><div><b>行き先を指定する</b><small>いまから、ここへ向かう(勤務時間外でも出発。切符代は財布から)</small></div></div>
-      <div style="display:flex;gap:4px;flex-wrap:wrap"><select id="rqCity"><option value="">街を選ぶ</option><optgroup label="国内">${CITIES_JP.map(c=>`<option value="${c[0]}">${c[0]}</option>`).join('')}</optgroup><optgroup label="海外${flightsAvailable()?'':'(便データの準備中)'}">${CITIES_WORLD.map(c=>`<option value="${c[0]}" ${flightsAvailable()?'':'disabled'}>${c[0]}</option>`).join('')}</optgroup></select><input id="rqText" placeholder="または住所・駅名・施設名" style="flex:1;min-width:140px"><button id="rqGo">行ってほしい</button>${S.trip?'<button id="rqHome">帰ってきて</button>':''}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap"><select id="rqCity" hidden><option value="">街を選ぶ</option><optgroup label="国内">${CITIES_JP.map(c=>`<option value="${c[0]}">${c[0]}</option>`).join('')}</optgroup><optgroup label="海外${flightsAvailable()?'':'(便データの準備中)'}">${CITIES_WORLD.map(c=>`<option value="${c[0]}" ${flightsAvailable()?'':'disabled'}>${c[0]}</option>`).join('')}</optgroup></select><input id="rqText" placeholder="街の名前・住所・駅名・施設名" style="flex:1;min-width:140px"><button id="rqGo" class="buy">行ってほしい</button>${S.trip?'<button id="rqHome">帰ってきて</button>':''}</div>
+      <div class="sec" style="margin-top:8px">国内</div><div class="chips">${CITIES_JP.slice(0,planMore.jp?999:14).map(c=>`<button data-city="${c[0]}">${c[0]}</button>`).join('')}${planMore.jp?'':'<button data-morecity="jp" style="color:var(--dim)">もっと…</button>'}</div>
+      <div class="sec">海外 ${flightsAvailable()?'✈ 便データあり':'(便データの準備中)'}</div><div class="chips">${CITIES_WORLD.slice(0,planMore.w?999:12).map(c=>`<button data-city="${c[0]}" ${flightsAvailable()?'':'disabled'}>${c[0]}</button>`).join('')}${planMore.w?'':'<button data-morecity="w" style="color:var(--dim)">もっと…</button>'}</div>
       ${S.request?`<div class="note" style="color:var(--ok)">📌 次の朝: ${S.request.name} へ向かう予定 <button id="rqClear">取り消す</button></div>`:''}`;
-    h+=`<div class="note">遠出: 朝に気分と財布で決める。移動は乗換案内の実ダイヤ(新幹線・特急も本物の列車名)。飛行機は時刻表データがまだ無いので乗らない。訪ねた街: ${Object.keys(S.cities).join('、')||'まだなし'}</div>`;}
+    h+=`<div class="note">遠出は朝に気分と財布で決めることもある。移動は乗換案内の実ダイヤ(新幹線・特急も本物の列車名)。${flightsAvailable()?'飛行機は Aviasales の便データ(6時間ごとに更新)で本物の便に乗る。':'飛行機の便データが届くまでは鉄道だけ。'}訪ねた街: ${Object.keys(S.cities).join('、')||'まだなし'}</div>`;}
   if(tab==='teach'){const T=S.taught;h+='<h3>教える</h3><div class="note">乗換案内に無い土地勘、店の好み、癖をあなたが教える。教えたことは機械の経路案内より優先される。</div>';
     h+=`<div class="row" style="border:0"><div><b>店を教える</b><small>店名の一部で探す</small></div></div><div><input id="tShop" placeholder="例: いせや" style="width:70%;padding:3px 6px;border-radius:6px;border:1px solid #666;background:#fff;color:#222"> <button id="tShopFind">探す</button></div><div id="tShopRes"></div>`;
     const shops=Object.entries(T.shops);if(shops.length)h+='<div style="margin:4px 0">'+shops.map(([k,v])=>`<div class="row"><div>${v.mode==='like'?'👍':'🚫'} <b>${v.n}</b><small>${v.memo||''}</small></div><button data-unteach="${k}">✕</button></div>`).join('')+'</div>';
@@ -1122,19 +1137,19 @@ function renderPanel(){if(!tab)return;let h='';
     const mem=Object.keys(S.went).length;h+=`<div class="note">ふたりで行った店: ${mem}軒</div>`;}
   if(tab==='friends'){const stamps=Object.entries(S.stamps);h+=`<h3>友達とコレクション</h3>${closetHTML()}<div class="sec">スタンプ帳(都道府県 ${stamps.length})</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">${stamps.length?stamps.map(([k,v])=>`<span style="border:1.5px solid var(--acc);color:var(--acc);border-radius:50%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;font:700 11px var(--fd);text-align:center;transform:rotate(${(k.length*7)%9-4}deg)">${k.replace(/(都|府|県)$/,'')}</span>`).join(''):'<span class=note>まだありません。街に着くと押されます</span>'}</div>${S.souvenirs.length?`<div class="sec">お土産(${S.souvenirs.length})</div>`+S.souvenirs.slice().reverse().slice(0,12).map(x=>`<div class="row"><div>🎁 <b>${x.town}</b><small>${x.shop} / ${fmtD(x.t)}</small></div><span style="color:var(--ink2)">¥${fmt(x.price)}</span></div>`).join(''):''}<div class="sec">友達帳</div>`;if(!S.friends.length)h+='<div class="note">まだいません。同じ店に何度か通うと仲良くなります。</div>';
     for(const f of S.friends.slice().reverse()){h+=`<div class="row"><div>${'★'.repeat(Math.min(5,f.level))} <b>${f.name}</b>さん<small>${f.pn||''}の${f.role} / ${fmtD(f.t)}に出会った</small></div></div>`;}}
-  if(tab==='more'){h+=`<div class="sec">ほかの帳面</div><div class="row" style="gap:6px"><button data-tab2="teach">✎ 教える</button><button data-tab2="wish">♡ 行きたい</button><button data-tab2="friends">友達とコレクション</button></div><h3>オフィストラベル(試作)</h3><div class="row"><div>家<small>${S.homeAddr||'サンプルの街(吉祥寺)'}${S.trip?' / いまは '+S.trip.city+' に滞在':''} / この街の店・場所 ${POIS.length}件</small></div></div>`;
+  if(tab==='more'){h+=`<h3>設定</h3><div class="grid3"><button data-tab2="teach"><i>✎</i>教える</button><button data-tab2="wish"><i>♡</i>行きたい</button><button data-tab2="friends"><i>👥</i>友達と<br>コレクション</button></div><div class="sec">プロフィール</div><div class="row"><div>家<small>${S.homeAddr||'サンプルの街(吉祥寺)'}${S.trip?' / いまは '+S.trip.city+' に滞在':''} / この街の店・場所 ${POIS.length}件</small></div></div>`;
     h+=`<div class="row"><div>設定<small>${S.name} / ${JOBS[S.job].n} / ${V().e}${V().n} / 勤務 ${fmtHM(S.work.start)}〜${fmtHM(S.work.end)} / 好み: ${S.prefs.map(k=>PREF_LIST.find(x=>x[0]===k)[1]).join('・')}</small></div><button id="bSetup">変える</button></div>`;
-    h+=`<div class="row"><div>飛行機<small>公共交通オープンデータセンター(ODPT)のアクセストークンを貼ると、JAL・ANA国内線の実ダイヤで飛ぶ。${S.keys.odpt?(FLIGHTS?'便データ '+FLIGHTS.length+'件 読み込み済み':'鍵あり(次の遠出で読み込み)'):'未設定(それまでは鉄道だけ)'}</small></div><button id="bOdpt">${S.keys.odpt?'変更':'鍵を貼る'}</button></div>
+    h+=`<div class="sec">データ</div><div class="row"><div>飛行機(国内 ODPT)<small>公共交通オープンデータセンター(ODPT)のアクセストークンを貼ると、JAL・ANA国内線の実ダイヤで飛ぶ。${S.keys.odpt?(FLIGHTS?'便データ '+FLIGHTS.length+'件 読み込み済み':'鍵あり(次の遠出で読み込み)'):'未設定(それまでは鉄道だけ)'}</small></div><button id="bOdpt">${S.keys.odpt?'変更':'鍵を貼る'}</button></div>
       <div class="row"><div>国際線の時刻表<small>どれか1つで飛べる。AirLabs(airlabs.co、無料枠 月1,000回)か AeroDataBox(RapidAPI、無料枠あり)。${S.keys.airlabs?'AirLabs 鍵あり':S.keys.aerodatabox?'AeroDataBox 鍵あり':'未設定'}</small></div><span><button id="bAirlabs">${S.keys.airlabs?'AirLabs 変更':'AirLabs'}</button> <button id="bAdb">${S.keys.aerodatabox?'AeroDataBox 変更':'AeroDataBox'}</button></span></div>
       <div class="row"><div>飛行機(Aviasales の便データ)<small>実在の便・出発時刻・最安値。国内も海外も。データは GitHub が6時間ごとに取り直す。${FLIGHTS_STATIC?'最終更新 '+esc(String(FLIGHTS_STATIC.updated).replace('T',' ').slice(0,16))+'・'+FLIGHTS_STATIC.pairs.length+'路線':FLIGHTS_STATIC===false?'まだ届いていない(GitHub の TP_TOKEN を設定すると始まる)':'確認中'} / 紹介 marker ${S.keys.travelpayouts?'あり':'未設定'}</small></div><span><button id="bTpM">${S.keys.travelpayouts?'marker 変更':'marker'}</button> <button id="bTp" style="font-size:11px">token(直接)</button></span></div>`;
-    h+=`<div class="row"><div>アフィリエイト<small>楽天アフィリエイトID、じゃらん(バリューコマース)のsid/pid。入れると宿リンクが成果の入る形になる。${S.keys.rakutenAff?'楽天: 設定済 ':''}${S.keys.vcSid?'じゃらん: 設定済':''}</small></div><button id="bAff">設定</button></div>`;
+    h+=`<div class="sec">収益化</div><div class="row"><div>アフィリエイト<small>楽天アフィリエイトID、じゃらん(バリューコマース)のsid/pid。入れると宿リンクが成果の入る形になる。${S.keys.rakutenAff?'楽天: 設定済 ':''}${S.keys.vcSid?'じゃらん: 設定済':''}</small></div><button id="bAff">設定</button></div>`;
     h+=`<div class="row"><div>写真<small>近くで撮られた本物の写真をWikimedia Commonsから。Mapillaryの無料トークンを入れると街角の写真も(任意)</small></div><button id="bMly">${S.mlyToken?'設定済':'トークン'}</button></div>`;
-    h+=`<div class="row"><div>お小遣いを渡す<small>手持ち ¥${fmt(S.wallet)}。収穫のほかに、直接渡すこともできる(試作用)</small></div><button id="bGive">+¥1,000</button></div>`;
+    h+=`<div class="sec">その他</div><div class="row"><div>お小遣いを渡す<small>手持ち ¥${fmt(S.wallet)}。収穫のほかに、直接渡すこともできる(試作用)</small></div><button id="bGive">+¥1,000</button></div>`;
     h+=`<div class="row"><div>統計<small>収穫 ¥${fmt(S.stats.harvest)} / 使った ¥${fmt(S.stats.spent)} / 寄った ${S.stats.visits}軒 / 友達 ${S.friends.length}人</small></div></div>`;
     h+=`<div class="row"><div>小窓で開く<small>横長の別ウィンドウ</small></div><button id="bPop">開く</button></div>`;
     h+=`<div class="row"><div>詰まったとき<small>旅を中断して家に戻す。日記・友達・行きたいは残る</small></div><button id="bHomeNow">家に戻す</button></div>`;
     h+=`<div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v32 (2026-09-19)</div>';
+    h+='<div class="note">版: v33 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
@@ -1146,7 +1161,8 @@ function renderPanel(){if(!tab)return;let h='';
   panel.querySelectorAll('[data-tab2]').forEach(b=>b.onclick=()=>openTab(b.dataset.tab2));
   panel.querySelectorAll('[data-ansp]').forEach(b=>b.onclick=()=>{const [id,key]=b.dataset.ansp.split('|');const a=S.asks.find(x=>String(x.id)===id);if(a&&!a.done)resolveAsk(a,key,false);renderPanel();});
   panel.querySelectorAll('[data-plan2]').forEach(b=>b.onclick=()=>{S.plan={k:todayKey(),mode:b.dataset.plan2};toast('今日は「'+PLAN_LABEL[b.dataset.plan2]+'」','var(--acc)');renderPanel();save();});
-  const rq=$('rqGo');if(rq)rq.onclick=async()=>{const cityName=$('rqCity').value;const txt=$('rqText').value.trim();
+  panel.querySelectorAll('[data-city]').forEach(b=>b.onclick=()=>{$('rqCity').value=b.dataset.city;$('rqGo').click();$('rqCity').value='';});panel.querySelectorAll('[data-morecity]').forEach(b=>b.onclick=()=>{planMore[b.dataset.morecity]=true;renderPanel();});
+  const rq=$('rqGo');if(rq)rq.onclick=async()=>{let cityName=$('rqCity').value;const txt=$('rqText').value.trim();if(!cityName&&txt){const hit=CITIES_JP.find(x=>x[0]===txt)||CITIES_WORLD.find(x=>x[0]===txt);if(hit)cityName=hit[0];}
     if(cityName){const c=CITIES_JP.find(x=>x[0]===cityName)||CITIES_WORLD.find(x=>x[0]===cityName);requestNow({name:c[0],la:c[1],lo:c[2],ap:c[3]||undefined});toast('いまから'+c[0]+'へ向かいます','var(--acc)');renderPanel();return;}
     if(!txt){toast('街を選ぶか、場所を入れてください','var(--ng)');return;}
     try{const rs=await geocode(txt);if(!rs.length){toast('見つかりませんでした','var(--ng)');return;}const r=rs[0];const nm=r.display_name.split(',')[0];requestNow({name:nm,la:+r.lat,lo:+r.lon});toast('いまから'+nm+'へ向かいます','var(--acc)');renderPanel();}catch(e){toast('住所検索に失敗','var(--ng)');}};
@@ -1243,7 +1259,7 @@ function frame(t){if(!M){last=t;requestAnimationFrame(frame);return;}const dt=Ma
       else if(fState==='walk'&&atHomeF){bubble={text:'ただいま',until:t+6000,next:20000};roomSay('ただいま',6000);if(Date.now()-manualViewAt>120000&&view!=='home')setView('home');}
       fState=st;}}
   if(view==='home'){homeT+=dt;if(homeT>=0.1){homeT=0;fitRoom();drawScene();renderHome(false);}}else draw(t);
-  hudT+=dt;if(hudT>0.25){hudT=0;{const ready=S.field.slots.filter(x=>x.stage===2).length;$('bFarm').innerHTML='畑'+(ready?'<span class="cnt">'+ready+'</span>':'');}updateMorning();renderHud();renderFoot();if(S.setup&&M)updateWeather();}
+  hudT+=dt;if(hudT>0.25){hudT=0;{const ready=S.field.slots.filter(x=>x.stage===2).length;$('bFarm').innerHTML='<i>🌱</i><span>畑</span>'+(ready?'<span class="cnt">'+ready+'</span>':'');}updateMorning();renderHud();renderFoot();if(S.setup&&M)updateWeather();}
   requestAnimationFrame(frame);}
 function onMapClick(cx,cy){ // 店をタップで行きたい
   let best=-1,bd=18;const e={clientX:cx,clientY:cy};for(let i=0;i<POIS.length;i++){const [x,y]=px(POIS[i].la,POIS[i].lo);const d=Math.hypot(x-e.clientX,y-e.clientY);if(d<bd){bd=d;best=i;}}
