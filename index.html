@@ -460,7 +460,7 @@ function jaOnly(x){let s0=String(x||'');const JA=/[\u3040-\u30ff\u4e00-\u9fff]/,
   if(JA.test(s0))return s0.replace(/\s*\([^)]*[A-Za-z][^)]*\)/g,'').replace(/\s+[A-Za-z\u00C0-\u024F][A-Za-z0-9\u00C0-\u024F\-\s'.]*$/,'').trim();
   if(LAT.test(s0)){const m=/\(([^)]*[A-Za-z][^)]*)\)/.exec(s0);if(m&&!LAT.test(s0.replace(/\([^)]*\)/g,'')))s0=m[1];return s0.replace(/\s*\([^)]*\)/g,'').trim();}
   return s0.trim();}
-const MODE_JA={BUS:'バス',REGIONAL_RAIL:'電車',RAIL:'電車',SUBWAY:'地下鉄',METRO:'地下鉄',TRAM:'路面電車',FERRY:'船',COACH:'高速バス',HIGHSPEED_RAIL:'新幹線',LONG_DISTANCE:'特急',REGIONAL_FAST_RAIL:'快速',NIGHT_RAIL:'夜行',AIRPLANE:'飛行機',CHECKIN:'搭乗手続き',BAGGAGE:'到着'};
+const MODE_JA={OTHER:'乗り物',MONORAIL:'モノレール',BUS:'バス',REGIONAL_RAIL:'電車',RAIL:'電車',SUBWAY:'地下鉄',METRO:'地下鉄',TRAM:'路面電車',FERRY:'船',COACH:'高速バス',HIGHSPEED_RAIL:'新幹線',LONG_DISTANCE:'特急',REGIONAL_FAST_RAIL:'快速',NIGHT_RAIL:'夜行',AIRPLANE:'飛行機',CHECKIN:'搭乗手続き',BAGGAGE:'到着'};
 const MODE_ICON={AIRPLANE:'✈️',CHECKIN:'🛂',BAGGAGE:'🧳',BUS:'🚌',COACH:'🚌',REGIONAL_RAIL:'🚆',RAIL:'🚆',REGIONAL_FAST_RAIL:'🚆',SUBWAY:'🚇',METRO:'🚇',TRAM:'🚋',FERRY:'⛴',HIGHSPEED_RAIL:'🚄',LONG_DISTANCE:'🚄',WALK:'🚶'};
 /* Transitous の途中停車駅と線形(Google polyline)。線形は60点までに間引く */
 function trainKind(h){const m=/^\(([^)\s]+)/.exec(h||'');return m?m[1]:'';}
@@ -537,11 +537,16 @@ async function tpFlights(orig,dest,dateStr){if(!tpCache)tpCache=tpLoad();const k
   const data=(j.data||[]).filter(x=>x&&x.departure_at&&x.airline).map(x=>({price:+x.price,al:String(x.airline),fn:String(x.flight_number||''),dep:x.departure_at,dur:+(x.duration_to||x.duration||0),tr:+(x.transfers||0),link:x.link||'',o:x.origin_airport||orig,d:x.destination_airport||dest}));
   tpCache[key]={t:Date.now(),data};for(const k of Object.keys(tpCache))if(tpCache[k].t<Date.now()-2*86400e3)delete tpCache[k];tpSave();return data;}
 function ymd(t){const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+/* 空港のアクセス地点: Transitous の geocode で「○○空港」の駅・停留所を探し、空港から4km以内の最寄りを使う */
+const AP_ACCESS={};
+async function airportAccess(code){const A=AIRPORTS[code];if(!A)return null;if(AP_ACCESS[code])return AP_ACCESS[code];let best=[A[1],A[2]];
+  try{const r=await fetch('https://api.transitous.org/api/v1/geocode?text='+encodeURIComponent(A[0].replace(/国際|・.*$/,''))+'&language=ja');if(r.ok){const j=await r.json();let bd=1e18;for(const x of (j||[])){if(x.type!=='STOP'||x.lat==null)continue;const d=dist([A[1],A[2]],[x.lat,x.lon]);if(d<4000&&d<bd){bd=d;best=[x.lat,x.lon];}}}}catch(e){}
+  AP_ACCESS[code]=best;return best;}
 async function planIntlFlight(from,city,t){if(!flightsAvailable())return null;
   let destCode=city.ap||null;if(!destCode){const a=nearestAirport(city.la,city.lo);if(a&&a.d<120000)destCode=a.code;}if(!destCode||!AIRPORTS[destCode])return null;const B=AIRPORTS[destCode];
   const origs=Object.keys(AIRPORTS).filter(c=>AIRPORTS[c][3]!=='intl'&&c!==destCode).map(c=>({c,d:dist(from,[AIRPORTS[c][1],AIRPORTS[c][2]])})).sort((a,b)=>a.d-b.d).slice(0,2).filter(x=>x.d<150000).map(x=>x.c);if(!origs.length)return null;
   let best=null;
-  for(const o of origs){const A=AIRPORTS[o];let toAp=null;try{toAp=await planTransit(from,[A[1],A[2]],t);}catch(e){}const arriveAp=toAp?toAp.legs[toAp.legs.length-1].t1:t+Math.round(dist(from,[A[1],A[2]])/8)*1000;const intl=B[3]==='intl';
+  for(const o of origs){const A=AIRPORTS[o];const AX=await airportAccess(o);let toAp=null;try{toAp=await planTransit(from,AX,t);}catch(e){}const arriveAp=toAp?toAp.legs[toAp.legs.length-1].t1:t+Math.round(dist(from,[A[1],A[2]])/8)*1000;const intl=B[3]==='intl';
     for(const k of [0,1]){let list=[];try{list=await tpFlights(o,destCode,ymd(t+k*86400000));}catch(e){console.warn(e);continue;}
       for(const f of list){const dep=Date.parse(f.dep);if(!(dep>=arriveAp+(intl?2:1)*3600e3))continue;if(f.tr>1||!f.dur)continue;if(f.price>S.wallet)continue;if(!best||f.price<best.f.price)best={f,dep,o,A,toAp,arriveAp};}
       if(best)break;}
@@ -549,12 +554,12 @@ async function planIntlFlight(from,city,t){if(!flightsAvailable())return null;
   if(!best)return null;let {f,dep,A,toAp,arriveAp}=best;const arr=dep+f.dur*60000;const op=AIRLINE_JA[f.al]||'';const fn=f.al+(f.fn||'');const intl=B[3]==='intl';const buffer=(intl?120:75)*60000;
   /* 出発が遠いなら、間に合う時刻に街を出る(その時刻の実ダイヤで空港へ) */
   {const estDur=toAp?(toAp.legs[toAp.legs.length-1].t1-toAp.legs[0].t0):Math.round(dist(from,[A[1],A[2]])/8)*1000;const leaveAt=dep-buffer-estDur;
-    if(leaveAt>t+15*60000){let toAp2=null;try{toAp2=await planTransit(from,[A[1],A[2]],leaveAt);}catch(e){}
+    if(leaveAt>t+15*60000){let toAp2=null;try{toAp2=await planTransit(from,await airportAccess(best.o),leaveAt);}catch(e){}
       if(toAp2){const a2=toAp2.legs[toAp2.legs.length-1].t1;if(a2<=dep-buffer*0.7){toAp=toAp2;arriveAp=a2;}}
       else if(!toAp){arriveAp=Math.min(dep-buffer,leaveAt+estDur);}}
     if(!toAp){const t0=Math.max(t,arriveAp-estDur);toAp={legs:[{mode:'BUS',route:'',agency:'',headsign:A[0],from:{n:'START',la:from[0],lo:from[1]},to:{n:A[0],la:A[1],lo:A[2]},t0,t1:arriveAp,line:'空港への乗り物(時刻は概算)'}]};}}
   const url='https://www.aviasales.com'+(f.link?(f.link.startsWith('/')?'':'/')+f.link:'/search/'+best.o+ymd(dep).slice(8,10)+ymd(dep).slice(5,7)+destCode+'1')+(S.keys.travelpayouts?(f.link&&f.link.includes('?')?'&':'?')+'marker='+encodeURIComponent(S.keys.travelpayouts):'');
-  let fromCity=null;try{fromCity=await planTransit([B[1],B[2]],[city.la,city.lo],arr+45*60000);}catch(e){}
+  let fromCity=null;try{fromCity=await planTransit(await airportAccess(destCode),[city.la,city.lo],arr+45*60000);}catch(e){}
   const legs=[];if(toAp)legs.push(...toAp.legs);
   legs.push({mode:'CHECKIN',route:'',agency:'',headsign:'',from:{n:A[0],la:A[1],lo:A[2]},to:{n:A[0],la:A[1],lo:A[2]},t0:arriveAp,t1:dep});
   legs.push({mode:'AIRPLANE',route:fn,agency:op,headsign:B[0],from:{n:A[0],la:A[1],lo:A[2]},to:{n:B[0],la:B[1],lo:B[2]},t0:dep,t1:arr,url,price:f.price,transfers:f.tr});
@@ -569,10 +574,10 @@ async function planFlightTrip(from,city,t){const fl=await loadFlights();if(!fl)r
   const destAp=nearestAirport(city.la,city.lo);if(!destAp||destAp.d>90000)return null;const destsSet=new Set(fl.filter(f=>f.d===destAp.code).map(f=>f.o));if(!destsSet.size)return null;
   const origAp=nearestAirport(from[0],from[1],[...destsSet]);if(!origAp||origAp.d>120000)return null;
   const A=AIRPORTS[origAp.code],B=AIRPORTS[destAp.code];
-  const toAp=await planTransit(from,[A[1],A[2]],t);const arriveAp=toAp?toAp.legs[toAp.legs.length-1].t1:t+Math.round(origAp.d/8)*1000;
+  const toAp=await planTransit(from,await airportAccess(origAp.code),t).catch(()=>null);const arriveAp=toAp?toAp.legs[toAp.legs.length-1].t1:t+Math.round(origAp.d/8)*1000;
   const day=new Date(t);const cands=fl.filter(f=>f.o===origAp.code&&f.d===destAp.code&&calMatches(f.cal,day)).map(f=>({...f,dep:hm(t,f.t0),arr:hm(t,f.t1)})).filter(f=>f.dep>=arriveAp+60*60000).sort((a,b)=>a.dep-b.dep);
   const f=cands[0];if(!f)return null;const arr=f.arr<f.dep?f.arr+86400000:f.arr;
-  const fromCity=await planTransit([B[1],B[2]],[city.la,city.lo],arr+30*60000);
+  const fromCity=await planTransit(await airportAccess(destAp.code),[city.la,city.lo],arr+30*60000).catch(()=>null);
   const legs=[];if(toAp)legs.push(...toAp.legs);
   legs.push({mode:'CHECKIN',route:'',agency:'',headsign:'',from:{n:A[0],la:A[1],lo:A[2]},to:{n:A[0],la:A[1],lo:A[2]},t0:arriveAp,t1:f.dep});
   legs.push({mode:'AIRPLANE',route:f.fn,agency:f.op,headsign:B[0],from:{n:A[0],la:A[1],lo:A[2]},to:{n:B[0],la:B[1],lo:B[2]},t0:f.dep,t1:arr});
@@ -1162,7 +1167,7 @@ function renderPanel(){if(!tab)return;let h='';
     h+=`<div class="row"><div>小窓で開く<small>横長の別ウィンドウ</small></div><button id="bPop">開く</button></div>`;
     h+=`<div class="row"><div>詰まったとき<small>旅を中断して家に戻す。日記・友達・行きたいは残る</small></div><button id="bHomeNow">家に戻す</button></div>`;
     h+=`<div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v35 (2026-09-19)</div>';
+    h+='<div class="note">版: v36 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
