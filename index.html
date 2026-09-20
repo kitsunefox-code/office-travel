@@ -465,7 +465,7 @@ const MODE_ICON={AIRPLANE:'✈️',CHECKIN:'🛂',BAGGAGE:'🧳',BUS:'🚌',COAC
 /* Transitous の途中停車駅と線形(Google polyline)。線形は60点までに間引く */
 function trainKind(h){const m=/^\(([^)\s]+)/.exec(h||'');return m?m[1]:'';}
 /* 乗り物の呼び方: 「JR中央線快速(中央特快) 東京行き」「京王バス 吉04 吉祥寺駅行き」 */
-function rideName(l){if(l.mode==='AIRPLANE')return (l.agency||'')+' '+(l.route||'')+'便';const rt=(l.route&&!/^\d{5,}$/.test(l.route))?l.route:'';const base=l.line||((l.agency?l.agency+'の':'')+(MODE_JA[l.mode]||'乗り物'));return base+(l.kind&&!base.includes(l.kind)?'('+l.kind+')':'')+(rt&&!l.line?' '+rt:'')+(l.headsign?' '+l.headsign+'行き':'');}
+function rideName(l){if(l.mode==='AIRPLANE')return (l.agency?l.agency+' ':'')+(l.route||'')+'便';const rt=(l.route&&!/^\d{5,}$/.test(l.route))?l.route:'';const base=l.line||((l.agency?l.agency+'の':'')+(MODE_JA[l.mode]||'乗り物'));return base+(l.kind&&!base.includes(l.kind)?'('+l.kind+')':'')+(rt&&!l.line?' '+rt:'')+(l.headsign?' '+l.headsign+'行き':'');}
 function legStops(l){const arr=l.intermediateStops||[];return arr.slice(0,40).map(x=>({n:jaOnly(x.name||''),la:x.lat,lo:x.lon,t:Date.parse(x.arrival||x.departure||l.endTime)})).filter(x=>x.la&&x.lo);}
 function decodePoly(str,prec){const f=Math.pow(10,prec);let idx=0,lat=0,lon=0;const out=[];const rd=()=>{let b,sh=0,res=0;do{b=str.charCodeAt(idx++)-63;res+=(b&0x1f)*Math.pow(2,sh);sh+=5;}while(b>=0x20);return (res%2)?-(res+1)/2:res/2;};while(idx<str.length){lat+=rd();lon+=rd();out.push([lat/f,lon/f]);}return out;}
 function legGeo(l){try{const g=l.legGeometry;if(!g||!g.points||l.mode==='WALK')return null;let pts=null;for(const prec of [g.precision||7,g.precision===7?6:7]){try{const p=decodePoly(g.points,prec);if(p.length>1&&dist(p[0],[l.from.lat,l.from.lon])<800){pts=p;break;}}catch(e){}}
@@ -510,7 +510,7 @@ const CITIES_JP=[['東京',35.6812,139.7671],['横浜',35.4657,139.6223],['鎌�
 function fareEstimate(km){return Math.round(km*27*1.15/10)*10;}
 /* 飛行機: 公共交通オープンデータセンター(ODPT)の鍵があれば JAL/ANA 国内線の実ダイヤで飛ぶ */
 const CITIES_WORLD=[['ソウル',37.5665,126.978,'ICN'],['釜山',35.1796,129.0756,'PUS'],['台北',25.033,121.5654,'TPE'],['香港',22.3193,114.1694,'HKG'],['上海',31.2304,121.4737,'PVG'],['北京',39.9042,116.4074,'PEK'],['バンコク',13.7563,100.5018,'BKK'],['ハノイ',21.0278,105.8342,'HAN'],['ホーチミン',10.8231,106.6297,'SGN'],['シンガポール',1.3521,103.8198,'SIN'],['クアラルンプール',3.139,101.6869,'KUL'],['マニラ',14.5995,120.9842,'MNL'],['グアム',13.4443,144.7937,'GUM'],['ホノルル',21.3069,-157.8583,'HNL'],['シドニー',-33.8688,151.2093,'SYD'],['ロサンゼルス',34.0522,-118.2437,'LAX'],['サンフランシスコ',37.7749,-122.4194,'SFO'],['ニューヨーク',40.7128,-74.006,'JFK'],['ロンドン',51.5074,-0.1278,'LHR'],['パリ',48.8566,2.3522,'CDG'],['ローマ',41.9028,12.4964,'FCO'],['バルセロナ',41.3874,2.1686,'BCN'],['ベルリン',52.52,13.405,'BER'],['アムステルダム',52.3676,4.9041,'AMS'],['イスタンブール',41.0082,28.9784,'IST'],['ドバイ',25.2048,55.2708,'DXB']];
-const AIRLINE_JA={JL:'日本航空',NH:'全日空',MM:'ピーチ',GK:'ジェットスター・ジャパン',BC:'スカイマーク','7G':'スターフライヤー',ZG:'ZIPAIR',TG:'タイ国際航空',SQ:'シンガポール航空',CX:'キャセイパシフィック',KE:'大韓航空',OZ:'アシアナ航空',CI:'チャイナエアライン',BR:'エバー航空',VN:'ベトナム航空',VJ:'ベトジェット',PR:'フィリピン航空',MH:'マレーシア航空',HA:'ハワイアン航空',UA:'ユナイテッド航空',DL:'デルタ航空',AA:'アメリカン航空',QF:'カンタス航空',BA:'ブリティッシュ・エアウェイズ',AF:'エールフランス',LH:'ルフトハンザ',KL:'KLM',EK:'エミレーツ',QR:'カタール航空',TK:'ターキッシュ エアラインズ',CA:'中国国際航空',MU:'中国東方航空',CZ:'中国南方航空',ZE:'イースター航空',LJ:'ジンエアー','7C':'チェジュ航空',TW:'ティーウェイ航空',TR:'スクート',D7:'エアアジアX',HX:'香港航空',UO:'香港エクスプレス',JX:'スターラックス航空',IT:'タイガーエア台湾'};
+const AIRLINE_JA={JL:'日本航空',NH:'全日空',EH:'ANAウイングス',NU:'日本トランスオーシャン航空',HD:'AIRDO','6J':'ソラシドエア',FW:'IBEXエアラインズ',OC:'オリエンタルエアブリッジ',JC:'日本エアコミューター',RC:'琉球エアーコミューター','7G':'スターフライヤー',MM:'ピーチ',GK:'ジェットスター・ジャパン',BC:'スカイマーク','7G':'スターフライヤー',ZG:'ZIPAIR',TG:'タイ国際航空',SQ:'シンガポール航空',CX:'キャセイパシフィック',KE:'大韓航空',OZ:'アシアナ航空',CI:'チャイナエアライン',BR:'エバー航空',VN:'ベトナム航空',VJ:'ベトジェット',PR:'フィリピン航空',MH:'マレーシア航空',HA:'ハワイアン航空',UA:'ユナイテッド航空',DL:'デルタ航空',AA:'アメリカン航空',QF:'カンタス航空',BA:'ブリティッシュ・エアウェイズ',AF:'エールフランス',LH:'ルフトハンザ',KL:'KLM',EK:'エミレーツ',QR:'カタール航空',TK:'ターキッシュ エアラインズ',CA:'中国国際航空',MU:'中国東方航空',CZ:'中国南方航空',ZE:'イースター航空',LJ:'ジンエアー','7C':'チェジュ航空',TW:'ティーウェイ航空',TR:'スクート',D7:'エアアジアX',HX:'香港航空',UO:'香港エクスプレス',JX:'スターラックス航空',IT:'タイガーエア台湾'};
 const AIRPORTS={ICN:['ソウル仁川空港',37.4602,126.4407,'intl'],PUS:['釜山金海空港',35.1795,128.9382,'intl'],TPE:['台北桃園空港',25.0797,121.2342,'intl'],HKG:['香港国際空港',22.308,113.9185,'intl'],PVG:['上海浦東空港',31.1443,121.8083,'intl'],PEK:['北京首都空港',40.0799,116.6031,'intl'],BKK:['バンコク・スワンナプーム空港',13.69,100.7501,'intl'],HAN:['ハノイ・ノイバイ空港',21.2212,105.8072,'intl'],SGN:['ホーチミン・タンソンニャット空港',10.8188,106.6519,'intl'],SIN:['シンガポール・チャンギ空港',1.3644,103.9915,'intl'],KUL:['クアラルンプール空港',2.7456,101.7099,'intl'],MNL:['マニラ・ニノイアキノ空港',14.5086,121.0198,'intl'],GUM:['グアム国際空港',13.4834,144.7961,'intl'],HNL:['ホノルル空港',21.3187,-157.9225,'intl'],SYD:['シドニー空港',-33.9399,151.1753,'intl'],LAX:['ロサンゼルス空港',33.9416,-118.4085,'intl'],SFO:['サンフランシスコ空港',37.6213,-122.379,'intl'],JFK:['ニューヨークJFK空港',40.6413,-73.7781,'intl'],LHR:['ロンドン・ヒースロー空港',51.47,-0.4543,'intl'],CDG:['パリ・シャルル・ド・ゴール空港',49.0097,2.5479,'intl'],FCO:['ローマ・フィウミチーノ空港',41.8003,12.2389,'intl'],BCN:['バルセロナ空港',41.2974,2.0833,'intl'],BER:['ベルリン・ブランデンブルク空港',52.3667,13.5033,'intl'],AMS:['アムステルダム・スキポール空港',52.3105,4.7683,'intl'],IST:['イスタンブール空港',41.2753,28.7519,'intl'],DXB:['ドバイ国際空港',25.2532,55.3657,'intl'],HND:['羽田空港',35.5494,139.7798],NRT:['成田空港',35.7720,140.3929],CTS:['新千歳空港',42.7752,141.6923],FUK:['福岡空港',33.5859,130.4507],ITM:['伊丹空港',34.7855,135.4382],KIX:['関西空港',34.4347,135.2441],
  NGO:['中部空港',34.8584,136.8054],OKA:['那覇空港',26.1958,127.6459],HIJ:['広島空港',34.4361,132.9194],SDJ:['仙台空港',38.1397,140.9170],KMQ:['小松空港',36.3946,136.4066],KOJ:['鹿児島空港',31.8034,130.7194],
  NGS:['長崎空港',32.9169,129.9136],KMJ:['熊本空港',32.8373,130.8550],HKD:['函館空港',41.7700,140.8219],AKJ:['旭川空港',43.6708,142.4475],KIJ:['新潟空港',37.9559,139.1206],OKJ:['岡山空港',34.7569,133.8553],
@@ -546,7 +546,13 @@ async function planIntlFlight(from,city,t){if(!flightsAvailable())return null;
       for(const f of list){const dep=Date.parse(f.dep);if(!(dep>=arriveAp+(intl?2:1)*3600e3))continue;if(f.tr>1||!f.dur)continue;if(f.price>S.wallet)continue;if(!best||f.price<best.f.price)best={f,dep,o,A,toAp,arriveAp};}
       if(best)break;}
     if(best)break;}
-  if(!best)return null;const {f,dep,A,toAp,arriveAp}=best;const arr=dep+f.dur*60000;const op=AIRLINE_JA[f.al]||f.al;const fn=f.al+(f.fn||'');
+  if(!best)return null;let {f,dep,A,toAp,arriveAp}=best;const arr=dep+f.dur*60000;const op=AIRLINE_JA[f.al]||'';const fn=f.al+(f.fn||'');const intl=B[3]==='intl';const buffer=(intl?120:75)*60000;
+  /* 出発が遠いなら、間に合う時刻に街を出る(その時刻の実ダイヤで空港へ) */
+  {const estDur=toAp?(toAp.legs[toAp.legs.length-1].t1-toAp.legs[0].t0):Math.round(dist(from,[A[1],A[2]])/8)*1000;const leaveAt=dep-buffer-estDur;
+    if(leaveAt>t+15*60000){let toAp2=null;try{toAp2=await planTransit(from,[A[1],A[2]],leaveAt);}catch(e){}
+      if(toAp2){const a2=toAp2.legs[toAp2.legs.length-1].t1;if(a2<=dep-buffer*0.7){toAp=toAp2;arriveAp=a2;}}
+      else if(!toAp){arriveAp=Math.min(dep-buffer,leaveAt+estDur);}}
+    if(!toAp){const t0=Math.max(t,arriveAp-estDur);toAp={legs:[{mode:'BUS',route:'',agency:'',headsign:A[0],from:{n:'START',la:from[0],lo:from[1]},to:{n:A[0],la:A[1],lo:A[2]},t0,t1:arriveAp,line:'空港への乗り物(時刻は概算)'}]};}}
   const url='https://www.aviasales.com'+(f.link?(f.link.startsWith('/')?'':'/')+f.link:'/search/'+best.o+ymd(dep).slice(8,10)+ymd(dep).slice(5,7)+destCode+'1')+(S.keys.travelpayouts?(f.link&&f.link.includes('?')?'&':'?')+'marker='+encodeURIComponent(S.keys.travelpayouts):'');
   let fromCity=null;try{fromCity=await planTransit([B[1],B[2]],[city.la,city.lo],arr+45*60000);}catch(e){}
   const legs=[];if(toAp)legs.push(...toAp.legs);
@@ -611,8 +617,8 @@ function goCity(city,t){const j=S.j;if(city.home)buySouvenir(t);j.state='stay';j
       j.transit=plan;j.transit.city=city;j.straight=null;j.path=[];j.target=-1;j.state='walk';j.walkStart=t;j.eta=last.t1;j.pos=from.slice();
       const airFare=(()=>{if(plan.price!=null)return {fare:plan.price,taught:false,real:true};const tf=taughtFare(S.trip?S.trip.city:(S.townName||'家'),city.name);return tf!=null?{fare:tf,taught:true}:{fare:Math.round((5000+plan.fareKm*20)/100)*100,taught:false};})();
       const pay=Math.min(airFare.fare,S.wallet);S.wallet-=pay;S.stats.spent+=pay;city.fare=0;
-      addDiary({kind:'visit',pn:plan.flight.op+' '+plan.flight.fn+'便',pla:from[0],plo:from[1],text:plan.flight.op+' '+plan.flight.fn+'便の航空券を買った'+(airFare.real?'(Aviasalesの最安値 ¥'+fmt(airFare.fare)+')':airFare.taught?'(あなたに教わった額)':'(航空券代は距離からの推定)'),cost:pay,emoji:'✈️',color:'#a9c9e6',t:Date.now()});
-      addDiary({kind:'note',url:plan.flight&&plan.flight.url||undefined,text:city.name+'へ。飛行機で行く。'+plan.legs.find(l=>l.mode==='AIRPLANE').from.n+' '+fmtT(plan.flight.dep)+'発 '+plan.flight.op+' '+plan.flight.fn+'便、'+plan.legs.find(l=>l.mode==='AIRPLANE').to.n+' '+fmtT(plan.legs.find(l=>l.mode==='AIRPLANE').t1)+'着',t});
+      addDiary({kind:'visit',pn:plan.flight.op+' '+plan.flight.fn+'便',pla:from[0],plo:from[1],text:(plan.flight.op?plan.flight.op+' ':'')+plan.flight.fn+'便の航空券を買った'+(airFare.real?'(Aviasalesの最安値 ¥'+fmt(airFare.fare)+')':airFare.taught?'(あなたに教わった額)':'(航空券代は距離からの推定)'),cost:pay,emoji:'✈️',color:'#a9c9e6',t:Date.now()});
+      addDiary({kind:'note',url:plan.flight&&plan.flight.url||undefined,text:city.name+'へ。飛行機で行く。'+plan.legs.find(l=>l.mode==='AIRPLANE').from.n+' '+fmtT(plan.flight.dep)+'発 '+(plan.flight.op?plan.flight.op+' ':'')+plan.flight.fn+'便、'+plan.legs.find(l=>l.mode==='AIRPLANE').to.n+' '+fmtT(plan.legs.find(l=>l.mode==='AIRPLANE').t1)+'着',t});
       toast(S.name+'は'+city.name+'へ飛ぶ('+plan.flight.op+' '+plan.flight.fn+')','var(--acc)');}).catch(()=>{if(j.planning&&j.planning.token===token){requestTransit(-1,t,[city.la,city.lo],city);}});return;}
   requestTransit(-1,t,[city.la,city.lo],city);}
 async function arriveCity(city,t){const j=S.j;j.cityTarget=null;if(!city.resume)S.stats.visits++;
@@ -844,6 +850,7 @@ function statusText(){const j=S.j;const A=S.name;
   if(j.planning)return '🔍 乗換案内を調べている'+(j.planning.city?'('+j.planning.city.name+'へ)':'');
   if(j.state==='hotel'){const p=j.at>=0?POIS[j.at]:null;return p&&LODGING.has(p.k)?info(p).e+' '+p.n+'に泊まっている':'🏨 '+(M?M.name:'')+'で一泊';}
   if(j.state==='walk'&&j.transit){const L=curTransitLeg();const now=Date.now();const to=j.transit.city?j.transit.city.name:(j.target>=0?POIS[j.target].n:'家');
+    {const F0=j.transit.legs[0];if(now<F0.t0-60000){const here=j.at>=0&&POIS[j.at]?POIS[j.at].n+'で':'';return '⏳ '+here+fmtT(F0.t0)+'の出発まで待つ → '+to;}}
     if(L.mode==='CHECKIN')return '🛂 '+L.from.n+'で搭乗手続き・保安検査(出発 '+fmtT(L.t1)+')';
     if(L.mode==='BAGGAGE')return '🧳 '+L.from.n+'に着陸。荷物を受け取る';
     if(L.mode==='AIRPLANE'&&now>=L.t0)return '✈️ '+L.agency+' '+L.route+'便 '+L.to.n+'まで あと'+Math.max(1,Math.ceil((L.t1-now)/60000))+'分 → '+to;
@@ -1155,7 +1162,7 @@ function renderPanel(){if(!tab)return;let h='';
     h+=`<div class="row"><div>小窓で開く<small>横長の別ウィンドウ</small></div><button id="bPop">開く</button></div>`;
     h+=`<div class="row"><div>詰まったとき<small>旅を中断して家に戻す。日記・友達・行きたいは残る</small></div><button id="bHomeNow">家に戻す</button></div>`;
     h+=`<div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v34 (2026-09-19)</div>';
+    h+='<div class="note">版: v35 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
