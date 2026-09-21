@@ -1008,18 +1008,19 @@ const MICRO={luup:{n:'LUUP',speed:3.6,unlock:120,ret:60,fare:sec=>50+15*Math.cei
 function nearestNodeIdx(la,lo){let b=0,bd=1e18;for(let i=0;i<NODES.length;i++){const d=(NODES[i][0]-la)**2+((NODES[i][1]-lo)*COSL)**2;if(d<bd){bd=d;b=i;}}return b;}
 function pathGeo(a,b){return route(a,b).map(i=>[NODES[i][0],NODES[i][1]]);}
 function geoLen(g){let s=0;for(let i=1;i<g.length;i++)s+=dist(g[i-1],g[i]);return s;}
-function microPlan(toPoi,t){const j=S.j;const from=j.pos||[HOME.la,HOME.lo];const to=toPoi>=0?[POIS[toPoi].la,POIS[toPoi].lo]:[HOME.la,HOME.lo];const toName=toPoi>=0?POIS[toPoi].n:'家';const dd=dist(from,to);if(dd<600||!NODES||!NODES.length)return null;
+function microPlan(toPoi,t){const j=S.j;const from=j.pos||[HOME.la,HOME.lo];const to=toPoi>=0?[POIS[toPoi].la,POIS[toPoi].lo]:[HOME.la,HOME.lo];const toName=toPoi>=0?POIS[toPoi].n:'家';const dd=dist(from,to);if(dd<900||!NODES||!NODES.length)return null;const hr0=hour(t);const late0=hr0>=23.5||hr0<5;
   const ports=POIS.filter(p=>p.k==='port');const near=(pt,lim)=>{let best=null,bd=lim;for(const p of ports){const d=dist(pt,[p.la,p.lo]);if(d<bd){bd=d;best=p;}}return best;};
   let cycle=null;const pa=near(from,300),pb=near(to,300);
-  if(pa&&pb&&pa!==pb&&!rainy()){const op=MICRO[pa.op]||MICRO.other;const nA=nearestNodeIdx(from[0],from[1]),nB=nearestNodeIdx(to[0],to[1]);const g1=pathGeo(nA,pa.nn),g2=pathGeo(pa.nn,pb.nn),g3=pathGeo(pb.nn,nB);const w1=geoLen(g1)/1.15,rd=geoLen(g2),ride=rd/op.speed,w3=geoLen(g3)/1.15;
-    if(rd>450){const t1=t+w1*1000,t2=t1+op.unlock*1000,t3=t2+ride*1000,t4=t3+op.ret*1000,t5=t4+w3*1000;const fare=op.fare(ride);const mode=pa.op==='luup'?'LUUP':'CYCLE';
+  if(pa&&pb&&pa!==pb&&!rainy()&&dd>=1800){const op=MICRO[pa.op]||MICRO.other;const nA=nearestNodeIdx(from[0],from[1]),nB=nearestNodeIdx(to[0],to[1]);const g1=pathGeo(nA,pa.nn),g2=pathGeo(pa.nn,pb.nn),g3=pathGeo(pb.nn,nB);const w1=geoLen(g1)/1.15,rd=geoLen(g2),ride=rd/op.speed,w3=geoLen(g3)/1.15;
+    const walkAll=dd*1.25/1.15;const saves=walkAll-(w1+op.unlock+ride+op.ret+w3);
+    if(rd>1500&&saves>=12*60){const t1=t+w1*1000,t2=t1+op.unlock*1000,t3=t2+ride*1000,t4=t3+op.ret*1000,t5=t4+w3*1000;const fare=op.fare(ride);const mode=pa.op==='luup'?'LUUP':'CYCLE';
       cycle={legs:[{mode:'WALK',route:'',agency:'',headsign:'',from:{n:'START',la:from[0],lo:from[1]},to:{n:pa.n,la:pa.la,lo:pa.lo},t0:t,t1:t1,geo:g1},{mode,line:op.n,route:'',agency:'',headsign:'',kind:'',from:{n:pa.n,la:pa.la,lo:pa.lo},to:{n:pb.n,la:pb.la,lo:pb.lo},t0:t2,t1:t3,geo:g2,stops:[],fare},{mode:'WALK',route:'',agency:'',headsign:'',from:{n:pb.n,la:pb.la,lo:pb.lo},to:{n:'END',la:to[0],lo:to[1]},t0:t4,t1:t5,geo:g3}],dur:Math.round((t5-t)/1000),micro:mode,fare,total:t5-t};}}
-  let taxi=null;if(dd>=900){const g=pathGeo(nearestNodeIdx(from[0],from[1]),nearestNodeIdx(to[0],to[1]));const rd=Math.max(dd,geoLen(g));const wait=(3+Math.random()*4)*60;const ride=rd/6.5+60;const fare=taxiFare(rd);const app=Math.random()<0.45;const t0=t+wait*1000,t1=t0+ride*1000;
+  let taxi=null;if(dd>=1500||(late0&&dd>=900)){const g=pathGeo(nearestNodeIdx(from[0],from[1]),nearestNodeIdx(to[0],to[1]));const rd=Math.max(dd,geoLen(g));const wait=(3+Math.random()*4)*60;const ride=rd/6.5+60;const fare=taxiFare(rd);const app=Math.random()<0.45;const t0=t+wait*1000,t1=t0+ride*1000;
     taxi={legs:[{mode:'TAXI',line:app?'配車(GO・Uber)':'タクシー',route:'',agency:'',headsign:'',kind:'',from:{n:'START',la:from[0],lo:from[1]},to:{n:'END',la:to[0],lo:to[1]},t0,t1,geo:g,stops:[],fare,app}],dur:Math.round((t1-t)/1000),micro:'TAXI',fare,total:t1-t};}
   const thrift=S.taught.habits.cheap||trait('thrift')>0,lux=trait('luxury')>0,walker=trait('walker')>0;const hr=hour(t);const late=hr>=23.5||hr<5;const tired=S.energy<25;
   let use=null;
   if(taxi&&taxi.fare<=S.wallet*0.5&&((rainy()&&(lux||tired||Math.random()<0.35))||late||(lux&&dd>1500&&Math.random()<0.5)||(tired&&dd>1800&&!thrift&&Math.random()<0.4)))use=taxi;
-  else if(cycle&&cycle.fare<=S.wallet&&!tired&&Math.random()<(walker?0.3:0.6))use=cycle;
+  else if(cycle&&cycle.fare<=S.wallet&&!tired&&(!walker||dd>=3000)&&Math.random()<0.5)use=cycle;
   return {use,from,taxi,cycle,dd};}
 function go(toPoi,t){const j=S.j;
   const tr=taughtRouteFor(toPoi);if(tr){startTaught(toPoi,t,tr);return;}
