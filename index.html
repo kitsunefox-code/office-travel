@@ -36,7 +36,7 @@
   #dlg .opts button{padding:8px 14px;font-size:13px}
   @media (max-width:760px){#dlg{bottom:calc(60px + env(safe-area-inset-bottom))}}
   #ask,#poiCard{position:absolute;left:10px;right:10px;bottom:14px;margin:0 auto;max-width:520px;background:rgba(250,246,238,.97);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow);z-index:4}
-  #ask .q,#poiCard .q{font:700 15px/1.3 var(--fd);margin-bottom:6px}
+  #ask .q,#poiCard .q{font:700 16px/1.3 var(--fd);margin-bottom:4px;display:flex;align-items:center;gap:8px}#poiCard .q .em{display:inline-flex;width:30px;height:30px;border-radius:9px;align-items:center;justify-content:center;font-size:16px;flex:none}
   #ask .opts,#poiCard .opts{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
   #ask .opts button,#poiCard .opts button{padding:8px 12px;font-size:13px}
   #ask .ttl{color:var(--dim);font-size:11px;margin-top:6px}
@@ -159,14 +159,14 @@ body.vhome #bViewMe{display:none!important}
   button.buy,#modal button.buy,#sOk{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
   button.buy:hover,#sOk:hover{background:#c4692f}
   /* 右パネル: 日記・旅程 */
-  #panel{position:absolute;right:10px;top:50px;bottom:16px;width:392px;max-width:calc(100% - 20px);background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:14px 16px 16px;overflow:auto;box-shadow:var(--shadow)}
-  #panel h3{margin:0 0 10px;font:700 17px/1.3 var(--fd);color:var(--ink);letter-spacing:.2px;padding-right:28px}
-  #panel .pclose{position:absolute;right:10px;top:10px;width:26px;height:26px;border-radius:50%;padding:0;font-size:15px;line-height:1;color:var(--ink2)}
-  #panel .row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+  #panel{position:absolute;right:10px;top:50px;bottom:16px;width:392px;max-width:calc(100% - 20px);background:var(--paper);background-image:linear-gradient(var(--paper),var(--paper));color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:14px 16px 16px;overflow:auto;box-shadow:var(--shadow)}
+  #panel h3{margin:0 0 12px;font:700 18px/1.3 var(--fd);color:var(--ink);letter-spacing:.2px;padding-right:32px;position:relative}#panel h3::after{content:'';display:block;width:36px;height:3px;border-radius:2px;background:var(--acc);margin-top:6px}
+  #panel .pclose{position:absolute;right:10px;top:10px;width:30px;height:30px;border-radius:50%;padding:0;font-size:17px;line-height:1;color:var(--ink2);background:var(--paper2);border-color:transparent}.pclose:hover{background:var(--line)}
+  #panel .row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;margin:0 0 6px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 0 rgba(40,30,10,.03)}#panel .row:hover{border-color:#d6cdb9}#panel .row>div:first-child{min-width:0}#panel .row>div:first-child>small{color:var(--ink2)}#panel .row>b{font:700 15px/1.2 var(--fd);white-space:nowrap}
   #panel .row small{display:block;color:var(--ink2);font-size:11.5px;line-height:1.45;margin-top:1px}
   #panel .row b{font-weight:700}
   #panel .row button{white-space:nowrap}
-  #panel .note{color:var(--dim);font-size:11.5px;margin-top:8px;line-height:1.5}
+  #panel .note{color:var(--dim);font-size:11.5px;margin-top:8px;line-height:1.5;background:var(--paper2);border-radius:10px;padding:8px 10px}
   #panel a{color:var(--info);text-decoration:none;border-bottom:1px solid rgba(58,120,181,.3)}
   #panel a:hover{border-bottom-color:var(--info)}
   #panel button.on{color:var(--acc);border-color:var(--acc);background:#fff}
@@ -196,12 +196,12 @@ a.shop{color:var(--ink);font-weight:700;text-decoration:underline dotted;text-de
 .pstrip .polaroid{flex:none;width:104px;margin:0;transform:rotate(-1deg)}
 .receipt{font:12px/1.5 var(--fb);background:#fff;color:var(--ink);padding:8px 10px;border-radius:8px;margin:6px 0;border:1px solid var(--line);border-left:3px solid var(--acc2)}
   .receipt button{padding:3px 9px;font-size:12px}
-  .tl{display:grid;grid-template-columns:44px 20px 1fr;gap:0 6px;align-items:start;padding:5px 0;border-bottom:1px dashed var(--line);font-size:12.5px;line-height:1.45}
+  .tl{display:grid;grid-template-columns:44px 24px 1fr;gap:0 8px;align-items:start;padding:7px 0 7px 0;font-size:12.5px;line-height:1.45;position:relative}.tl::before{content:'';position:absolute;left:55px;top:0;bottom:0;width:2px;background:var(--line)}.tl .tle{position:relative;z-index:1;background:var(--paper);border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:13px}.tl .tle svg{width:16px;height:16px}
   .tl .tlt{color:var(--ink2);font-variant-numeric:tabular-nums;font-size:12px;padding-top:1px}
   .tl .tle{text-align:center}.tle svg{vertical-align:middle}
   .tl .tlc{color:var(--acc);font-variant-numeric:tabular-nums;white-space:nowrap;margin-left:6px}
   /* 見出しつきの区切り */
-  #panel .sec{font:700 13px/1.3 var(--fd);color:var(--ink2);margin:14px 0 4px;letter-spacing:.4px}
+  #panel .sec{font:700 12px/1.3 var(--fd);color:var(--ink2);margin:16px 0 6px;letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;gap:8px}.sec::after{content:'';flex:1;height:1px;background:var(--line)}
   /* 設定・報告 */
   #modal{position:absolute;inset:0;background:rgba(42,47,58,.42);display:flex;align-items:center;justify-content:center;padding:8px;z-index:80}
   #modal .box{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:16px 20px 18px;min-width:300px;max-width:min(640px,96%);max-height:94%;overflow:auto;text-align:center;font-size:13px;line-height:1.5;box-shadow:var(--shadow)}
@@ -240,7 +240,7 @@ a.shop{color:var(--ink);font-weight:700;text-decoration:underline dotted;text-de
     #btns button i{font-size:19px}#btns button i svg{width:22px;height:22px}
     #btns button.act{background:transparent;color:var(--ink)}#btns button.act i{background:var(--ink);border-radius:12px;padding:2px 10px;color:#fff}
     #btns button .cnt{top:0;right:calc(50% - 22px)}
-    #panel{left:0;right:0;width:auto;top:auto;bottom:calc(52px + env(safe-area-inset-bottom));height:60%;border-radius:16px 16px 0 0;padding:14px 14px 18px}
+    #panel{left:0;right:0;width:auto;top:auto;bottom:calc(52px + env(safe-area-inset-bottom));height:62%;border-radius:18px 18px 0 0;padding:18px 14px 18px}#panel::before{content:'';position:absolute;left:50%;top:6px;width:40px;height:4px;border-radius:2px;background:var(--line);transform:translateX(-50%)}
     #morning,#ask,#poiCard{bottom:calc(60px + env(safe-area-inset-bottom))}
     #basemap .maplibregl-ctrl-bottom-right,#basemap .maplibregl-ctrl-bottom-left{bottom:calc(52px + env(safe-area-inset-bottom))}
     #toast{bottom:calc(64px + env(safe-area-inset-bottom))}body:not(.vhome) #hfoot:not(.hidden)~#toast,body:not(.vhome) #toast{bottom:calc(206px + env(safe-area-inset-bottom))}body.vhome #toast{bottom:calc(206px + env(safe-area-inset-bottom))}
@@ -1261,15 +1261,31 @@ function draw(now){const hr=hour(Date.now());const night=nightness(hr);
   // 店
   ctx.font='10px sans-serif';ctx.textAlign='left';
   const near=[];for(let i=0;i<POIS.length;i++){const p=POIS[i];if(zoomedOut&&!p.far&&p.k!=='park'&&p.k!=='station'&&i!==j.at&&i!==j.target)continue;const [x,y]=px(p.la,p.lo);if(!vis(x,y))continue;
-    const col=COLORS[p.k]||'#ccc';ctx.globalAlpha=BASE?0.85:1;ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,p.k==='park'?0:(BASE?2.6:3.2),0,7);ctx.fill();ctx.strokeStyle='rgba(0,0,0,.35)';ctx.lineWidth=1;ctx.stroke();ctx.globalAlpha=1;
-    const pk_=PK(p);if(S.wish.includes(pk_)){ctx.fillStyle='#e0245e';ctx.font='9px sans-serif';ctx.fillText('♥',x+4,y-4);ctx.font='10px sans-serif';}
-    if(S.went[pk_]){ctx.fillStyle='#2b8a3e';ctx.beginPath();ctx.arc(x,y,6,0,7);ctx.lineWidth=1.5;ctx.strokeStyle='#2b8a3e';ctx.stroke();}
-    const d=Math.hypot(x-W/2,y-H/2);if(d<220||i===j.at||i===j.target||p.k==='park'||p.k==='station'||p.s>=4||(zoomedOut&&p.far))near.push({i,x,y,d,p});}
-  near.sort((a,b)=>a.d-b.d).slice(0,zoomedOut?18:(BASE?7:14)).forEach(({i,x,y,p})=>{const big=i===j.at||i===j.target||p.k==='park'||p.k==='station';ctx.font=(big?'bold 11px':'10px')+' sans-serif';
-    const label=(info(p).e)+' '+p.n;const tw=ctx.measureText(label).width;ctx.fillStyle=night>0.5?'rgba(20,24,34,.75)':'rgba(255,255,255,.8)';ctx.fillRect(x+5,y-13,tw+6,14);ctx.fillStyle=night>0.5?'#eee':'#333';ctx.fillText(label,x+8,y-2);});
+    const col=COLORS[p.k]||'#ccc';const pk_=PK(p);const isNear=(Math.hypot(x-W/2,y-H/2)<220||i===j.at||i===j.target||p.s>=4);
+    if(p.k!=='park'&&!isNear){ctx.globalAlpha=BASE?0.8:1;ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,BASE?2.8:3.2,0,7);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=1.2;ctx.stroke();ctx.globalAlpha=1;
+      if(S.wish.includes(pk_)){ctx.fillStyle='#e0245e';ctx.beginPath();ctx.arc(x+3.5,y-3.5,2,0,7);ctx.fill();}}
+    const d=Math.hypot(x-W/2,y-H/2);if(d<220||i===j.at||i===j.target||p.k==='park'||p.k==='station'||p.s>=4||(zoomedOut&&p.far))near.push({i,x,y,d,p,col,pk:pk_});}
+  const shown=near.sort((a,b)=>a.d-b.d).slice(0,zoomedOut?18:(BASE?9:14));
+  /* ピン本体 */
+  for(const {i,x,y,p,col,pk} of shown){if(p.k==='park')continue;const isT=i===j.target&&j.state==='walk',isAt=i===j.at;const r=isT||isAt?11:9;
+    if(isT){const ph=(now/700)%1;ctx.strokeStyle='rgba(217,127,90,'+(0.7*(1-ph)).toFixed(2)+')';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(x,y,r+4+ph*12,0,7);ctx.stroke();}
+    ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();ctx.ellipse(x,y+r+2,r*0.7,2.5,0,0,7);ctx.fill();
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=isT||isAt?3:2.2;ctx.stroke();
+    ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(x-4,y+r-1);ctx.lineTo(x+4,y+r-1);ctx.lineTo(x,y+r+5);ctx.closePath();ctx.fill();
+    ctx.font=(r>9?'12px':'10.5px')+' "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#333';ctx.fillText(info(p).e,x,y+0.5);ctx.textBaseline='alphabetic';ctx.textAlign='left';
+    if(S.went[pk]){ctx.fillStyle='#2b8a3e';ctx.beginPath();ctx.arc(x+r-2,y+r-3,4.5,0,7);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(x+r-4.2,y+r-3);ctx.lineTo(x+r-2.6,y+r-1.4);ctx.lineTo(x+r+0.2,y+r-5);ctx.stroke();}
+    if(S.wish.includes(pk)){ctx.fillStyle='#e0245e';ctx.beginPath();ctx.arc(x-r+2,y-r+3,4.5,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.font='7px sans-serif';ctx.textAlign='center';ctx.fillText('♥',x-r+2,y-r+5.6);ctx.textAlign='left';}}
+  /* ラベル(ピル) */
+  for(const {i,x,y,p} of shown){const big=i===j.at||i===j.target||p.k==='park'||p.k==='station';const r=p.k==='park'?0:(big?11:9);ctx.font=(big?'700 11px':'500 10.5px')+' "Zen Maru Gothic","Noto Sans JP",sans-serif';
+    const label=p.k==='park'?(info(p).e+' '+p.n):p.n;const tw=ctx.measureText(label).width;const lx=x+r+4,ly=y-9;
+    ctx.fillStyle=night>0.5?'rgba(20,24,34,.82)':'rgba(255,255,255,.9)';ctx.beginPath();ctx.roundRect(lx,ly,tw+10,18,9);ctx.fill();ctx.strokeStyle=night>0.5?'rgba(255,255,255,.12)':'rgba(0,0,0,.08)';ctx.lineWidth=1;ctx.stroke();
+    ctx.fillStyle=night>0.5?'#eee':'#2a2f3a';ctx.fillText(label,lx+5,ly+13);}
   // 家
   {const [x,y]=px(HOME.la,HOME.lo);ctx.fillStyle='rgba(0,0,0,.18)';ctx.beginPath();ctx.ellipse(x,y+9,14,4,0,0,7);ctx.fill();
-    ctx.fillStyle='#f3e7d3';ctx.fillRect(x-11,y-6,22,15);ctx.fillStyle='#c94b4b';ctx.beginPath();ctx.moveTo(x-14,y-6);ctx.lineTo(x,y-19);ctx.lineTo(x+14,y-6);ctx.closePath();ctx.fill();ctx.fillStyle='#8d6a47';ctx.fillRect(x-3,y+1,6,8);ctx.fillStyle='#9ccbe8';ctx.fillRect(x+4,y-2,5,5);
+    {const g=ctx.createLinearGradient(x-12,0,x+12,0);g.addColorStop(0,'#fbf3e4');g.addColorStop(1,'#e9d9bf');ctx.fillStyle=g;ctx.beginPath();ctx.roundRect(x-12,y-7,24,17,[0,0,2,2]);ctx.fill();ctx.strokeStyle='rgba(60,40,30,.35)';ctx.lineWidth=1;ctx.stroke();}
+    ctx.fillStyle='#c94b4b';ctx.beginPath();ctx.moveTo(x-16,y-6);ctx.lineTo(x,y-21);ctx.lineTo(x+16,y-6);ctx.closePath();ctx.fill();ctx.strokeStyle='rgba(60,40,30,.35)';ctx.stroke();ctx.fillStyle='rgba(255,255,255,.25)';ctx.beginPath();ctx.moveTo(x-12,y-7);ctx.lineTo(x,y-18);ctx.lineTo(x,y-15);ctx.lineTo(x-9,y-7);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#8d6a47';ctx.fillRect(x+6,y-18,4,7);ctx.fillStyle='#8d6a47';ctx.beginPath();ctx.roundRect(x-3.5,y+1,7,9,[3,3,0,0]);ctx.fill();ctx.fillStyle='#f2d16b';ctx.fillRect(x+1.5,y+5,1.2,1.2);
+    ctx.fillStyle=night>0.5?'#ffe9a8':'#9ccbe8';ctx.fillRect(x+4,y-3,6,5);ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.strokeRect(x+4,y-3,6,5);ctx.fillStyle=night>0.5?'#ffe9a8':'#9ccbe8';ctx.fillRect(x-10,y-3,6,5);ctx.strokeRect(x-10,y-3,6,5);
     ctx.font='bold 12px sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,.9)';ctx.strokeText('家',x+17,y+3);ctx.fillStyle='#333';ctx.fillText('家',x+17,y+3);}
   // 経路
   if(j.state==='walk'&&j.transit){ctx.lineWidth=2.5;for(const l of j.transit.legs){const [x1,y1]=px(l.from.la,l.from.lo),[x2,y2]=px(l.to.la,l.to.lo);ctx.strokeStyle=l.mode==='WALK'?'rgba(70,120,220,.5)':l.mode==='BUS'?'rgba(230,120,40,.7)':l.mode==='TAXI'?'rgba(220,180,30,.8)':l.mode==='AIRPLANE'?'rgba(90,120,200,.6)':'rgba(40,140,90,.7)';ctx.setLineDash(l.mode==='WALK'?[5,5]:[]);ctx.beginPath();if(l.geo&&l.geo.length>1){l.geo.forEach((g,gi)=>{const [gx,gy]=px(g[0],g[1]);if(gi)ctx.lineTo(gx,gy);else ctx.moveTo(gx,gy);});}else{ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);}ctx.stroke();if(l.stops&&l.stops.length&&!zoomedOut){ctx.fillStyle='#fff';ctx.strokeStyle='#666';ctx.lineWidth=1;ctx.setLineDash([]);for(const st of l.stops){const [sx,sy]=px(st.la,st.lo);ctx.beginPath();ctx.arc(sx,sy,2.5,0,7);ctx.fill();ctx.stroke();}ctx.lineWidth=2.5;}if(l.mode!=='WALK'){ctx.fillStyle='#fff';ctx.strokeStyle='#555';ctx.lineWidth=1;ctx.setLineDash([]);for(const [sx,sy] of [[x1,y1],[x2,y2]]){ctx.beginPath();ctx.arc(sx,sy,3.5,0,7);ctx.fill();ctx.stroke();}}}ctx.setLineDash([]);}
@@ -1643,7 +1659,7 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>この人を別の端末へ<small>引き継ぎコードを出す → 別の端末の「読み込む」に貼る。街のデータは向こうで取り直す</small></div><span><button id="bExport">コードを出す</button> <button id="bImport">読み込む</button></span></div>
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v53 (2026-09-19)</div>';
+    h+='<div class="note">版: v54 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
@@ -1776,7 +1792,7 @@ function onMapClick(cx,cy){ // 店をタップで行きたい
   let best=-1,bd=18;const e={clientX:cx,clientY:cy};for(let i=0;i<POIS.length;i++){const [x,y]=px(POIS[i].la,POIS[i].lo);const d=Math.hypot(x-e.clientX,y-e.clientY);if(d<bd){bd=d;best=i;}}
   if(best>=0)showPoiCard(best);else $('poiCard').classList.add('hidden');}
 function showPoiCard(i){const p=POIS[i];const k=remember(p);const price=priceOf(p);const el=$('poiCard');const v=S.visited[k];const op=isOpen(p.h,new Date());
-  el.innerHTML=`<div class="q">${info(p).e} ${p.n}</div><div style="color:var(--ink2);font-size:12px">${info(p).label}${CUIS[p.c]?'・'+menuName(p):''}${price?' / ¥'+fmt(price)+'くらい':''}${p.h?' / '+(op===false?'<span style="color:var(--ng)">いま閉店中</span>':'営業時間 '+p.h):''}${v?' / '+S.name+'は'+v.n+'回':''}</div>
+  el.innerHTML=`<div class="q"><span class="em" style="background:${COLORS[p.k]||'#ddd'}">${info(p).e}</span><span>${esc(p.n)}</span></div><div style="color:var(--ink2);font-size:12px">${info(p).label}${CUIS[p.c]?'・'+menuName(p):''}${price?' / ¥'+fmt(price)+'くらい':''}${p.h?' / '+(op===false?'<span style="color:var(--ng)">いま閉店中</span>':'営業時間 '+p.h):''}${v?' / '+S.name+'は'+v.n+'回':''}</div>
     <div class="opts"><button data-w="1">${S.wish.includes(k)?'♥ 行きたいから外す':'♡ 行きたい'}</button><button data-go="1" class="buy">今すぐ寄って</button><a href="${gmapsLL(p)}" target="_blank" rel="noopener" style="align-self:center;margin-left:4px">Googleマップ</a><button data-x="1" style="margin-left:auto">閉じる</button></div>`;
   el.querySelector('[data-w]').onclick=()=>{if(S.wish.includes(k))S.wish=S.wish.filter(x=>x!==k);else S.wish.push(k);save();showPoiCard(i);if(tab==='wish')renderPanel();};
   el.querySelector('[data-go]').onclick=()=>{const now=Date.now();if(!inWork(now)){toast('勤務時間外は動きません。行きたいには入れておきます','var(--ng)');if(!S.wish.includes(k))S.wish.push(k);save();return;}if(S.j.transit||S.j.cityTarget){toast('いま乗り物で移動中なので、着いてから','var(--ng)');if(!S.wish.includes(k))S.wish.push(k);save();return;}
