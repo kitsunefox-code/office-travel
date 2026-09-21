@@ -220,7 +220,10 @@ a.shop{color:var(--ink);font-weight:700;text-decoration:underline dotted;text-de
 .sc h3{margin:0 0 10px;font:700 13.5px/1.2 var(--fd);color:var(--ink);display:flex;align-items:center;gap:8px}.sc h3 i{font-style:normal;display:inline-flex;width:20px;height:20px;border-radius:50%;background:var(--ink);color:#fff;font:700 11px/1 var(--fb);align-items:center;justify-content:center}
 .sc .g{display:grid;grid-template-columns:72px 1fr;gap:8px 10px;align-items:center}.sc .g>span:nth-child(odd){font:600 12px var(--fb);color:var(--dim)}
 .sc small{display:block;color:var(--dim);font-size:11.5px;line-height:1.5;margin-top:3px}
-.sc .inl{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}.sc .inl input{flex:1;min-width:160px}
+.sc .inl{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;width:100%}.sc .inl input{flex:1;min-width:160px}
+.addrSt{display:block;font:600 12.5px/1.4 var(--fb);margin:2px 0 6px}.addrSt.ok{color:var(--ok)}.addrSt.warn{color:#b07a1a}.addrSt.ng{color:var(--ng)}
+.addrC{display:block;margin:2px 0;font-size:12.5px}.addrC.one{background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 8px}
+.mmap{position:relative;height:150px;border-radius:12px;overflow:hidden;margin:6px 0 4px;border:1px solid var(--line);background:#e8e4da}.mmap .tiles{position:absolute;left:0;top:0;width:768px;height:768px}.mmap .tiles img{position:absolute;width:256px;height:256px}.mmap .pin{position:absolute;left:50%;top:50%;transform:translate(-50%,-100%);filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}.mmap .attr{position:absolute;right:4px;bottom:2px;font-size:9px;background:rgba(255,255,255,.8);padding:0 4px;border-radius:3px;color:#555;margin:0}
 .sc textarea{width:100%;box-sizing:border-box;font:500 13px var(--fb);padding:7px 9px;border:1px solid var(--line);border-radius:10px;background:#fff;resize:vertical}
 .sc .sws .sw{width:22px;height:22px;margin:0 3px 3px 0}.sc .sws .sw.on{box-shadow:0 0 0 2px #fff inset,0 0 0 2px var(--ink)}
 .sc .chks,.sc .days{display:flex;flex-wrap:wrap;gap:6px}.chk{position:relative}.chk input{position:absolute;opacity:0;width:1px;height:1px}.chk span{display:inline-block;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:12.5px;cursor:pointer;user-select:none}.chk input:checked+span{background:var(--ink);color:#fff;border-color:var(--ink)}
@@ -358,7 +361,27 @@ function addrVariants(q){q=q.replace(/[０-９]/g,c=>String.fromCharCode(c.charC
   const m3=q.match(/^(.*?)(\d+)(丁目|番地|番|号).*$/);if(m3)out.push(m3[1]+m3[2]+'丁目');
   const noNum=q.replace(/[\d\-丁目番地号]+$/,'').trim();if(noNum&&noNum!==q)out.push(noNum);
   return [...new Set(out.filter(Boolean))];}
-async function geocode(q){let last=[];for(const v of addrVariants(q)){const rs=await geocodeOnce(v);if(rs.length){rs.forEach(r=>r._q=v);return rs;}last=rs;await new Promise(r=>setTimeout(r,1100));}return last;}
+const KANJI_NUM={'〇':0,'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9};
+function kanjiToNum(s){return String(s||'').replace(/[一二三四五六七八九〇十]+(?=丁目)/g,k=>{if(k==='十')return '10';let n=0;if(k.includes('十')){const [a,b]=k.split('十');n=(a?KANJI_NUM[a]:1)*10+(b?KANJI_NUM[b]:0);}else n=+k.split('').map(c=>KANJI_NUM[c]).join('');return String(n);}).replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));}
+function looksLikeAddress(q){return /[都道府県市区町村郡]/.test(q)&&/(\d|[一二三四五六七八九十]+丁目)/.test(kanjiToNum(q));}
+function muniOf(q){const m=kanjiToNum(q).replace(/^.*?[都道府県]/,'').match(/^(.+?[市区町村])/);return m?m[1]:'';}
+/* GSI の結果を Nominatim と同じ形にする */
+async function geocodeGSI(q){const nq=addrVariants(q)[0];const r=await fetch('https://msearch.gsi.go.jp/address-search/AddressSearch?q='+encodeURIComponent(nq));if(!r.ok)throw new Error('gsi '+r.status);const js=await r.json();
+  const mu=muniOf(nq);const out=[];
+  for(const x of (js||[])){const t=(x.properties&&x.properties.title)||'';if(mu&&!kanjiToNum(t).includes(mu))continue;const [lo,la]=x.geometry.coordinates;
+    const town=t.replace(/^.*?[都道府県]/,'').replace(/^.*?郡/,'').replace(/^.*?[市区町村]/,'').replace(/^[^丁０-９\d]{1,4}区/,'').replace(/[０-９\d].*$/,'').trim()||mu;
+    const exact=/[号番]$/.test(t)||/番地/.test(t);out.push({lat:la,lon:lo,display_name:t,address:{suburb:town},_q:nq,_gsi:true,_exact:exact});
+    if(out.length>=5)break;}
+  return out;}
+async function geocode(q){
+  if(looksLikeAddress(q)){try{const g=await geocodeGSI(q);if(g.length)return g;}catch(e){console.warn('gsi',e);}}
+  let last=[];for(const v of addrVariants(q)){const rs=await geocodeOnce(v);if(rs.length){rs.forEach(r=>r._q=v);return rs;}last=rs;await new Promise(r=>setTimeout(r,1100));}
+  if(!looksLikeAddress(q)){try{const g=await geocodeGSI(q);if(g.length)return g;}catch(e){}}
+  return last;}
+/* 地図の確認用: OSM タイル 3×3 を並べて、点を真ん中に */
+function miniMapHTML(la,lo,z){z=z||17;const n=2**z;const xt=(lo+180)/360*n;const yt=(1-Math.log(Math.tan(la*Math.PI/180)+1/Math.cos(la*Math.PI/180))/Math.PI)/2*n;const tx=Math.floor(xt),ty=Math.floor(yt);const fx=(xt-tx)*256,fy=(yt-ty)*256;
+  let imgs='';for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)imgs+=`<img src="https://tile.openstreetmap.org/${z}/${tx+dx}/${ty+dy}.png" style="left:${(dx+1)*256}px;top:${(dy+1)*256}px" alt="">`;
+  return `<div class="mmap"><div class="tiles" style="left:50%;top:50%;transform:translate(${(-256-fx).toFixed(1)}px,${(-256-fy).toFixed(1)}px)">${imgs}</div><div class="pin"><svg viewBox="0 0 24 32" width="26" height="34"><path d="M12 31s10-11 10-19A10 10 0 0 0 2 12c0 8 10 19 10 19z" fill="#d97f5a" stroke="#fff" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="#fff"/></svg></div><small class="attr">© OpenStreetMap</small></div>`;}
 const KIND_MAP={restaurant:'restaurant',cafe:'cafe',pub:'pub',bar:'bar',fast_food:'fast_food',bakery:'bakery',confectionery:'sweets',pastry:'sweets',chocolate:'sweets',ice_cream:'sweets',donut:'sweets',
  books:'books',gift:'shop',variety_store:'shop',second_hand:'shop',stationery:'shop',toys:'shop',music:'shop',art:'shop',craft:'shop',antiques:'shop',deli:'shop',tea:'cafe',coffee:'cafe',convenience:'conv',supermarket:'super',
  park:'park',station:'station',theatre:'theatre',cinema:'cinema',museum:'museum',gallery:'museum',library:'library',attraction:'attraction',artwork:'artwork',marketplace:'market',
@@ -622,6 +645,10 @@ async function refreshTownPois(){try{const j=S.j;if(!M||M.pv===POI_V||S.trip||j.
   const far=M.pois.filter(p=>p.far);const seen=new Set(far.map(p=>p.n+'|'+p.k));const fresh=nt.pois.filter(p=>!seen.has(p.n+'|'+p.k)).map(p=>({...p,nn:nearest(p.la,p.lo)}));
   const before=M.pois.length;M.pois=fresh.concat(far);M.pv=POI_V;POIS=M.pois;if(j.at>=0)j.at=-1;j.target=-1;saveTown(M);
   addDiary({kind:'note',tag:'note',text:name+'の店や場所をあらためて調べた。'+before+'件 → '+POIS.length+'件(宿は3kmまで)。',t:Date.now()});toast(name+'の店・場所を'+POIS.length+'件に増やした','var(--acc)');save();}catch(e){console.warn('refreshTownPois',e);}}
+async function refineHome(){try{if(!S.setup||S.homeExact||!S.homeAddr||!M||S.trip||!looksLikeAddress(S.homeAddr))return;const rs=await geocodeGSI(S.homeAddr);const r=rs&&rs[0];if(!r||!r._exact)return;
+  const nl=[+r.lat,+r.lon];const moved=S.homeLL?dist(S.homeLL,nl):0;S.homeExact=true;if(moved<8){save();return;}if(moved>1500){save();return;}
+  const nn=nearestNodeIdx(nl[0],nl[1]);const atHomeNow=S.j.at===-1&&S.j.state!=='walk'&&!S.j.transit;S.homeLL=nl;HOME={la:nl[0],lo:nl[1],nn};if(M&&M.home){M.home=[nl[0],nl[1],nn];saveTown(M);}if(atHomeNow)S.j.pos=nl.slice();
+  addDiary({kind:'note',tag:'note',text:'家の場所を番地(「'+r.display_name.replace(/^.*?[都道府県]/,'')+'」)に合わせ直した。前より'+Math.round(moved)+'mずれていた。',t:Date.now()});toast('家の場所を番地に合わせた('+Math.round(moved)+'m 修正)','var(--acc)');save();}catch(e){console.warn('refineHome',e);}}
 function saveTown(town){try{localStorage.setItem(TOWN_KEY,JSON.stringify(town));return true;}catch(e){console.warn('town too large to store',e);return false;}}
 function dist(a,b){const R=6371000,q=Math.PI/180;const dLa=(b[0]-a[0])*q,dLo=(b[1]-a[1])*q;const h=Math.sin(dLa/2)**2+Math.cos(a[0]*q)*Math.cos(b[0]*q)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
 function route(a,b){ // ダイクストラ(道路グラフ)
@@ -1803,7 +1830,7 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>この人を別の端末へ<small>引き継ぎコードを出す → 別の端末の「読み込む」に貼る。街のデータは向こうで取り直す</small></div><span><button id="bExport">コードを出す</button> <button id="bImport">読み込む</button></span></div>
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v57 (2026-09-19)</div>';
+    h+='<div class="note">版: v58 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
@@ -1880,22 +1907,31 @@ function showSetup(){const days='日月火水木金土';
   [['sHairC','hairC'],['sSkin','skin'],['sTop','top']].forEach(([id,key])=>{document.querySelectorAll('#'+id+' .sw').forEach(e=>e.onclick=()=>{lk[key]=e.dataset.c;prevLook();});});prevLook();
   let chosen=S.homeLL?{la:S.homeLL[0],lo:S.homeLL[1],label:S.townName||'',addr:S.homeAddr||''}:null;
   const cands=$('sCands');if(chosen)cands.innerHTML=`<div style="color:var(--ok)">📍 ${chosen.addr||chosen.label}</div>`;
-  $('sFind').onclick=async()=>{const q=$('sAddr').value.trim();if(!q)return;cands.innerHTML='<span style="color:var(--dim)">探しています…</span>';
-    try{const rs=await geocode(q);if(!rs.length){cands.innerHTML='<span style="color:var(--ng)">見つかりませんでした。町名や駅名で試してください</span>';return;}
-      cands.innerHTML=(rs[0]._q&&rs[0]._q!==q?`<div style="color:var(--dim);font-size:11px">番地までは地図に無かったので「${rs[0]._q}」で探しました(家は丁目の中心あたりに置かれます)</div>`:'')+rs.map((r,i)=>{const a=r.address||{};const town=a.suburb||a.neighbourhood||a.quarter||a.town||a.city||a.village||'';return `<label style="display:block;margin:2px 0"><input type="radio" name="sCand" value="${i}" ${i===0?'checked':''}> ${r.display_name.split(',').slice(0,4).join(' ')}</label>`;}).join('');
-      const pick=i=>{const r=rs[i];const a=r.address||{};chosen={la:+r.lat,lo:+r.lon,label:a.suburb||a.neighbourhood||a.quarter||a.town||a.city||a.village||r.display_name.split(',')[0],addr:q};};
-      pick(0);cands.querySelectorAll('input[name=sCand]').forEach(el=>el.onchange=()=>pick(+el.value));}
-    catch(e){cands.innerHTML='<span style="color:var(--ng)">住所検索がうまくいきませんでした。少し待って再試行</span>';}};
+  let findSeq=0,lastQ='';
+  const doFind=async(auto)=>{const q=$('sAddr').value.trim();if(!q||q.length<2)return false;if(auto&&q===lastQ)return !!chosen;lastQ=q;const my=++findSeq;cands.innerHTML='<span class="addrSt">🔎 探しています…</span>';
+    try{const rs=await geocode(q);if(my!==findSeq)return false;if(!rs.length){chosen=null;cands.innerHTML='<span class="addrSt ng">見つかりませんでした。「東京都武蔵野市御殿山2-10-3」のように市区町村から、または駅名で</span>';return false;}
+      const exact=!!rs[0]._exact;const approx=!exact&&rs[0]._q&&rs[0]._q!==addrVariants(q)[0];
+      const pick=i=>{const r=rs[i];const a=r.address||{};chosen={la:+r.lat,lo:+r.lon,label:a.suburb||a.neighbourhood||a.quarter||a.town||a.city||a.village||r.display_name.split(',')[0],addr:q,exact:!!r._exact};
+        cands.querySelector('.addrMap').innerHTML=miniMapHTML(chosen.la,chosen.lo,17);};
+      cands.innerHTML=`<div class="addrSt ${exact?'ok':approx?'warn':'ok'}">${exact?'📍 番地まで見つかりました':approx?'📍 番地までは見つからず、'+esc(rs[0]._q)+' のあたりに置きます':'📍 見つかりました'}</div>`
+        +(rs.length>1?rs.map((r,i)=>`<label class="addrC"><input type="radio" name="sCand" value="${i}" ${i===0?'checked':''}> ${esc(r._gsi?r.display_name:r.display_name.split(',').slice(0,4).join(' '))}</label>`).join(''):`<div class="addrC one">${esc(rs[0]._gsi?rs[0].display_name:rs[0].display_name.split(',').slice(0,4).join(' '))}</div>`)
+        +`<div class="addrMap"></div><small>ピンの位置が家になります。ずれていたら番地まで入れ直してください</small>`;
+      pick(0);cands.querySelectorAll('input[name=sCand]').forEach(el=>el.onchange=()=>pick(+el.value));return true;}
+    catch(e){if(my===findSeq)cands.innerHTML='<span class="addrSt ng">住所検索がうまくいきませんでした。少し待ってもう一度</span>';return false;}};
+  $('sFind').onclick=()=>doFind(false);
+  {const ai=$('sAddr');let tmr=null;ai.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();clearTimeout(tmr);doFind(false);}});
+   ai.addEventListener('input',()=>{clearTimeout(tmr);const q=ai.value.trim();if(q!==lastQ){chosen=null;}if(looksLikeAddress(q)||/駅$/.test(q))tmr=setTimeout(()=>doFind(true),900);});}
+  if(chosen&&chosen.la)cands.innerHTML=`<div class="addrSt ok">📍 ${esc(chosen.addr||chosen.label)}</div><div class="addrMap">${miniMapHTML(chosen.la,chosen.lo,17)}</div>`;
   const smp=$('sSample');if(smp)smp.onclick=(ev)=>{ev.preventDefault();chosen={sample:true,la:KICHI.home[0],lo:KICHI.home[1],label:'吉祥寺',addr:'サンプル: 吉祥寺(御殿山)'};cands.innerHTML='<div style="color:var(--ok)">📍 サンプルの街(吉祥寺)</div>';};
   $('sOk').onclick=async()=>{const [sh,sm]=$('sStart').value.split(':').map(Number),[eh,em]=$('sEnd').value.split(':').map(Number);const st=sh*60+sm,en=eh*60+em;if(!(en>st)){toast('終了は開始より後に','var(--ng)');return;}
-    if(!chosen){toast('家を「探す」で決めてください','var(--ng)');return;}
+    if(!chosen&&$('sAddr').value.trim()){const ok=await doFind(false);if(!ok){toast('家の住所が見つからなかった。入れ直して','var(--ng)');return;}}if(!chosen){toast('家の住所を入れてください','var(--ng)');return;}
     const daysSel=[...document.querySelectorAll('.sDay:checked')].map(c=>+c.value);if(!daysSel.length){toast('曜日を1つは','var(--ng)');return;}
     const prefs=[...document.querySelectorAll('.sPref:checked')].map(c=>c.value);if(!prefs.length&&!parsePersona($('sPersona').value).prefs.length){toast('好みを1つは(または好きなことを書いてください)','var(--ng)');return;}
     S.name=($('sName').value.trim()||'もう1人のあなた').slice(0,12);S.job=JOBS[$('sJob').value]?$('sJob').value:'other';S.vehicle=$('sVeh').value;document.querySelectorAll('.sTrait').forEach(c=>{S.taught.habits[c.value]=c.checked;});S.work={start:st,end:en,days:daysSel};{const pp=parsePersona($('sPersona').value);S.persona=pp;for(const h of pp.habits)S.taught.habits[h]=true;S.prefs=[...new Set([...prefs,...pp.prefs])].slice(0,6);if(pp.text.trim())addDiary({kind:'note',text:'あなたのメモ「'+pp.text.trim().slice(0,80)+'」。'+personaSummary(pp)+'、と受け取った。',t:Date.now()});}S.look={hair:lk.hair,hairC:lk.hairC,skin:lk.skin};S.outfit.top=lk.top;S.outfit.glasses=lk.glasses;homeSig='';
     const homeChanged=!S.homeLL||Math.abs(S.homeLL[0]-chosen.la)>1e-5||Math.abs(S.homeLL[1]-chosen.lo)>1e-5||!M;
     if(homeChanged){const ok=$('sOk');ok.disabled=true;mbox.classList.remove('setup');mbox.innerHTML=`<h2>街を用意しています</h2><p id="ldMsg">住所のまわりを調べています…</p><p style="color:var(--dim)">OpenStreetMap から道と店を取り込みます。30秒〜1分ほど。遠くの名所は始まってから後追いで足します。</p>`;
       try{let town;if(chosen.sample&&typeof KICHI!=='undefined')town=KICHI;else town=await buildTown(chosen.la,chosen.lo,chosen.label,true,m=>{const el=$('ldMsg');if(el)el.textContent=m;});
-        initTown(town);saveTown(town);S.homeLL=[chosen.la,chosen.lo];S.homeAddr=chosen.addr;S.townName=chosen.label;
+        initTown(town);saveTown(town);S.homeLL=[chosen.la,chosen.lo];S.homeAddr=chosen.addr;S.homeExact=!!chosen.exact;S.townName=chosen.label;
         S.trip=null;S.j={t:Date.now(),state:'home',pos:[HOME.la,HOME.lo],at:-1,path:[],seg:0,segPos:0,target:-1,until:0,lastReport:0,straight:null};
         toast(chosen.label+'の店・場所 '+POIS.length+'件を取り込みました','var(--acc)');}
       catch(e){mbox.classList.remove('setup');mbox.innerHTML=`<h2>街を取り込めませんでした</h2><p>${(e&&e.message)||e}</p><p style="color:var(--dim)">地図サーバーが混んでいることがあります。少し待ってもう一度、または別の住所で。</p><button id="sRetry">設定にもどる</button>`;$('sRetry').onclick=showSetup;return;}}
@@ -1956,7 +1992,7 @@ async function notify(title,body){try{if(!S.notify||document.visibilityState==='
   if(reg&&reg.showNotification)await reg.showNotification(title,{body,icon:'icon-192.png',badge:'icon-192.png',tag:'officetravel'});else new Notification(title,{body,icon:'icon-192.png'});}catch(e){console.warn('notify',e);}}
 async function enableNotify(){if(typeof Notification==='undefined'){toast('このブラウザは通知に対応していない','var(--ng)');return;}let p=Notification.permission;if(p==='default'){try{p=await Notification.requestPermission();}catch(e){}}
   if(p==='granted'){S.notify=true;save();toast('通知をオンにした。画面を閉じている間の到着・宿・雨を知らせる','var(--acc)');}else{S.notify=false;save();toast('通知が許可されなかった(ブラウザの設定で許可できる)','var(--ng)');}renderPanel();}
-(function boot(){document.querySelectorAll('#btns i[data-ic]').forEach(i=>{i.innerHTML=ICON[i.dataset.ic]||'';});setTimeout(()=>{if(S.setup)refreshTownPois();},20000);setInterval(()=>{if(S.setup)refreshTownPois();},30*60000);
+(function boot(){document.querySelectorAll('#btns i[data-ic]').forEach(i=>{i.innerHTML=ICON[i.dataset.ic]||'';});setTimeout(()=>{if(S.setup)refreshTownPois();},20000);setTimeout(()=>{refineHome();},6000);setInterval(()=>{if(S.setup)refreshTownPois();},30*60000);
 let town=null;try{const raw=localStorage.getItem(TOWN_KEY);if(raw)town=JSON.parse(raw);}catch(e){}
   if(S.trip){let away=null;try{const a=JSON.parse(localStorage.getItem(AWAY_KEY)||'null');if(a&&a.name===S.trip.city)away=a.nodes?a:townCacheGet(a.name,a.la,a.lo);}catch(e){}if(away)town=away;}
   const j=S.j;j.planning=null;j.cityTarget=null;const wasLoading=j.loadingTown;j.loadingTown=null;
