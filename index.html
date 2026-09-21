@@ -203,8 +203,20 @@ a.shop{color:var(--ink);font-weight:700;text-decoration:underline dotted;text-de
   /* 見出しつきの区切り */
   #panel .sec{font:700 13px/1.3 var(--fd);color:var(--ink2);margin:14px 0 4px;letter-spacing:.4px}
   /* 設定・報告 */
-  #modal{position:absolute;inset:0;background:rgba(42,47,58,.42);display:flex;align-items:center;justify-content:center;padding:8px}
+  #modal{position:absolute;inset:0;background:rgba(42,47,58,.42);display:flex;align-items:center;justify-content:center;padding:8px;z-index:80}
   #modal .box{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:16px 20px 18px;min-width:300px;max-width:min(640px,96%);max-height:94%;overflow:auto;text-align:center;font-size:13px;line-height:1.5;box-shadow:var(--shadow)}
+#modal .box.setup{max-width:min(720px,96%);padding:14px 16px 0;text-align:left}
+.setupHead{display:flex;gap:14px;align-items:center;margin:0 0 6px}.setupHead svg{flex:none;border-radius:14px;box-shadow:var(--shadow);background:#efe6d6}.setupHead .ttl h2{margin:0 0 4px;font:700 20px/1.2 var(--fd)}.setupHead .ttl p{margin:0;color:var(--ink2);font-size:12.5px}
+.sc{background:var(--paper2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:8px 0}
+.sc h3{margin:0 0 10px;font:700 13.5px/1.2 var(--fd);color:var(--ink);display:flex;align-items:center;gap:8px}.sc h3 i{font-style:normal;display:inline-flex;width:20px;height:20px;border-radius:50%;background:var(--ink);color:#fff;font:700 11px/1 var(--fb);align-items:center;justify-content:center}
+.sc .g{display:grid;grid-template-columns:72px 1fr;gap:8px 10px;align-items:center}.sc .g>span:nth-child(odd){font:600 12px var(--fb);color:var(--dim)}
+.sc small{display:block;color:var(--dim);font-size:11.5px;line-height:1.5;margin-top:3px}
+.sc .inl{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}.sc .inl input{flex:1;min-width:160px}
+.sc textarea{width:100%;box-sizing:border-box;font:500 13px var(--fb);padding:7px 9px;border:1px solid var(--line);border-radius:10px;background:#fff;resize:vertical}
+.sc .sws .sw{width:22px;height:22px;margin:0 3px 3px 0}.sc .sws .sw.on{box-shadow:0 0 0 2px #fff inset,0 0 0 2px var(--ink)}
+.sc .chks,.sc .days{display:flex;flex-wrap:wrap;gap:6px}.chk{position:relative}.chk input{position:absolute;opacity:0;width:1px;height:1px}.chk span{display:inline-block;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:12.5px;cursor:pointer;user-select:none}.chk input:checked+span{background:var(--ink);color:#fff;border-color:var(--ink)}
+.setupFoot{position:sticky;bottom:0;margin:6px -16px 0;padding:10px 16px 14px;background:linear-gradient(to bottom,rgba(250,246,238,0),var(--paper) 35%);text-align:center}.setupFoot #sOk{font:700 15px var(--fd);padding:11px 26px;border-radius:999px;box-shadow:0 4px 14px rgba(217,127,90,.35)}
+@media (max-width:760px){#modal{padding:0}#modal .box.setup{max-width:100%;width:100%;max-height:100%;border-radius:0;border:0}.setupHead svg{width:110px;height:88px}.sc .g{grid-template-columns:1fr}.sc .g>span:nth-child(odd){margin-bottom:-4px}}
   #modal h2{margin:0 0 6px;font:700 18px/1.3 var(--fd);color:var(--ink);text-wrap:balance}
   #modal p{margin:2px 0 8px;color:var(--ink2)}
   #modal .big{font-size:24px;color:var(--ink);margin:6px 0;font-variant-numeric:tabular-nums}
@@ -420,6 +432,8 @@ const SKINS=[{n:'明るい',c:'#f6d5b8'},{n:'ふつう',c:'#e8bf99'},{n:'小麦'
 function curRideKind(){const j=S.j;if(j.state!=='walk'||!j.transit)return null;const L=curTransitLeg();if(!L)return null;const now=Date.now();if(now<L.t0)return null;if(L.mode==='WALK'||L.mode==='BAGGAGE')return null;if(L.mode==='CHECKIN')return 'lounge';return vehKind(L.mode);}
 function skyNow(){const hr=hour(Date.now());const n=nightness(hr);const w=wxNow();const rain=rainy();const cloudy=!!(w&&w.code>=2);const dusk=(hr>=16.5&&hr<19)||(hr>=5&&hr<7.5);let top=mix('#8fc6e8','#1a2442',n),bot=mix('#dceffa','#3b4a72',n);if(cloudy||rain){top=mix('#9aa7b5','#1a2442',n);bot=mix('#cfd6dc','#3b4a72',n);}if(dusk&&!rain)bot=mix(bot,'#f0a870',0.55);return {top,bot,n,rain,cloudy};}
 /* 座っている本人: 立ち姿を描いてから座面で脚を隠し、曲げた脚を描く */
+/* 他の乗客(シルエットに近い、落ち着いた色) */
+function passengerSVG(cx,cy,coat,hair,book){return `<g opacity=".92"><rect x="${cx-26}" y="${cy-70}" width="52" height="66" rx="16" fill="${coat}"/><rect x="${cx-22}" y="${cy-6}" width="18" height="30" rx="7" fill="#4a5568"/><rect x="${cx+4}" y="${cy-6}" width="18" height="30" rx="7" fill="#4a5568"/><rect x="${cx-24}" y="${cy+20}" width="20" height="8" rx="4" fill="#3a2f2a"/><rect x="${cx+4}" y="${cy+20}" width="20" height="8" rx="4" fill="#3a2f2a"/><circle cx="${cx}" cy="${cy-92}" r="24" fill="#e8c9ae"/><path d="M${cx-26} ${cy-92} A26 26 0 0 1 ${cx+26} ${cy-92} L${cx+26} ${cy-86} Q${cx} ${cy-98} ${cx-26} ${cy-86} Z" fill="${hair}"/><circle cx="${cx-8}" cy="${cy-88}" r="2" fill="#3a2f2a"/><circle cx="${cx+8}" cy="${cy-88}" r="2" fill="#3a2f2a"/>${book?`<rect x="${cx-18}" y="${cy-40}" width="36" height="22" rx="2" fill="#fff" stroke="#c9c3b6"/><line x1="${cx}" y1="${cy-40}" x2="${cx}" y2="${cy-18}" stroke="#c9c3b6"/>`:`<rect x="${cx-9}" y="${cy-40}" width="18" height="26" rx="3" fill="#2a2f3a"/><rect x="${cx-7}" y="${cy-38}" width="14" height="20" rx="1" fill="#9fd0f0"/>`}</g>`;}
 function seatedSVG(cx,cy,sc,seatColor){sc=sc||1;const feetY=cy+37;const lk=S.look||{};const pants='#4a5568',shoe=(S.outfit&&S.outfit.shoes)||'#5a4634';
   return `<g transform="translate(${cx} ${cy}) scale(${sc}) translate(${-cx} ${-cy})">${charSVG(cx,feetY,{still:true})}<rect x="${cx-44}" y="${cy-2}" width="88" height="46" rx="6" fill="${seatColor||'#5d7bb0'}"/><rect x="${cx-30}" y="${cy-8}" width="60" height="16" rx="7" fill="${pants}"/><rect x="${cx-27}" y="${cy+4}" width="12" height="36" rx="5" fill="${pants}"/><rect x="${cx+15}" y="${cy+4}" width="12" height="36" rx="5" fill="${pants}"/><rect x="${cx-31}" y="${cy+38}" width="20" height="9" rx="4" fill="${shoe}"/><rect x="${cx+11}" y="${cy+38}" width="20" height="9" rx="4" fill="${shoe}"/><rect x="${cx-22}" y="${cy-14}" width="44" height="10" rx="5" fill="${(S.outfit&&S.outfit.top)||'#d97f5a'}"/></g>`;}
 /* 窓の外: 空 + 流れる街並み(電車・バス・タクシー) */
@@ -439,33 +453,62 @@ function rideSceneSVG(kind){const L=curTransitLeg()||{};const now=Date.now();con
     for(let i=0;i<7;i++){const sx=30+i*70;g+=`<line x1="${sx}" y1="40" x2="${sx}" y2="86" stroke="#9a948a" stroke-width="3"/><ellipse cx="${sx}" cy="96" rx="10" ry="12" fill="none" stroke="#f4f1ea" stroke-width="4"/>`;}
     g+=`<rect x="0" y="16" width="480" height="18" fill="#dcd8cf"/>`;
     g+=sceneryWindow(28,124,200,150,28,'train')+sceneryWindow(252,124,200,150,28,'train');g+=`<rect x="28" y="124" width="200" height="150" rx="6" fill="none" stroke="#f4f1ea" stroke-width="8"/><rect x="252" y="124" width="200" height="150" rx="6" fill="none" stroke="#f4f1ea" stroke-width="8"/>`;
+    /* 天井灯と吊り広告 */
+    g+=`<rect x="70" y="4" width="340" height="8" rx="4" fill="#fffbe8" opacity=".9"/><rect x="70" y="4" width="340" height="8" rx="4" fill="none" stroke="#cfc9bd" stroke-width="1"/>`;
+    g+=`<g transform="translate(20 100)"><line x1="26" y1="-14" x2="26" y2="0" stroke="#9a948a" stroke-width="1.5"/><line x1="66" y1="-14" x2="66" y2="0" stroke="#9a948a" stroke-width="1.5"/><rect x="8" y="0" width="76" height="22" rx="2" fill="#fff" stroke="#d9d3c6"/><rect x="14" y="5" width="30" height="12" rx="1" fill="#e58a8a"/><rect x="48" y="6" width="30" height="3" fill="#8a9099"/><rect x="48" y="12" width="22" height="3" fill="#8a9099"/></g>`;
+    g+=`<g transform="translate(380 100)"><line x1="26" y1="-14" x2="26" y2="0" stroke="#9a948a" stroke-width="1.5"/><line x1="66" y1="-14" x2="66" y2="0" stroke="#9a948a" stroke-width="1.5"/><rect x="8" y="0" width="76" height="22" rx="2" fill="#fff" stroke="#d9d3c6"/><rect x="14" y="5" width="18" height="12" rx="1" fill="#8fb0d4"/><rect x="36" y="6" width="42" height="3" fill="#8a9099"/><rect x="36" y="12" width="30" height="3" fill="#8a9099"/></g>`;
+    /* 座席(クッションの割り) */
     g+=`<rect x="-20" y="282" width="520" height="92" rx="10" fill="#6b88bd"/><rect x="-20" y="366" width="520" height="8" fill="#4e6a9b"/>`;
+    for(let i=0;i<7;i++)g+=`<line x1="${-20+i*80+40}" y1="290" x2="${-20+i*80+40}" y2="366" stroke="#5d7bb0" stroke-width="2"/>`;
+    g+=`<rect x="-20" y="282" width="520" height="14" rx="7" fill="#fff" opacity=".12"/>`;
+    /* 向かいの乗客(座って本や携帯を見ている) */
+    g+=passengerSVG(70,372,'#7a8aa6','#3a2f2a',true)+passengerSVG(410,372,'#a67a7a','#5a4634',false);
+    /* 手すりポール */
+    g+=`<rect x="146" y="120" width="5" height="300" rx="2.5" fill="#dcd8cf" stroke="#9a948a" stroke-width="1"/><rect x="330" y="120" width="5" height="300" rx="2.5" fill="#dcd8cf" stroke="#9a948a" stroke-width="1"/>`;
     g+=`<rect x="120" y="40" width="240" height="44" rx="6" fill="#1e2230"/><text x="240" y="70" text-anchor="middle" font-size="19" font-weight="700" fill="#ffb347" font-family="Zen Maru Gothic,Noto Sans JP,sans-serif">${esc(nx||('→ '+(L.to&&L.to.n||'')))}</text>`;
     g+=seatedSVG(240,372,1.05,'#5d7bb0');
     g+=`<rect x="-20" y="418" width="520" height="24" rx="8" fill="#4e6a9b"/>`;
+    /* 床: 遠近の目地と黄色い線 */
+    g+=`<line x1="-1200" y1="470" x2="1680" y2="470" stroke="#e9c46a" stroke-width="3" opacity=".7"/>`;for(let i=0;i<8;i++)g+=`<line x1="${-60+i*90}" y1="442" x2="${-120+i*110}" y2="640" stroke="#a09a8e" stroke-width="1" opacity=".5"/>`;
     }
   else if(kind==='bus'){g+=`<rect x="-1200" y="-800" width="2880" height="1240" fill="#f1ede4"/><rect x="-1200" y="450" width="2880" height="1000" fill="#7d7468"/><rect x="-1200" y="446" width="2880" height="6" fill="#5f574d"/>`;
     g+=sceneryWindow(24,110,432,160,26,'bus')+`<rect x="24" y="110" width="432" height="160" rx="8" fill="none" stroke="#e8e2d4" stroke-width="10"/><rect x="236" y="110" width="8" height="160" fill="#e8e2d4"/>`;
     g+=`<rect x="0" y="20" width="480" height="70" fill="#e3ddd0"/><rect x="60" y="34" width="360" height="42" rx="6" fill="#1e2230"/><text x="240" y="63" text-anchor="middle" font-size="18" font-weight="700" fill="#7CFC9A" font-family="Zen Maru Gothic,Noto Sans JP,sans-serif">${esc(nx||line)}</text>`;
     g+=`<rect x="404" y="300" width="40" height="40" rx="8" fill="#e8e2d4"/><circle cx="424" cy="320" r="9" fill="#c8503c"/><text x="424" y="356" text-anchor="middle" font-size="9" fill="#6b655b" font-family="Noto Sans JP,sans-serif">とまります</text>`;
-    g+=`<rect x="0" y="290" width="400" height="92" rx="10" fill="#c96b4a"/><rect x="0" y="374" width="400" height="8" fill="#a3543a"/>`;
+    g+=`<rect x="0" y="290" width="400" height="92" rx="10" fill="#c96b4a"/><rect x="0" y="374" width="400" height="8" fill="#a3543a"/><rect x="0" y="290" width="400" height="12" rx="6" fill="#fff" opacity=".12"/>`;
+    g+=passengerSVG(60,382,'#7a8aa6','#5a4634',false);
     g+=seatedSVG(200,380,1.05,'#c96b4a');
+    /* 天井の手すりと降車ボタンの案内 */
+    g+=`<line x1="0" y1="96" x2="480" y2="96" stroke="#d9d3c6" stroke-width="5"/>`;
     }
   else if(kind==='taxi'){g+=`<rect x="-1200" y="-800" width="2880" height="1240" fill="#2f2f36"/><rect x="-1200" y="470" width="2880" height="1000" fill="#3b3b44"/>`;
     g+=sceneryWindow(60,120,360,170,20,'taxi')+`<path d="M60 120 h360 v170 h-360z" fill="none" stroke="#1a1a20" stroke-width="12"/><path d="M60 120 q-8 100 0 170" fill="none" stroke="#1a1a20" stroke-width="12"/>`;
     g+=`<rect x="20" y="300" width="440" height="60" rx="10" fill="#4a4a55"/><rect x="0" y="300" width="480" height="180" fill="#3a3a44"/>`;
     g+=`<rect x="330" y="30" width="126" height="70" rx="8" fill="#111"/><text x="393" y="56" text-anchor="middle" font-size="11" fill="#9aa" font-family="Noto Sans JP,sans-serif">${esc(L.mode==='TAXI'?'料金(概算)':'')}</text><text x="393" y="86" text-anchor="middle" font-size="22" font-weight="700" fill="#ff5a3c" font-family="Zen Maru Gothic,Noto Sans JP,sans-serif">¥${fmt(L.fare||0)}</text>`;
     g+=`<rect x="24" y="30" width="150" height="34" rx="6" fill="#f2c744"/><text x="99" y="53" text-anchor="middle" font-size="15" font-weight="700" fill="#2a2f3a" font-family="Zen Maru Gothic,Noto Sans JP,sans-serif">TAXI / 配車</text>`;
-    g+=`<rect x="0" y="320" width="480" height="70" rx="12" fill="#5a5a68"/>`;
+    /* 運転席(後ろ姿)とヘッドレスト */
+    g+=`<rect x="60" y="250" width="120" height="120" rx="14" fill="#2a2a32"/><rect x="84" y="228" width="72" height="40" rx="10" fill="#3a3a44"/><circle cx="120" cy="236" r="22" fill="#e8c9ae"/><path d="M98 236 A22 22 0 0 1 142 236 L142 232 Q120 222 98 232 Z" fill="#2a2f3a"/><rect x="88" y="256" width="64" height="26" rx="8" fill="#e8e6e1"/>`;
+    /* ドアの内張り・ハンドル */
+    g+=`<rect x="440" y="290" width="40" height="150" rx="6" fill="#4a4a55"/><rect x="450" y="330" width="20" height="8" rx="4" fill="#9aa"/>`;
+    g+=`<rect x="0" y="320" width="480" height="70" rx="12" fill="#5a5a68"/><line x1="240" y1="326" x2="240" y2="384" stroke="#4a4a55" stroke-width="3"/><rect x="0" y="320" width="480" height="10" rx="5" fill="#fff" opacity=".08"/>`;
     g+=seatedSVG(300,392,1.02,'#5a5a68');
     g+=`<rect x="0" y="440" width="480" height="30" rx="8" fill="#4a4a55"/>`;}
   else if(kind==='plane'){g+=`<rect x="-1200" y="-800" width="2880" height="1240" fill="#e9e7e1"/><rect x="-1200" y="480" width="2880" height="1000" fill="#3a4658"/>`;
     g+=`<rect x="-20" y="30" width="520" height="90" rx="14" fill="#d3cfc6"/><rect x="-20" y="112" width="520" height="8" fill="#b8b3a8"/><rect x="40" y="46" width="180" height="50" rx="8" fill="#c4bfb4"/><rect x="260" y="46" width="180" height="50" rx="8" fill="#c4bfb4"/>`;
     g+=`<rect x="92" y="68" width="116" height="16" rx="3" fill="#1e2230"/><text x="150" y="80" text-anchor="middle" font-size="9" fill="#ffb347" font-family="sans-serif">FASTEN SEAT BELT</text>`;
-    g+=planeWindow(60,150,90,120)+planeWindow(330,150,90,120);
-    g+=`<rect x="200" y="140" width="80" height="140" rx="6" fill="#dcd8cf"/>`;
-    g+=`<rect x="120" y="300" width="240" height="140" rx="16" fill="#3f5a8a"/><rect x="150" y="286" width="180" height="36" rx="10" fill="#4e6a9b"/>`;
+    /* 読書灯 */
+    g+=`<circle cx="130" cy="100" r="5" fill="#fff5cf"/><circle cx="240" cy="100" r="5" fill="#fff5cf"/><circle cx="350" cy="100" r="5" fill="#fff5cf"/><rect x="200" y="94" width="80" height="12" rx="6" fill="#1e2230"/><circle cx="216" cy="100" r="3" fill="#7CFC9A"/><circle cx="240" cy="100" r="3" fill="#ffb347"/><circle cx="264" cy="100" r="3" fill="#ff5a3c" opacity=".35"/>`;
+    /* 窓(3つずつ)と壁のカーブ */
+    g+=`<rect x="-20" y="120" width="520" height="180" fill="#dcd8cf" opacity=".5"/>`;
+    g+=planeWindow(30,150,58,84)+planeWindow(102,150,58,84)+planeWindow(320,150,58,84)+planeWindow(392,150,58,84);
+    for(const wx of [30,102,320,392])g+=`<rect x="${wx}" y="150" width="58" height="84" rx="29" fill="none" stroke="#cfcac0" stroke-width="7"/>`;
+    g+=`<rect x="190" y="130" width="100" height="160" rx="8" fill="#d3cfc6"/><rect x="204" y="150" width="72" height="90" rx="6" fill="#c4bfb4"/><rect x="214" y="160" width="52" height="8" rx="2" fill="#9aa"/>`;
+    /* 隣の席(空席)と本人の席 */
+    for(const sx of [40,440])g+=`<rect x="${sx-60}" y="300" width="120" height="140" rx="14" fill="#35507c"/><rect x="${sx-44}" y="286" width="88" height="34" rx="9" fill="#4e6a9b"/><rect x="${sx-30}" y="292" width="60" height="16" rx="6" fill="#fff" opacity=".85"/>`;
+    g+=`<rect x="120" y="300" width="240" height="140" rx="16" fill="#3f5a8a"/><rect x="150" y="286" width="180" height="36" rx="10" fill="#4e6a9b"/><rect x="180" y="292" width="120" height="18" rx="7" fill="#fff" opacity=".9"/><rect x="120" y="300" width="240" height="140" rx="16" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="2"/>`;
     g+=seatedSVG(240,430,1.05,'#3f5a8a');
+    /* シートベルト */
+    g+=`<path d="M176 448 Q240 470 304 448" fill="none" stroke="#2a2f3a" stroke-width="7" stroke-linecap="round"/><rect x="230" y="450" width="22" height="12" rx="2" fill="#9aa7b5"/>`;
     g+=`<rect x="0" y="478" width="480" height="16" rx="6" fill="#2f3a4a"/>`;
     g+=`<rect x="266" y="58" width="176" height="42" rx="6" fill="#1e2230"/><text x="354" y="74" text-anchor="middle" font-size="10" fill="#9fb3d9" font-family="Noto Sans JP,sans-serif">${esc((L.route||'')+(L.agency?' '+L.agency:''))}</text><text x="354" y="92" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" font-family="Zen Maru Gothic,Noto Sans JP,sans-serif">${esc((L.to&&L.to.n||'')+' '+(L.t1?fmtT(L.t1)+'着':''))}</text>`;}
   else if(kind==='lounge'){g+=`<rect x="-1200" y="-800" width="2880" height="1240" fill="#f4f1ea"/><rect x="-1200" y="460" width="2880" height="1000" fill="#d9d4c8"/>`;
@@ -480,7 +523,7 @@ function rideSceneSVG(kind){const L=curTransitLeg()||{};const now=Date.now();con
 let lastRideKind=null;
 /* 立っている本人。基準: 中心 x=240、足元 y=561 の図を (cx,feetY) へ平行移動 */
 function charSVG(cx,feetY,o){o=o||{};const look=o.look||S.look||{};const out=o.outfit||S.outfit||{};const hc=look.hairC||'#2a2f3a',skin=look.skin||'#f6d5b8',col='#2a2f3a',top=out.top||'#d97f5a';const hairS=look.hair||'short';
-  const still=!!o.still;const blink=!still&&(Date.now()%3800)<140;const talking=!still&&roomSayUntil>Date.now();const bobY=still?0:Math.sin(Date.now()/650)*2;const isHot=!still&&hot(),isCold=!still&&cold(),umb=!still&&(rainy()||rainLater()!=null);
+  const still=!!o.still;const blink=!still&&(Date.now()%3800)<140;const talking=!still&&roomSayUntil>Date.now();const bobY=still?0:Math.sin(Date.now()/650)*2;const wxOn=!still||o.wx;const isHot=wxOn&&hot(),isCold=wxOn&&cold(),umb=wxOn&&(rainy()||rainLater()!=null);
   /* 髪: 頭(中心240,412 r38)にかぶる帽子形 + 前髪。後ろ髪は顔の下に描く */
   const hd=hc,hl=mix(hc,'#ffffff',0.18);
   const CAP=`<path d="M200 416 A40 40 0 0 1 280 416 L280 408 Q270 400 258 406 Q248 397 238 405 Q226 397 214 407 Q206 402 200 410 Z" fill="${hd}"/><path d="M212 386 Q226 372 246 374" fill="none" stroke="${hl}" stroke-width="3" stroke-linecap="round" opacity=".7"/>`;
@@ -1240,10 +1283,12 @@ function draw(now){const hr=hour(Date.now());const night=nightness(hr);
     const ph=legPhase();const TL=curTransitLeg();const riding=TL&&TL.mode!=='WALK'&&now>=0&&Date.now()>=TL.t0;
     if(riding){const [ax,ay]=px(TL.from.la,TL.from.lo),[bx,by]=px(TL.to.la,TL.to.lo);const dx=bx-ax,dy=by-ay;const dir=dx>=0?1:-1;const ang=Math.atan2(dy,dx);drawVehicle(ctx,x,y,vehKind(TL.mode),dir,ang,now);}
     else if(ph==='move'&&j.straight&&j.straight.label){const [ax,ay]=px(j.straight.from[0],j.straight.from[1]),[bx,by]=px(j.straight.to[0],j.straight.to[1]);drawVehicle(ctx,x,y,'bus',(bx-ax)>=0?1:-1,0,now);}
-    else if(ph==='move'){ctx.font='26px sans-serif';ctx.textAlign='center';ctx.fillText(V().e,x,y+6);ctx.textAlign='left';}
-    else{const sc=1.8;ctx.save();ctx.translate(x,y+bob);ctx.scale(sc,sc);
+    else if(ph==='move'){let d=1;if(j.straight){const [ax]=px(j.straight.from[0],j.straight.from[1]),[bx]=px(j.straight.to[0],j.straight.to[1]);d=(bx-ax)>=0?1:-1;}drawVehicle(ctx,x,y,S.vehicle==='car'?'car':'bike',d,0,now);}
+    else{const spr=charSprite();if(lastWalkPx&&Math.abs(x-lastWalkPx)>0.6)walkDir=x>lastWalkPx?1:-1;lastWalkPx=x;
+      if(spr){const hgt=46,wid=hgt*140/232;const walking=j.state==='walk';const tilt=walking?Math.sin(now/150)*0.07:0;ctx.save();ctx.translate(x,y+14+bob);ctx.rotate(tilt);if(walkDir<0)ctx.scale(-1,1);ctx.drawImage(spr,-wid/2,-hgt,wid,hgt);ctx.restore();}
+      else{const sc=1.8;ctx.save();ctx.translate(x,y+bob);ctx.scale(sc,sc);
       ctx.fillStyle=topColor();ctx.beginPath();ctx.roundRect(-4.5,-4,9,10,3);ctx.fill();{const lk=S.look||{};const skin=lk.skin||'#f6d5b8',hc=lk.hairC||'#2a2f3a';if(lk.hair==='long'||lk.hair==='bob'){ctx.fillStyle=hc;ctx.fillRect(-5.5,-9.5,2.2,lk.hair==='long'?12:7);ctx.fillRect(3.3,-9.5,2.2,lk.hair==='long'?12:7);}ctx.fillStyle=skin;ctx.beginPath();ctx.arc(0,-8.5,5,0,7);ctx.fill();if(lk.hair!=='bald'){ctx.fillStyle=hc;ctx.beginPath();ctx.arc(0,-9.5,5,Math.PI,0);ctx.fill();ctx.fillRect(-5,-9.5,10,1.5);if(lk.hair==='bun'){ctx.beginPath();ctx.arc(0,-15,1.8,0,7);ctx.fill();}if(lk.hair==='spiky'){ctx.beginPath();ctx.moveTo(-4,-13);ctx.lineTo(-2.5,-16.5);ctx.lineTo(-1,-13.5);ctx.lineTo(0.5,-17);ctx.lineTo(2,-13.5);ctx.lineTo(3.5,-16);ctx.lineTo(4.5,-13);ctx.fill();}}}
-      ctx.fillStyle='#2a2f3a';ctx.fillRect(-2,-8,1,1);ctx.fillRect(1,-8,1,1);if(S.outfit.hat){ctx.fillStyle=S.outfit.hat;ctx.beginPath();ctx.ellipse(0,-12.3,6.8,1.7,0,0,7);ctx.fill();ctx.beginPath();ctx.arc(0,-12.3,5,Math.PI,0);ctx.fill();}if(S.outfit.glasses){ctx.strokeStyle='#2a2f3a';ctx.lineWidth=0.7;ctx.beginPath();ctx.arc(-1.6,-7.8,1.7,0,7);ctx.stroke();ctx.beginPath();ctx.arc(1.6,-7.8,1.7,0,7);ctx.stroke();}if(S.outfit.bag){ctx.fillStyle=S.outfit.bag;ctx.fillRect(-7.5,-1,3.5,5);}ctx.restore();}
+      ctx.fillStyle='#2a2f3a';ctx.fillRect(-2,-8,1,1);ctx.fillRect(1,-8,1,1);if(S.outfit.hat){ctx.fillStyle=S.outfit.hat;ctx.beginPath();ctx.ellipse(0,-12.3,6.8,1.7,0,0,7);ctx.fill();ctx.beginPath();ctx.arc(0,-12.3,5,Math.PI,0);ctx.fill();}if(S.outfit.glasses){ctx.strokeStyle='#2a2f3a';ctx.lineWidth=0.7;ctx.beginPath();ctx.arc(-1.6,-7.8,1.7,0,7);ctx.stroke();ctx.beginPath();ctx.arc(1.6,-7.8,1.7,0,7);ctx.stroke();}if(S.outfit.bag){ctx.fillStyle=S.outfit.bag;ctx.fillRect(-7.5,-1,3.5,5);}ctx.restore();}}
     if(rainy()&&!riding&&(j.state==='walk'||j.at===-1)){ctx.fillStyle='#c8503c';ctx.beginPath();ctx.arc(x+8,y-24,15,Math.PI,0);ctx.fill();ctx.strokeStyle='#5a4634';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x+8,y-24);ctx.lineTo(x+8,y-2);ctx.stroke();}
     if(j.state==='walk'&&!riding){ctx.fillStyle='#4a5568';ctx.fillRect(x-4+Math.sin(now/120)*3,y+10,3,5);ctx.fillRect(x+1-Math.sin(now/120)*3,y+10,3,5);}
     ctx.font='bold 12px sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,.9)';ctx.strokeText(S.name,x+13,y-8);ctx.fillStyle='#222';ctx.fillText(S.name,x+13,y-8);
@@ -1403,19 +1448,63 @@ function drawFieldOn(fv,now){const fctx=fv.getContext('2d');const FW=fv.clientWi
     for(let i=pops.length-1;i>=0;i--){const p=pops[i];p.t+=0.016;if(p.t>1){pops.splice(i,1);continue;}fctx.globalAlpha=1-p.t;fctx.fillStyle='#fff3c0';fctx.font='bold 13px sans-serif';fctx.textAlign='center';fctx.fillText(p.text,p.x,FH-24-p.t*22);fctx.globalAlpha=1;}}
 /* 乗り物の絵。種類: train / bus / taxi / plane / ferry。本人の顔が窓から見える */
 function vehKind(mode){if(mode==='AIRPLANE')return 'plane';if(mode==='BUS'||mode==='COACH')return 'bus';if(mode==='TAXI')return 'taxi';if(mode==='FERRY')return 'ferry';return 'train';}
+/* 地図用スプライト: charSVG を SVG 画像にして使い回す(見た目・服・天気が変わったら作り直す) */
+const SPRITES={};let walkDir=1,lastWalkPx=null;
+function charSprite(){const lk=S.look||{},o=S.outfit||{};const key=JSON.stringify([lk.hair,lk.hairC,lk.skin,o.top,o.hat,o.glasses,o.bag,o.shoes,rainy()||rainLater()!=null,hot(),cold()]);let sp=SPRITES[key];if(sp)return sp.ok?sp.img:null;
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="170 346 140 232" width="140" height="232">'+charSVG(240,561,{still:true,wx:true,look:lk,outfit:o})+'</svg>';
+  const img=new Image();sp={img,ok:false};SPRITES[key]=sp;img.onload=()=>{sp.ok=true;};img.onerror=()=>{sp.ok=false;};img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);return null;}
 function drawVehicle(ctx,x,y,kind,dir,ang,now){const lk=S.look||{},skin=lk.skin||'#f6d5b8',hc=lk.hairC||'#2a2f3a';ctx.save();ctx.translate(x,y);
-  const face=(fx,fy,r)=>{ctx.fillStyle=skin;ctx.beginPath();ctx.arc(fx,fy,r,0,7);ctx.fill();if(lk.hair!=='bald'){ctx.fillStyle=hc;ctx.beginPath();ctx.arc(fx,fy-r*0.25,r,Math.PI,0);ctx.fill();}ctx.fillStyle='#2a2f3a';ctx.fillRect(fx-r*0.45,fy+r*0.05,r*0.25,r*0.25);ctx.fillRect(fx+r*0.2,fy+r*0.05,r*0.25,r*0.25);};
-  ctx.fillStyle='rgba(0,0,0,.2)';ctx.beginPath();ctx.ellipse(0,12,20,4,0,0,7);ctx.fill();
-  if(kind==='plane'){ctx.rotate(ang);ctx.fillStyle='#9aa7b5';ctx.beginPath();ctx.moveTo(-4,0);ctx.lineTo(-14,14);ctx.lineTo(-6,14);ctx.lineTo(6,1);ctx.lineTo(-6,-14);ctx.lineTo(-14,-14);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(-16,0);ctx.lineTo(-22,7);ctx.lineTo(-17,7);ctx.lineTo(-12,1);ctx.lineTo(-17,-7);ctx.lineTo(-22,-7);ctx.closePath();ctx.fill();
-    ctx.fillStyle='#f4f1ea';ctx.beginPath();ctx.ellipse(0,0,20,4.5,0,0,7);ctx.fill();ctx.fillStyle='#3a78b5';ctx.fillRect(-18,-1,30,1.2);ctx.beginPath();ctx.moveTo(20,0);ctx.lineTo(14,-4.5);ctx.lineTo(14,4.5);ctx.closePath();ctx.fill();
-    ctx.fillStyle='#8fc6e8';for(let i=-10;i<=8;i+=6)ctx.fillRect(i,-3.6,2.2,1.8);face(2,-2.4,2.6);}
+  const OUT='rgba(40,30,30,.35)';
+  const rr=(x0,y0,w,h,r,fill,stroke)=>{ctx.beginPath();ctx.roundRect(x0,y0,w,h,r);ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke();}};
+  const win=(x0,y0,w,h)=>{rr(x0,y0,w,h,1.5,'#d8ecf7');ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillRect(x0+1,y0+1,w*0.35,h*0.4);};
+  const wheel=(wx,wy,r)=>{ctx.fillStyle='#2a2f3a';ctx.beginPath();ctx.arc(wx,wy,r,0,7);ctx.fill();ctx.fillStyle='#b8bcc6';ctx.beginPath();ctx.arc(wx,wy,r*0.45,0,7);ctx.fill();};
+  const lamp=(lx,ly)=>{const g=ctx.createRadialGradient(lx,ly,0,lx,ly,9);g.addColorStop(0,'rgba(255,240,180,.9)');g.addColorStop(1,'rgba(255,240,180,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(lx,ly,9,0,7);ctx.fill();ctx.fillStyle='#fff6d0';ctx.fillRect(lx-1.5,ly-1.5,3,3);};
+  const face=(fx,fy,r)=>{ctx.fillStyle=skin;ctx.beginPath();ctx.arc(fx,fy,r,0,7);ctx.fill();if(lk.hair!=='bald'){ctx.fillStyle=hc;ctx.beginPath();ctx.arc(fx,fy-r*0.2,r,Math.PI,0);ctx.fill();}ctx.fillStyle='#2a2f3a';ctx.fillRect(fx-r*0.45,fy+r*0.05,r*0.25,r*0.25);ctx.fillRect(fx+r*0.2,fy+r*0.05,r*0.25,r*0.25);};
+  const streaks=(len)=>{ctx.strokeStyle='rgba(60,70,90,.28)';ctx.lineWidth=1.5;ctx.lineCap='round';const ph=(now/90)%6;for(let i=0;i<3;i++){const yy=-6+i*6;const x0=-22-ph-i*3;ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(x0-len+i*2,yy);ctx.stroke();}};
+  ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();ctx.ellipse(0,13,22,4.5,0,0,7);ctx.fill();
+  if(kind==='plane'){ctx.rotate(ang);
+    /* ひこうき雲 */
+    ctx.strokeStyle='rgba(255,255,255,.75)';ctx.lineWidth=3;ctx.lineCap='round';ctx.setLineDash([10,7]);ctx.lineDashOffset=-(now/40)%17;ctx.beginPath();ctx.moveTo(-24,-3);ctx.lineTo(-70,-3);ctx.moveTo(-24,3);ctx.lineTo(-70,3);ctx.stroke();ctx.setLineDash([]);
+    /* 主翼 */
+    ctx.fillStyle='#b8c2cf';ctx.beginPath();ctx.moveTo(-2,-2);ctx.lineTo(-16,-17);ctx.lineTo(-8,-17);ctx.lineTo(8,-2);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(-2,2);ctx.lineTo(-16,17);ctx.lineTo(-8,17);ctx.lineTo(8,2);ctx.closePath();ctx.fill();ctx.strokeStyle=OUT;ctx.lineWidth=1;ctx.stroke();
+    /* エンジン */
+    rr(-9,-13,8,4,2,'#7f8b99');rr(-9,9,8,4,2,'#7f8b99');
+    /* 尾翼 */
+    ctx.fillStyle='#c8503c';ctx.beginPath();ctx.moveTo(-15,-1);ctx.lineTo(-24,-9);ctx.lineTo(-19,-9);ctx.lineTo(-12,-1);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(-15,1);ctx.lineTo(-24,9);ctx.lineTo(-19,9);ctx.lineTo(-12,1);ctx.closePath();ctx.fill();
+    /* 胴体 */
+    {const g=ctx.createLinearGradient(0,-5,0,5);g.addColorStop(0,'#ffffff');g.addColorStop(1,'#cfd6dd');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(0,0,22,5,0,0,7);ctx.fill();ctx.strokeStyle=OUT;ctx.lineWidth=1;ctx.stroke();}
+    ctx.fillStyle='#3a78b5';ctx.fillRect(-16,1.2,30,1.4);ctx.fillStyle='#2a3a55';ctx.beginPath();ctx.ellipse(17,-1.3,3.2,1.6,0,0,7);ctx.fill();
+    ctx.fillStyle='#8fc6e8';for(let i=-12;i<=8;i+=5)ctx.fillRect(i,-3.4,2.2,2);face(1,-2.6,2.6);}
   else{ctx.scale(dir<0?-1:1,1);
-    if(kind==='train'){ctx.fillStyle='#5d7bb0';ctx.beginPath();ctx.roundRect(-18,-10,34,18,4);ctx.fill();ctx.fillStyle='#4e6a9b';ctx.beginPath();ctx.moveTo(16,-10);ctx.lineTo(20,-2);ctx.lineTo(20,8);ctx.lineTo(16,8);ctx.closePath();ctx.fill();ctx.fillStyle='#c8503c';ctx.fillRect(-18,2,38,2.2);
-      ctx.fillStyle='#dff0fa';ctx.fillRect(-14,-7,7,7);ctx.fillRect(-4,-7,7,7);ctx.fillRect(6,-7,7,7);face(-10.5,-3,3.2);ctx.fillStyle='#2a2f3a';ctx.beginPath();ctx.arc(-11,9,3,0,7);ctx.arc(11,9,3,0,7);ctx.fill();ctx.fillStyle='#fff3c0';ctx.fillRect(18,3,2,3);}
-    else if(kind==='bus'){ctx.fillStyle='#e08a3c';ctx.beginPath();ctx.roundRect(-18,-11,36,20,3);ctx.fill();ctx.fillStyle='#dff0fa';ctx.fillRect(-15,-8,8,7);ctx.fillRect(-5,-8,8,7);ctx.fillRect(5,-8,11,7);face(-11,-4,3.2);ctx.fillStyle='#fff';ctx.fillRect(-18,-11,36,2);ctx.fillStyle='#2a2f3a';ctx.beginPath();ctx.arc(-10,10,3,0,7);ctx.arc(11,10,3,0,7);ctx.fill();ctx.fillStyle='#fff3c0';ctx.fillRect(16,2,2,3);}
-    else if(kind==='taxi'){ctx.fillStyle='#f2c744';ctx.beginPath();ctx.roundRect(-18,-2,36,9,3);ctx.fill();ctx.beginPath();ctx.moveTo(-10,-2);ctx.lineTo(-6,-10);ctx.lineTo(9,-10);ctx.lineTo(14,-2);ctx.closePath();ctx.fill();ctx.fillStyle='#dff0fa';ctx.beginPath();ctx.moveTo(-8,-3);ctx.lineTo(-5,-8.5);ctx.lineTo(1,-8.5);ctx.lineTo(1,-3);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(3,-3);ctx.lineTo(3,-8.5);ctx.lineTo(8,-8.5);ctx.lineTo(12,-3);ctx.closePath();ctx.fill();face(-3,-5.5,2.6);
-      ctx.fillStyle='#2a2f3a';ctx.fillRect(-3,-13.5,8,3.5);ctx.fillStyle='#f2c744';ctx.fillRect(-2,-12.8,6,2);ctx.fillStyle='#2a2f3a';ctx.beginPath();ctx.arc(-10,8,3,0,7);ctx.arc(10,8,3,0,7);ctx.fill();ctx.fillStyle='#fff3c0';ctx.fillRect(16,0,2,3);}
-    else{ctx.fillStyle='#3a78b5';ctx.beginPath();ctx.moveTo(-18,2);ctx.lineTo(18,2);ctx.lineTo(14,9);ctx.lineTo(-14,9);ctx.closePath();ctx.fill();ctx.fillStyle='#f4f1ea';ctx.fillRect(-10,-7,20,9);ctx.fillStyle='#dff0fa';ctx.fillRect(-7,-5,5,4);ctx.fillRect(2,-5,5,4);face(-4.5,-3,2.4);}}
+    if(kind==='train'){streaks(16);
+      {const g=ctx.createLinearGradient(0,-12,0,10);g.addColorStop(0,'#7b97c9');g.addColorStop(0.45,'#5d7bb0');g.addColorStop(1,'#4e6a9b');ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(-20,-10);ctx.lineTo(14,-10);ctx.quadraticCurveTo(22,-10,22,-1);ctx.lineTo(22,9);ctx.lineTo(-20,9);ctx.closePath();ctx.fill();ctx.strokeStyle=OUT;ctx.lineWidth=1;ctx.stroke();}
+      ctx.fillStyle='#c8503c';ctx.fillRect(-20,3,42,2.4);ctx.fillStyle='rgba(255,255,255,.35)';ctx.fillRect(-19,-9,40,1.5);
+      win(-16,-7,7,7);win(-6,-7,7,7);win(4,-7,7,7);ctx.fillStyle='rgba(0,0,0,.18)';ctx.fillRect(-9.5,-7,1,14);ctx.fillRect(0.5,-7,1,14);
+      ctx.fillStyle='#d8ecf7';ctx.beginPath();ctx.moveTo(14,-7);ctx.quadraticCurveTo(20,-7,20,-1);ctx.lineTo(20,0);ctx.lineTo(14,0);ctx.closePath();ctx.fill();
+      face(-12.5,-3,3.2);wheel(-13,10,3);wheel(-4,10,3);wheel(12,10,3);lamp(20,5);}
+    else if(kind==='bus'){streaks(14);
+      {const g=ctx.createLinearGradient(0,-13,0,10);g.addColorStop(0,'#f0a75a');g.addColorStop(0.5,'#e08a3c');g.addColorStop(1,'#c9722a');ctx.fillStyle=g;ctx.beginPath();ctx.roundRect(-20,-13,40,22,[4,6,3,3]);ctx.fill();ctx.strokeStyle=OUT;ctx.lineWidth=1;ctx.stroke();}
+      rr(-19,-13,38,3,[3,3,0,0],'#fff5e6');ctx.fillStyle='#1e2230';ctx.fillRect(-14,-12,20,2);
+      win(-17,-9,8,8);win(-7,-9,8,8);win(3,-9,8,8);ctx.fillStyle='#d8ecf7';ctx.beginPath();ctx.roundRect(13,-9,6,10,[1,4,1,1]);ctx.fill();
+      ctx.fillStyle='rgba(0,0,0,.12)';ctx.fillRect(-20,1,40,1.2);face(-13,-5,3.2);ctx.fillStyle='#2a2f3a';ctx.fillRect(18,-6,2,4);
+      wheel(-12,10,3.2);wheel(12,10,3.2);lamp(19,5);}
+    else if(kind==='taxi'||kind==='car'){streaks(14);const body=kind==='car'?topColor():'#f2c744',roof=kind==='car'?mix(topColor(),'#ffffff',0.25):'#f7d66a';
+      ctx.fillStyle=body;ctx.beginPath();ctx.roundRect(-20,-3,40,10,[3,5,3,3]);ctx.fill();ctx.strokeStyle=OUT;ctx.lineWidth=1;ctx.stroke();
+      ctx.fillStyle=roof;ctx.beginPath();ctx.moveTo(-12,-3);ctx.lineTo(-7,-11);ctx.lineTo(9,-11);ctx.lineTo(15,-3);ctx.closePath();ctx.fill();ctx.stroke();
+      ctx.fillStyle='#d8ecf7';ctx.beginPath();ctx.moveTo(-9.5,-4);ctx.lineTo(-6,-9.5);ctx.lineTo(0.5,-9.5);ctx.lineTo(0.5,-4);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(2.5,-4);ctx.lineTo(2.5,-9.5);ctx.lineTo(8,-9.5);ctx.lineTo(12.5,-4);ctx.closePath();ctx.fill();ctx.fillStyle='rgba(255,255,255,.6)';ctx.fillRect(-8,-8.5,3,2);
+      face(-3.5,-6.2,2.7);ctx.fillStyle='rgba(0,0,0,.15)';ctx.fillRect(-20,3,40,1);
+      if(kind==='taxi'){ctx.fillStyle='#2a2f3a';ctx.beginPath();ctx.roundRect(-3,-14.5,9,3.8,1.5);ctx.fill();ctx.fillStyle='#f2c744';ctx.fillRect(-2,-13.7,7,2.2);}
+      wheel(-11,8,3.4);wheel(11,8,3.4);lamp(19,1);ctx.fillStyle='#c8503c';ctx.fillRect(-20,-1,1.5,3);}
+    else if(kind==='bike'){/* 自転車 + 乗っている本人 */
+      ctx.strokeStyle='#2a2f3a';ctx.lineWidth=2;ctx.beginPath();ctx.arc(-9,7,6,0,7);ctx.stroke();ctx.beginPath();ctx.arc(9,7,6,0,7);ctx.stroke();ctx.fillStyle='rgba(42,47,58,.15)';ctx.beginPath();ctx.arc(-9,7,6,0,7);ctx.fill();
+      ctx.strokeStyle=topColor();ctx.lineWidth=2.2;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-9,7);ctx.lineTo(-3,-2);ctx.lineTo(7,-2);ctx.lineTo(9,7);ctx.moveTo(-3,-2);ctx.lineTo(1,7);ctx.lineTo(7,-2);ctx.stroke();
+      ctx.strokeStyle='#2a2f3a';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(7,-2);ctx.lineTo(9,-6);ctx.moveTo(-3,-2);ctx.lineTo(-5,-6);ctx.stroke();ctx.fillStyle='#5a4634';ctx.fillRect(-8,-7,6,2);
+      const ped=(now/120)%(Math.PI*2);ctx.fillStyle='#4a5568';ctx.fillRect(-1+Math.cos(ped)*3,4+Math.sin(ped)*3,3,3);
+      ctx.fillStyle=topColor();ctx.beginPath();ctx.roundRect(-6,-16,10,12,3);ctx.fill();face(-1,-19,4);}
+    else{/* 船 */streaks(10);
+      ctx.fillStyle='#3a78b5';ctx.beginPath();ctx.moveTo(-20,1);ctx.lineTo(20,1);ctx.lineTo(15,9);ctx.lineTo(-15,9);ctx.closePath();ctx.fill();ctx.strokeStyle=OUT;ctx.lineWidth=1;ctx.stroke();ctx.fillStyle='#c8503c';ctx.fillRect(-19,1,38,1.5);
+      rr(-11,-8,22,10,2,'#f4f1ea',OUT);win(-8,-6,5,4);win(1,-6,5,4);rr(4,-13,5,6,1,'#c8503c');ctx.fillStyle='rgba(255,255,255,.7)';for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(7-i*4-((now/200)%4),-16-i*3,2+i*0.6,0,7);ctx.fill();}
+      face(-5,-3,2.4);}}
   ctx.restore();}
 function vehSVG(mode){const k=vehKind(mode);const c={train:'#5d7bb0',bus:'#e08a3c',taxi:'#f2c744',plane:'#9aa7b5',ferry:'#3a78b5'}[k];
   if(k==='plane')return `<svg viewBox="-12 -12 24 24" width="18" height="18"><path d="M-9 0 L9 -1 L9 1Z M-2 -1 L-4 -9 L-1 -9 L4 -1Z M-2 1 L-4 9 L-1 9 L4 1Z M-9 -1 L-11 -5 L-9 -5 L-6 -1Z M-9 1 L-11 5 L-9 5 L-6 1Z" fill="${c}"/><ellipse cx="0" cy="0" rx="10" ry="2.2" fill="#f4f1ea" stroke="${c}" stroke-width=".6"/></svg>`;
@@ -1554,7 +1643,7 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>この人を別の端末へ<small>引き継ぎコードを出す → 別の端末の「読み込む」に貼る。街のデータは向こうで取り直す</small></div><span><button id="bExport">コードを出す</button> <button id="bImport">読み込む</button></span></div>
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v52 (2026-09-19)</div>';
+    h+='<div class="note">版: v53 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
@@ -1605,22 +1694,26 @@ function renderPanel(){if(!tab)return;let h='';
   const bh=$('bHomeNow');if(bh)bh.onclick=async()=>{if(!(await askYes('旅を中断して家に戻しますか?')))return;const j=S.j;j.transit=null;j.straight=null;j.planning=null;j.cityTarget=null;j.loadingTown=null;j.path=[];S.trip=null;S.request=null;let town=null;try{town=JSON.parse(localStorage.getItem(TOWN_KEY)||'null');}catch(e){}if(!town&&typeof KICHI!=='undefined')town=KICHI;if(town)initTown(town);j.at=-1;j.pos=[HOME.la,HOME.lo];j.state=inWork(Date.now())?'stay':'home';j.until=Date.now();addDiary({kind:'note',text:'(あなたの操作で家に戻した)',t:Date.now()});toast('家に戻した');renderPanel();save();};
   const br=$('bReset');if(br)br.onclick=async()=>{if(await askYes('本当に全部消す?')){localStorage.removeItem(KEY);location.reload();}};}
 function showSetup(){const days='日月火水木金土';
-  mbox.innerHTML=`<h2>オフィストラベル</h2><p>あなたが働いている間、もう1人のあなたが家のまわりを歩きます。仕事の"収穫"がお小遣いになります。</p>
-   <div style="text-align:left;display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;margin:6px 0">
-   <span>家</span><span><input id="sAddr" placeholder="例: 東京都武蔵野市御殿山2-10-3" style="width:250px" value="${S.homeAddr||''}"> <button id="sFind" type="button">探す</button><div id="sCands" style="margin-top:4px;text-align:left"></div><small style="color:var(--dim)">住所か駅名。地図と店は OpenStreetMap から取り込みます(1〜2分)。${typeof KICHI!=='undefined'?'<a href="#" id="sSample" style="color:var(--ad)">サンプルの街(吉祥寺)で試す</a>':''}</small></span>
-   <span>名前</span><input id="sName" value="${S.name}" maxlength="12" style="width:140px">
-   <span>見た目</span><span style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap"><svg id="sLookPrev" viewBox="150 340 300 240" width="120" height="96" style="background:#efe6d6;border-radius:10px;flex:none"></svg><span style="font-size:12.5px;line-height:1.9">髪型 <select id="sHair">${Object.entries(HAIRS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><br>髪の色 <span id="sHairC">${HAIR_COLORS.map(c=>`<i class="sw" data-c="${c.c}" title="${c.n}" style="background:${c.c}"></i>`).join('')}</span><br>肌 <span id="sSkin">${SKINS.map(c=>`<i class="sw" data-c="${c.c}" title="${c.n}" style="background:${c.c}"></i>`).join('')}</span><br>服の色 <span id="sTop">${CLOTH_COLORS.map(c=>`<i class="sw" data-c="${c.c}" title="${c.n}" style="background:${c.c}"></i>`).join('')}</span><br><label><input type="checkbox" id="sGlasses"> メガネ</label></span></span>
-   <span>あなたの仕事</span><select id="sJob">${Object.entries(JOBS).map(([k,v])=>`<option value="${k}" ${k===S.job?'selected':''}>${v.n}(${v.item}${v.e}を収穫)</option>`).join('')}</select>
-   <span>勤務</span><span><input id="sStart" type="time" value="${fmtHM(S.work.start)}"> 〜 <input id="sEnd" type="time" value="${fmtHM(S.work.end)}"></span>
-   <span>曜日</span><span>${[1,2,3,4,5,6,0].map(d=>`<label style="margin-right:6px"><input type="checkbox" class="sDay" value="${d}" ${S.work.days.includes(d)?'checked':''}>${days[d]}</label>`).join('')}</span>
-   <span>移動手段</span><span><select id="sVeh">${Object.entries(VEHICLES).map(([k,v])=>`<option value="${k}" ${k===S.vehicle?'selected':''}>${v.e} ${v.n}</option>`).join('')}</select><br><small style="color:var(--dim)">車や自転車があると、歩いて行けない名所にも足を伸ばします。駅前に店が少ない街でも大丈夫。</small></span>
-   <span>性格</span><span>${[['wander','知らない道を見ると入ってみる'],['sea','海を見ると長居する'],['foodie','食べ歩きが好き'],['cheap','高い店は避ける'],['train','電車が好き']].map(([k,l])=>`<label style="margin-right:6px;white-space:nowrap"><input type="checkbox" class="sTrait" value="${k}" ${S.taught.habits[k]?'checked':''}>${l}</label>`).join('')}</span>
-   <span>好きなこと・性格</span><span><textarea id="sPersona" rows="2" maxlength="300" style="width:100%;max-width:360px;font:500 13px var(--fb);padding:6px 8px;border:1px solid var(--line);border-radius:8px" placeholder="例: コーヒーと古本が好き。人見知りだけど猫を見ると寄る。節約家で、歩くのは苦にならない">${esc(S.persona&&S.persona.text||'')}</textarea><br><small style="color:var(--dim)">言葉から好み・癖・気質を読み取り、行き先の選び方や友達のできやすさに反映します。<span id="sPersonaEcho"></span></small></span>
-   <span>好み(2〜3つ)</span><span>${PREF_LIST.map(([k,l])=>`<label style="margin-right:6px;white-space:nowrap"><input type="checkbox" class="sPref" value="${k}" ${S.prefs.includes(k)?'checked':''}>${l}</label>`).join('')}</span></div>
-   <button id="sOk" class="buy">いってらっしゃい</button>`;
+  mbox.classList.add('setup');
+  mbox.innerHTML=`<div class="setupHead"><svg id="sLookPrev" viewBox="150 340 300 240" width="150" height="120"></svg><div class="ttl"><h2>オフィストラベル</h2><p>あなたが働いている間、もう1人のあなたが本物の街を歩きます。仕事の"収穫"がお小遣いになります。</p></div></div>
+   <section class="sc"><h3><i>1</i>家</h3><div class="g"><span>住所</span><span><span class="inl"><input id="sAddr" placeholder="例: 東京都武蔵野市御殿山2-10-3" value="${S.homeAddr||''}"><button id="sFind" type="button">探す</button></span><div id="sCands" style="margin-top:4px;text-align:left"></div><small>住所か駅名。地図と店は OpenStreetMap から取り込みます(1〜2分)。${typeof KICHI!=='undefined'?'<a href="#" id="sSample" style="color:var(--ad)">サンプルの街(吉祥寺)で試す</a>':''}</small></span></div></section>
+   <section class="sc"><h3><i>2</i>名前と見た目</h3><div class="g"><span>名前</span><input id="sName" value="${S.name}" maxlength="12" style="width:160px">
+     <span>髪型</span><select id="sHair">${Object.entries(HAIRS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select>
+     <span>髪の色</span><span id="sHairC" class="sws">${HAIR_COLORS.map(c=>`<i class="sw" data-c="${c.c}" title="${c.n}" style="background:${c.c}"></i>`).join('')}</span>
+     <span>肌</span><span id="sSkin" class="sws">${SKINS.map(c=>`<i class="sw" data-c="${c.c}" title="${c.n}" style="background:${c.c}"></i>`).join('')}</span>
+     <span>服の色</span><span id="sTop" class="sws">${CLOTH_COLORS.map(c=>`<i class="sw" data-c="${c.c}" title="${c.n}" style="background:${c.c}"></i>`).join('')}</span>
+     <span></span><label><input type="checkbox" id="sGlasses"> メガネをかける</label></div></section>
+   <section class="sc"><h3><i>3</i>あなたの仕事と勤務</h3><div class="g"><span>仕事</span><select id="sJob">${Object.entries(JOBS).map(([k,v])=>`<option value="${k}" ${k===S.job?'selected':''}>${v.n}(${v.item}${v.e}を収穫)</option>`).join('')}</select>
+     <span>勤務</span><span class="inl"><input id="sStart" type="time" value="${fmtHM(S.work.start)}"> 〜 <input id="sEnd" type="time" value="${fmtHM(S.work.end)}"></span>
+     <span>曜日</span><span class="days">${[1,2,3,4,5,6,0].map(d=>`<label class="chk"><input type="checkbox" class="sDay" value="${d}" ${S.work.days.includes(d)?'checked':''}><span>${days[d]}</span></label>`).join('')}</span>
+     <span>移動手段</span><span><select id="sVeh">${Object.entries(VEHICLES).map(([k,v])=>`<option value="${k}" ${k===S.vehicle?'selected':''}>${v.e} ${v.n}</option>`).join('')}</select><br><small>車や自転車があると、歩いて行けない名所にも足を伸ばします。</small></span></div></section>
+   <section class="sc"><h3><i>4</i>性格と好み</h3><div class="g"><span>ひとこと</span><span><textarea id="sPersona" rows="2" maxlength="300" placeholder="例: コーヒーと古本が好き。人見知りだけど猫を見ると寄る。節約家で、歩くのは苦にならない">${esc(S.persona&&S.persona.text||'')}</textarea><small>言葉から好み・癖・気質を読み取って、行き先の選び方や友達のできやすさに反映します。<span id="sPersonaEcho"></span></small></span>
+     <span>癖</span><span class="chks">${[['wander','知らない道に入る'],['sea','海で長居'],['foodie','食べ歩き'],['cheap','高い店は避ける'],['train','電車が好き']].map(([k,l])=>`<label class="chk"><input type="checkbox" class="sTrait" value="${k}" ${S.taught.habits[k]?'checked':''}><span>${l}</span></label>`).join('')}</span>
+     <span>好み</span><span class="chks">${PREF_LIST.map(([k,l])=>`<label class="chk"><input type="checkbox" class="sPref" value="${k}" ${S.prefs.includes(k)?'checked':''}><span>${l}</span></label>`).join('')}</span></div></section>
+   <div class="setupFoot"><button id="sOk" class="buy">いってらっしゃい</button></div>`;
   modal.classList.remove('hidden');
   const lk={hair:S.look.hair||'short',hairC:S.look.hairC||'#2a2f3a',skin:S.look.skin||'#f6d5b8',top:S.outfit.top||'#d97f5a',glasses:!!S.outfit.glasses};
-  const prevLook=()=>{$('sLookPrev').innerHTML=charSVG(300,568,{look:lk,outfit:{top:lk.top,glasses:lk.glasses,hat:null,bag:null,shoes:'#5a4634'},still:true});document.querySelectorAll('#sHairC .sw').forEach(e=>e.classList.toggle('on',e.dataset.c===lk.hairC));document.querySelectorAll('#sSkin .sw').forEach(e=>e.classList.toggle('on',e.dataset.c===lk.skin));document.querySelectorAll('#sTop .sw').forEach(e=>e.classList.toggle('on',e.dataset.c===lk.top));};
+  const prevLook=()=>{$('sLookPrev').innerHTML='<defs><linearGradient id="spw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f4ecdc"/><stop offset="1" stop-color="#e6dbc7"/></linearGradient></defs><rect x="150" y="340" width="300" height="185" fill="url(#spw)"/><rect x="150" y="518" width="300" height="12" fill="#efe3cf"/><rect x="150" y="528" width="300" height="60" fill="#c9a374"/><line x1="150" y1="553" x2="450" y2="553" stroke="#a9835a"/><rect x="176" y="362" width="70" height="56" rx="3" fill="#9fd0f0" stroke="#fffaf0" stroke-width="4"/><line x1="211" y1="362" x2="211" y2="418" stroke="#fffaf0" stroke-width="3"/><ellipse cx="300" cy="570" rx="60" ry="7" fill="#000" opacity=".15"/>'+charSVG(300,568,{look:lk,outfit:{top:lk.top,glasses:lk.glasses,hat:null,bag:null,shoes:'#5a4634'},still:true});document.querySelectorAll('#sHairC .sw').forEach(e=>e.classList.toggle('on',e.dataset.c===lk.hairC));document.querySelectorAll('#sSkin .sw').forEach(e=>e.classList.toggle('on',e.dataset.c===lk.skin));document.querySelectorAll('#sTop .sw').forEach(e=>e.classList.toggle('on',e.dataset.c===lk.top));};
   {const ta=$('sPersona');const echo=()=>{const p=parsePersona(ta.value);$('sPersonaEcho').textContent=ta.value.trim()?' 読み取り: '+personaSummary(p):'';};ta.oninput=echo;echo();}
   $('sHair').value=lk.hair;$('sGlasses').checked=lk.glasses;$('sHair').onchange=()=>{lk.hair=$('sHair').value;prevLook();};$('sGlasses').onchange=()=>{lk.glasses=$('sGlasses').checked;prevLook();};
   [['sHairC','hairC'],['sSkin','skin'],['sTop','top']].forEach(([id,key])=>{document.querySelectorAll('#'+id+' .sw').forEach(e=>e.onclick=()=>{lk[key]=e.dataset.c;prevLook();});});prevLook();
@@ -1639,17 +1732,17 @@ function showSetup(){const days='日月火水木金土';
     const prefs=[...document.querySelectorAll('.sPref:checked')].map(c=>c.value);if(!prefs.length&&!parsePersona($('sPersona').value).prefs.length){toast('好みを1つは(または好きなことを書いてください)','var(--ng)');return;}
     S.name=($('sName').value.trim()||'もう1人のあなた').slice(0,12);S.job=JOBS[$('sJob').value]?$('sJob').value:'other';S.vehicle=$('sVeh').value;document.querySelectorAll('.sTrait').forEach(c=>{S.taught.habits[c.value]=c.checked;});S.work={start:st,end:en,days:daysSel};{const pp=parsePersona($('sPersona').value);S.persona=pp;for(const h of pp.habits)S.taught.habits[h]=true;S.prefs=[...new Set([...prefs,...pp.prefs])].slice(0,6);if(pp.text.trim())addDiary({kind:'note',text:'あなたのメモ「'+pp.text.trim().slice(0,80)+'」。'+personaSummary(pp)+'、と受け取った。',t:Date.now()});}S.look={hair:lk.hair,hairC:lk.hairC,skin:lk.skin};S.outfit.top=lk.top;S.outfit.glasses=lk.glasses;homeSig='';
     const homeChanged=!S.homeLL||Math.abs(S.homeLL[0]-chosen.la)>1e-5||Math.abs(S.homeLL[1]-chosen.lo)>1e-5||!M;
-    if(homeChanged){const ok=$('sOk');ok.disabled=true;mbox.innerHTML=`<h2>街を用意しています</h2><p id="ldMsg">住所のまわりを調べています…</p><p style="color:var(--dim)">OpenStreetMap から道と店を取り込みます。30秒〜1分ほど。遠くの名所は始まってから後追いで足します。</p>`;
+    if(homeChanged){const ok=$('sOk');ok.disabled=true;mbox.classList.remove('setup');mbox.innerHTML=`<h2>街を用意しています</h2><p id="ldMsg">住所のまわりを調べています…</p><p style="color:var(--dim)">OpenStreetMap から道と店を取り込みます。30秒〜1分ほど。遠くの名所は始まってから後追いで足します。</p>`;
       try{let town;if(chosen.sample&&typeof KICHI!=='undefined')town=KICHI;else town=await buildTown(chosen.la,chosen.lo,chosen.label,true,m=>{const el=$('ldMsg');if(el)el.textContent=m;});
         initTown(town);saveTown(town);S.homeLL=[chosen.la,chosen.lo];S.homeAddr=chosen.addr;S.townName=chosen.label;
         S.trip=null;S.j={t:Date.now(),state:'home',pos:[HOME.la,HOME.lo],at:-1,path:[],seg:0,segPos:0,target:-1,until:0,lastReport:0,straight:null};
         toast(chosen.label+'の店・場所 '+POIS.length+'件を取り込みました','var(--acc)');}
-      catch(e){mbox.innerHTML=`<h2>街を取り込めませんでした</h2><p>${(e&&e.message)||e}</p><p style="color:var(--dim)">地図サーバーが混んでいることがあります。少し待ってもう一度、または別の住所で。</p><button id="sRetry">設定にもどる</button>`;$('sRetry').onclick=showSetup;return;}}
+      catch(e){mbox.classList.remove('setup');mbox.innerHTML=`<h2>街を取り込めませんでした</h2><p>${(e&&e.message)||e}</p><p style="color:var(--dim)">地図サーバーが混んでいることがあります。少し待ってもう一度、または別の住所で。</p><button id="sRetry">設定にもどる</button>`;$('sRetry').onclick=showSetup;return;}}
     if(!S.setup){S.field.lastSprout=Date.now();}
     S.setup=true;{const now0=Date.now();const d0=new Date(now0);d0.setHours(0,0,0,0);const en0=d0.getTime()+S.work.end*60000;S.kick={k:todayKey(now0),st:now0-1000,en:Math.max(en0,now0+3*3600e3)};S.j.state='home';S.j.at=-1;S.j.until=0;}modal.classList.add('hidden');toast(S.name+'、いま家を出ます');renderPanel();save();if(S.homeLL)setTimeout(()=>stampAt(S.homeLL[0],S.homeLL[1],Date.now()),2000);};}
 function showReport(r,sec){const A=S.name;const visits=r.entries?r.entries.filter(e=>e.kind==='visit'):r.visits.map(i=>POIS[i]).filter(Boolean);const spent=r.spent;
   const list=(r.entries?visits.slice(-6).map(e=>'・'+fmtT(e.t)+' '+e.text):visits.slice(-6).map(p=>'・'+p.n+'で'+info(p).label)).join('<br>');
-  mbox.innerHTML=`<h2>おかえりなさい</h2><p>留守 ${fmtDur(sec)}。${statusText().replace(/^[^ ]+ /,'')}</p>
+  mbox.classList.remove('setup');mbox.innerHTML=`<h2>おかえりなさい</h2><p>留守 ${fmtDur(sec)}。${statusText().replace(/^[^ ]+ /,'')}</p>
    ${visits.length?`<div style="text-align:left"><b style="color:var(--acc)">${A}が寄ったところ</b><br>${list}</div>`:`<div style="color:var(--dim)">${A}は${S.j.state==='home'?'家にいました':'歩いていました'}</div>`}
    <div style="margin:6px 0;color:var(--dim)">使ったお小遣い <b style="color:var(--fg)">¥${fmt(spent)}</b> / のこり <b style="color:var(--acc)">¥${fmt(S.wallet)}</b>${S.field.slots.filter(s=>s.stage===2).length?` / 収穫できる${(JOBS[S.job]||JOBS.other).item}が ${S.field.slots.filter(s=>s.stage===2).length}つ`:''}</div>
    <button id="wClose">日記を見る</button>`;
