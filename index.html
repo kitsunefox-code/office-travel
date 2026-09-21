@@ -93,7 +93,13 @@
   .walletTag{background:#3e5a3a;color:#fff;border-radius:.3em;padding:.3em .55em;font:700 .95em/1.2 var(--fd);box-shadow:0 .2em .4em rgba(0,0,0,.2);white-space:nowrap}
   .walletTag small{font:500 .65em var(--fb);opacity:.85;margin-right:.3em}
   .tag{background:rgba(250,246,238,.92);border:1px solid var(--line);border-radius:.4em;padding:.25em .55em;font:500 .9em/1.3 var(--fb);color:var(--ink2);white-space:nowrap}
-  .doorTag{background:var(--ink);color:#fff;border-radius:.5em;padding:.45em .7em;font:700 .95em/1.2 var(--fd);white-space:nowrap;box-shadow:0 .2em .4em rgba(0,0,0,.25)}
+  .roomBar{position:absolute;left:10px;right:10px;bottom:10px;display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;pointer-events:none;z-index:6}
+.roomBar .rb{pointer-events:auto;font:700 13px/1.2 var(--fd);padding:9px 13px;border-radius:999px;background:rgba(250,246,238,.94);border:1px solid var(--line);color:var(--ink);box-shadow:0 3px 10px rgba(40,30,10,.16);backdrop-filter:blur(6px);display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.roomBar .rb .k{font:600 10px/1 var(--fb);color:var(--dim);letter-spacing:.08em;background:var(--paper2);border-radius:999px;padding:3px 6px}
+.roomBar .rb.acc{background:var(--acc);border-color:var(--acc);color:#fff}.roomBar .rb.dark{background:var(--ink);border-color:var(--ink);color:#fff}
+.roomBar .rb:hover{transform:translateY(-1px)}
+@media (max-width:760px){.roomBar{bottom:calc(150px + env(safe-area-inset-bottom));left:8px;right:8px}.roomBar .rb{font-size:12.5px;padding:9px 12px}}
+.doorTag{background:var(--ink);color:#fff;border-radius:.5em;padding:.45em .7em;font:700 .95em/1.2 var(--fd);white-space:nowrap;box-shadow:0 .2em .4em rgba(0,0,0,.25)}
   .bubble{background:#fff;border-radius:.8em;padding:.5em .75em;font:500 1em/1.35 var(--fb);color:var(--ink);box-shadow:0 .2em .5em rgba(40,30,10,.18);position:relative;max-width:100%}
   .bubble:after{content:"";position:absolute;left:1.2em;bottom:-.5em;border:.5em solid transparent;border-top-color:#fff;border-bottom:0}
   .sub{display:none!important}
@@ -103,7 +109,7 @@
   #morning .opts button{padding:8px 12px;font-size:13px}
   #btns button .cnt{display:inline-block;min-width:16px;padding:0 4px;margin-left:3px;border-radius:8px;background:var(--acc);color:#fff;font-size:10px;line-height:16px;text-align:center}
   /* 上部: 今どこ */
-  #hud{display:flex;gap:10px;align-items:flex-start;position:absolute;left:10px;top:8px;width:400px;max-width:calc(100% - 440px);background:rgba(250,246,238,.97);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:10px 14px;box-sizing:border-box}
+  #hud{display:flex;gap:10px;align-items:flex-start;position:absolute;left:10px;top:8px;width:400px;max-width:calc(100% - 440px);background:rgba(250,246,238,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:10px 14px;box-sizing:border-box}
   #hud .face{flex:none;width:46px;height:48px;border-radius:50%;background:var(--paper2);border:1px solid var(--line);overflow:hidden}
   #hud .face svg{width:100%;height:100%;display:block}
   #hud .hbody{flex:1;min-width:0}
@@ -111,7 +117,7 @@
   #hud .now b{font:600 12.5px var(--fb);color:var(--ink2);letter-spacing:0}
   #hud .st{font:700 17px/1.3 var(--fd);color:var(--ink);margin-top:3px}
   #hud .meta{font:500 12px/1.4 var(--fb);color:var(--ink2);margin-top:3px}
-  #hfoot{position:absolute;left:10px;right:10px;bottom:14px;margin:0 auto;max-width:560px;background:rgba(250,246,238,.97);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:9px 12px;box-sizing:border-box}
+  #hfoot{position:absolute;left:10px;right:10px;bottom:14px;margin:0 auto;max-width:560px;background:rgba(250,246,238,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:9px 12px;box-sizing:border-box}
   #hfoot.hidden{display:none}
   #mapLoad{position:absolute;left:10px;right:10px;top:50%;transform:translateY(-50%);margin:0 auto;max-width:360px;background:rgba(250,246,238,.97);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);z-index:5;text-align:center}
 #mapLoad.hidden{display:none}
@@ -130,7 +136,7 @@ body.vhome #bViewMe{display:none!important}
   #hfoot .big small{display:block;font:600 11px var(--fd);color:var(--dim);letter-spacing:.06em}
   #hfoot .big b{display:block;font:700 15px/1.3 var(--fd);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #hfoot .big.money b{color:#3e5a3a}
-  #hfoot .chips{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;margin-top:7px;scrollbar-width:none}
+  #hfoot .chips{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;margin-top:7px;scrollbar-width:none;padding-bottom:1px}#hfoot .chips button{flex:none;white-space:nowrap;font-size:12.5px;padding:6px 11px}
   #hfoot .chips::-webkit-scrollbar{display:none}
   #hfoot .chips button i{font-style:normal;color:var(--acc);font-weight:700;margin-left:3px}
   #hud .card{background:rgba(250,246,238,.94);border:1px solid var(--line);border-radius:12px;padding:6px 12px;box-shadow:var(--shadow);display:flex;gap:10px;align-items:center}
@@ -213,8 +219,8 @@ a.shop{color:var(--ink);font-weight:700;text-decoration:underline dotted;text-de
     #hud{left:8px;right:8px;top:8px;width:auto;max-width:none;padding:9px 12px}#hud .st{font-size:16px}
     #hfoot{bottom:calc(76px + env(safe-area-inset-bottom));left:8px;right:8px;padding:8px 10px}
     #home{bottom:calc(52px + env(safe-area-inset-bottom))}
-    #bViewHome{right:8px;bottom:calc(196px + env(safe-area-inset-bottom))}
-    #bViewMe{right:8px;bottom:calc(240px + env(safe-area-inset-bottom))}
+    #bViewHome{right:8px;bottom:calc(214px + env(safe-area-inset-bottom))}
+    #bViewMe{right:8px;bottom:calc(258px + env(safe-area-inset-bottom))}
     #basemap .maplibregl-ctrl-attrib{font-size:9px;line-height:18px;padding:0 6px}
     #hud .card{padding:6px 10px;gap:8px}
     #btns{top:auto;bottom:0;left:0;right:0;border-radius:0;border:0;border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));justify-content:space-around;background:rgba(250,246,238,.98)}
@@ -225,7 +231,7 @@ a.shop{color:var(--ink);font-weight:700;text-decoration:underline dotted;text-de
     #panel{left:0;right:0;width:auto;top:auto;bottom:calc(52px + env(safe-area-inset-bottom));height:60%;border-radius:16px 16px 0 0;padding:14px 14px 18px}
     #morning,#ask,#poiCard{bottom:calc(60px + env(safe-area-inset-bottom))}
     #basemap .maplibregl-ctrl-bottom-right,#basemap .maplibregl-ctrl-bottom-left{bottom:calc(52px + env(safe-area-inset-bottom))}
-    #toast{bottom:calc(64px + env(safe-area-inset-bottom))}
+    #toast{bottom:calc(64px + env(safe-area-inset-bottom))}body:not(.vhome) #hfoot:not(.hidden)~#toast,body:not(.vhome) #toast{bottom:calc(206px + env(safe-area-inset-bottom))}body.vhome #toast{bottom:calc(206px + env(safe-area-inset-bottom))}
     #modal .box{padding:12px 14px;max-height:92%}
     .pstrip .polaroid{width:104px}
   }
@@ -481,7 +487,7 @@ function charSVG(cx,feetY,o){o=o||{};const look=o.look||S.look||{};const out=o.o
   let hairBack='',hairFront='';
   if(hairS==='short'){hairFront=CAP;}
   else if(hairS==='center'){hairFront=`<path d="M200 418 A40 40 0 0 1 280 418 L280 424 Q266 402 240 398 Q214 402 200 424 Z" fill="${hd}"/><path d="M214 388 Q222 378 234 376" fill="none" stroke="${hl}" stroke-width="3" stroke-linecap="round" opacity=".7"/>`;}
-  else if(hairS==='bob'){hairBack=`<path d="M200 408 Q194 436 200 458 L224 458 Q216 436 218 408 Z" fill="${hd}"/><path d="M280 408 Q286 436 280 458 L256 458 Q264 436 262 408 Z" fill="${hd}"/>`;hairFront=CAP;}
+  else if(hairS==='bob'){hairBack=`<path d="M201 410 Q197 436 203 454 L219 454 Q213 434 215 410 Z" fill="${hd}"/><path d="M279 410 Q283 436 277 454 L261 454 Q267 434 265 410 Z" fill="${hd}"/>`;hairFront=CAP;}
   else if(hairS==='long'){hairBack=`<path d="M200 408 Q190 456 198 504 L228 504 Q218 456 218 408 Z" fill="${hd}"/><path d="M280 408 Q290 456 282 504 L252 504 Q262 456 262 408 Z" fill="${hd}"/>`;hairFront=CAP;}
   else if(hairS==='pony'){hairBack=`<path d="M266 392 Q300 410 292 468 Q288 482 280 474 Q286 432 262 404 Z" fill="${hd}"/><circle cx="270" cy="400" r="5" fill="#c8503c"/>`;hairFront=CAP;}
   else if(hairS==='twin'){hairBack=`<path d="M204 396 Q176 420 186 470 Q190 482 198 474 Q192 434 214 406 Z" fill="${hd}"/><path d="M276 396 Q304 420 294 470 Q290 482 282 474 Q288 434 266 406 Z" fill="${hd}"/><circle cx="206" cy="402" r="4.5" fill="#c8503c"/><circle cx="274" cy="402" r="4.5" fill="#c8503c"/>`;hairFront=CAP;}
@@ -490,9 +496,9 @@ function charSVG(cx,feetY,o){o=o||{};const look=o.look||S.look||{};const out=o.o
   else if(hairS==='spiky'){hairFront=`<path d="M202 410 L210 376 L220 396 L230 366 L240 392 L250 364 L260 394 L270 372 L278 410 Z" fill="${hd}"/>`+CAP;}
   return `<g transform="translate(${(cx-240).toFixed(1)} ${(feetY-561+bobY).toFixed(1)})"><ellipse cx="240" cy="566" rx="34" ry="7" fill="rgba(0,0,0,.18)"/>
     <rect x="226" y="516" width="12" height="42" rx="5" fill="#4a5568"/><rect x="242" y="516" width="12" height="42" rx="5" fill="#4a5568"/><rect x="222" y="552" width="18" height="9" rx="4" fill="${out.shoes||'#5a4634'}"/><rect x="240" y="552" width="18" height="9" rx="4" fill="${out.shoes||'#5a4634'}"/>
-    <rect x="210" y="450" width="60" height="74" rx="18" fill="${top}"/><rect x="198" y="458" width="14" height="${isHot?'28':'52'}" rx="7" fill="${top}"/><rect x="268" y="458" width="14" height="${isHot?'28':'52'}" rx="7" fill="${top}"/>${out.bag?'<path d="M188 466 q6 -18 12 0" fill="none" stroke="'+out.bag+'" stroke-width="3"/><rect x="180" y="466" width="26" height="30" rx="5" fill="'+out.bag+'"/>':''}${isHot?'<rect x="199" y="484" width="12" height="26" rx="6" fill="'+skin+'"/><rect x="269" y="484" width="12" height="26" rx="6" fill="'+skin+'"/>':''}<circle cx="205" cy="512" r="7" fill="${skin}"/><circle cx="275" cy="512" r="7" fill="${skin}"/>${umb?'<line x1="284" y1="500" x2="284" y2="562" stroke="#5a4634" stroke-width="3" stroke-linecap="round"/><path d="M276 506 q8 -10 16 0 q-8 6 -16 0z" fill="#c8503c"/><path d="M284 562 q6 0 6 -6" fill="none" stroke="#5a4634" stroke-width="3"/>':''}${isCold?'<rect x="214" y="444" width="52" height="14" rx="7" fill="#c8503c"/><rect x="250" y="452" width="12" height="30" rx="5" fill="#c8503c"/>':''}
+    <rect x="210" y="450" width="60" height="74" rx="18" fill="${top}"/><path d="M242 450 h10 a18 18 0 0 1 18 18 v38 a18 18 0 0 1 -18 18 h-10 z" fill="#000" opacity=".07"/><path d="M226 451 q14 12 28 0" fill="none" stroke="#000" stroke-opacity=".16" stroke-width="2.2" stroke-linecap="round"/><rect x="198" y="458" width="14" height="${isHot?'28':'52'}" rx="7" fill="${top}"/><rect x="268" y="458" width="14" height="${isHot?'28':'52'}" rx="7" fill="${top}"/>${out.bag?'<path d="M188 466 q6 -18 12 0" fill="none" stroke="'+out.bag+'" stroke-width="3"/><rect x="180" y="466" width="26" height="30" rx="5" fill="'+out.bag+'"/>':''}${isHot?'<rect x="199" y="484" width="12" height="26" rx="6" fill="'+skin+'"/><rect x="269" y="484" width="12" height="26" rx="6" fill="'+skin+'"/>':''}<circle cx="205" cy="512" r="7" fill="${skin}"/><circle cx="275" cy="512" r="7" fill="${skin}"/>${umb?'<line x1="284" y1="500" x2="284" y2="562" stroke="#5a4634" stroke-width="3" stroke-linecap="round"/><path d="M276 506 q8 -10 16 0 q-8 6 -16 0z" fill="#c8503c"/><path d="M284 562 q6 0 6 -6" fill="none" stroke="#5a4634" stroke-width="3"/>':''}${isCold?'<rect x="214" y="444" width="52" height="14" rx="7" fill="#c8503c"/><rect x="250" y="452" width="12" height="30" rx="5" fill="#c8503c"/>':''}
     ${hairBack}<circle cx="240" cy="412" r="38" fill="${skin}"/>${hairFront}${out.hat?'<path d="M204 392 q36 -40 72 0 v-4 q-36 -30 -72 0z" fill="'+out.hat+'"/><ellipse cx="240" cy="391" rx="44" ry="7" fill="'+out.hat+'"/>':''}
-    ${blink?'<rect x="226" y="418" width="8" height="2" fill="'+col+'"/><rect x="246" y="418" width="8" height="2" fill="'+col+'"/>':'<circle cx="230" cy="418" r="3.2" fill="'+col+'"/><circle cx="250" cy="418" r="3.2" fill="'+col+'"/>'}
+    ${blink?'<rect x="226" y="418" width="8" height="2" fill="'+col+'"/><rect x="246" y="418" width="8" height="2" fill="'+col+'"/>':'<circle cx="230" cy="418" r="3.2" fill="'+col+'"/><circle cx="250" cy="418" r="3.2" fill="'+col+'"/><circle cx="231.2" cy="416.8" r="1" fill="#fff" opacity=".9"/><circle cx="251.2" cy="416.8" r="1" fill="#fff" opacity=".9"/>'}
     ${out.glasses?'<circle cx="230" cy="418" r="8.5" fill="rgba(255,255,255,.25)" stroke="#2a2f3a" stroke-width="2"/><circle cx="250" cy="418" r="8.5" fill="rgba(255,255,255,.25)" stroke="#2a2f3a" stroke-width="2"/><line x1="238.5" y1="418" x2="241.5" y2="418" stroke="#2a2f3a" stroke-width="2"/>':''}
     <path d="${talking?'M231 432 q9 8 18 0 q-9 4 -18 0z':'M231 431 q9 8 18 0'}" fill="${talking?col:'none'}" stroke="${col}" stroke-width="2"/><circle cx="222" cy="428" r="5" fill="#f0a89a" opacity=".55"/><circle cx="258" cy="428" r="5" fill="#f0a89a" opacity=".55"/></g>`;}
 function topColor(){return (S.outfit&&S.outfit.top)||'#d97f5a';}
@@ -1290,8 +1296,17 @@ function drawScene(){{const rk=curRideKind();if(rk&&!leaveRoom){$('scene').inner
   const hand=(cx,cy,len,ang,wd,col)=>`<line x1="${cx}" y1="${cy}" x2="${(cx+len*Math.sin(ang)).toFixed(1)}" y2="${(cy-len*Math.cos(ang)).toFixed(1)}" stroke="${col}" stroke-width="${wd}" stroke-linecap="round"/>`;
   let sky=`<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${top}"/><stop offset="1" stop-color="${bot}"/></linearGradient><clipPath id="win"><rect x="36" y="44" width="210" height="160" rx="4"/></clipPath><pattern id="planks" width="480" height="26" patternUnits="userSpaceOnUse"><rect width="480" height="26" fill="#c9a374"/><line x1="0" y1="25.5" x2="480" y2="25.5" stroke="#a9835a" stroke-width="1"/><line x1="120" y1="0" x2="120" y2="26" stroke="#a9835a" stroke-width="1"/><line x1="360" y1="0" x2="360" y2="26" stroke="#a9835a" stroke-width="1"/></pattern></defs>`;
   let g=sky;
-  g+=`<rect x="-1200" y="-800" width="2880" height="1230" fill="${mix('#efe6d6','#8b8477',n*0.55)}"/>`;
-  g+=`<rect x="-1200" y="430" width="2880" height="1000" fill="url(#planks)"/><rect x="-1200" y="430" width="2880" height="1000" fill="#000" opacity="${(n*0.35).toFixed(2)}"/><rect x="-1200" y="424" width="2880" height="8" fill="${mix('#d8c7a8','#6d6558',n*0.5)}"/>`;
+  g+=`<defs><linearGradient id="wallG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${mix('#f4ecdc','#8f877a',n*0.55)}"/><stop offset="0.55" stop-color="${mix('#eee4d2','#857d70',n*0.55)}"/><stop offset="1" stop-color="${mix('#e6dbc7','#7b7366',n*0.55)}"/></linearGradient><linearGradient id="floorG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="${(0.16+n*0.3).toFixed(2)}"/><stop offset="0.35" stop-color="#000" stop-opacity="${(n*0.3).toFixed(2)}"/><stop offset="1" stop-color="#000" stop-opacity="${(0.04+n*0.35).toFixed(2)}"/></linearGradient><radialGradient id="lampG" cx="0.5" cy="0" r="0.75"><stop offset="0" stop-color="#ffe9b0" stop-opacity="${(n*0.55).toFixed(2)}"/><stop offset="1" stop-color="#ffe9b0" stop-opacity="0"/></radialGradient></defs>`;
+  g+=`<rect x="-1200" y="-800" width="2880" height="1230" fill="url(#wallG)"/>`;
+  /* 壁の淡い横目地 */
+  for(let yy=60;yy<420;yy+=60)g+=`<line x1="-1200" y1="${yy}" x2="1680" y2="${yy}" stroke="#000" stroke-opacity="0.025"/>`;
+  /* 天井照明: 夜はあかりが落ちる */
+  g+=`<line x1="240" y1="-800" x2="240" y2="26" stroke="${mix('#8d6a47','#3a2c1c',n)}" stroke-width="2"/><path d="M212 26 h56 l10 22 h-76 z" fill="${mix('#f2d9a8','#c9a86a',n*0.4)}" stroke="${mix('#c9a86a','#6d5a3a',n)}" stroke-width="1.5"/>${n>0.25?`<ellipse cx="240" cy="49" rx="30" ry="4" fill="#fff5cf" opacity="${(n*0.9).toFixed(2)}"/><path d="M164 48 h152 l130 380 h-412 z" fill="url(#lampG)"/>`:''}`;
+  g+=`<rect x="-1200" y="430" width="2880" height="1000" fill="url(#planks)"/><rect x="-1200" y="430" width="2880" height="1000" fill="url(#floorG)"/>`;
+  /* 床板の木目(節) */
+  for(let i=0;i<10;i++){const kx=-40+i*96+(i%3)*23,ky=436+(i*26)%156+13;g+=`<ellipse cx="${kx}" cy="${ky}" rx="9" ry="1.6" fill="#8d6a47" opacity=".35"/>`;}
+  /* 幅木 */
+  g+=`<rect x="-1200" y="420" width="2880" height="12" fill="${mix('#efe3cf','#6d6558',n*0.5)}"/><rect x="-1200" y="430" width="2880" height="2" fill="#000" opacity=".12"/>`;
   // 窓
   g+=`<g clip-path="url(#win)"><rect x="36" y="44" width="210" height="160" fill="url(#sky)"/>`;
   if(n<0.9)g+=`<circle cx="${sunX.toFixed(1)}" cy="${sunY.toFixed(1)}" r="14" fill="#ffd98a" opacity="${(1-n).toFixed(2)}"/>`;
@@ -1324,11 +1339,13 @@ function drawScene(){{const rk=curRideKind();if(rk&&!leaveRoom){$('scene').inner
   g+=`<rect x="24" y="398" width="34" height="34" rx="4" fill="#c86b4a"/><g fill="#5f9a5a"><ellipse cx="41" cy="382" rx="12" ry="22"/><ellipse cx="28" cy="388" rx="9" ry="18" transform="rotate(-25 28 388)"/><ellipse cx="55" cy="388" rx="9" ry="18" transform="rotate(25 55 388)"/></g>`;
   // ラグ
   g+=`<ellipse cx="240" cy="590" rx="190" ry="34" fill="#e6b7a0" opacity=".75"/><ellipse cx="240" cy="590" rx="160" ry="26" fill="none" stroke="#fff" stroke-width="2" opacity=".5"/>`;
+  // 家具の影
+  g+=`<ellipse cx="356" cy="598" rx="96" ry="9" fill="#000" opacity=".16"/><ellipse cx="112" cy="596" rx="78" ry="7" fill="#000" opacity=".14"/><ellipse cx="41" cy="433" rx="20" ry="3" fill="#000" opacity=".18"/>`;
   // ソファ
-  g+=`<g transform="translate(350 540) scale(1.18) translate(-350 -540)">`;g+=`<rect x="286" y="466" width="128" height="70" rx="14" fill="#5d7bb0"/><rect x="278" y="500" width="144" height="40" rx="12" fill="#4e6a9b"/><rect x="278" y="484" width="20" height="50" rx="8" fill="#6b88bd"/><rect x="402" y="484" width="20" height="50" rx="8" fill="#6b88bd"/><rect x="290" y="540" width="10" height="14" fill="#5a4634"/><rect x="400" y="540" width="10" height="14" fill="#5a4634"/>`;
+  g+=`<g transform="translate(350 540) scale(1.18) translate(-350 -540)">`;g+=`<rect x="286" y="466" width="128" height="70" rx="14" fill="#5d7bb0"/><rect x="278" y="500" width="144" height="40" rx="12" fill="#4e6a9b"/><rect x="278" y="484" width="20" height="50" rx="8" fill="#6b88bd"/><rect x="402" y="484" width="20" height="50" rx="8" fill="#6b88bd"/><rect x="290" y="540" width="10" height="14" fill="#5a4634"/><rect x="400" y="540" width="10" height="14" fill="#5a4634"/><line x1="350" y1="470" x2="350" y2="500" stroke="#000" stroke-opacity=".12" stroke-width="2"/><rect x="286" y="466" width="128" height="70" rx="14" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="2"/><g transform="rotate(-8 318 494)"><rect x="300" y="480" width="36" height="30" rx="7" fill="#e9c46a"/><rect x="300" y="480" width="36" height="30" rx="7" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2"/></g>`;
   g+='</g>';
   // ちゃぶ台(左)
-  g+=`<ellipse cx="112" cy="552" rx="84" ry="23" fill="#b98f66"/><ellipse cx="112" cy="548" rx="84" ry="21" fill="#d1a877"/><rect x="52" y="562" width="8" height="32" fill="#8d6a47"/><rect x="166" y="562" width="8" height="32" fill="#8d6a47"/><rect x="108" y="568" width="8" height="28" fill="#8d6a47"/>`;
+  g+=`<ellipse cx="112" cy="552" rx="84" ry="23" fill="#b98f66"/><ellipse cx="112" cy="548" rx="84" ry="21" fill="#d1a877"/><rect x="52" y="562" width="8" height="32" fill="#8d6a47"/><rect x="166" y="562" width="8" height="32" fill="#8d6a47"/><rect x="108" y="568" width="8" height="28" fill="#8d6a47"/><ellipse cx="112" cy="548" rx="84" ry="21" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="2"/><g><ellipse cx="86" cy="546" rx="10" ry="4" fill="#fff"/><rect x="76" y="536" width="20" height="10" rx="3" fill="#fff"/><path d="M96 538 q7 2 0 7" fill="none" stroke="#fff" stroke-width="2"/><ellipse cx="86" cy="536" rx="8" ry="2.5" fill="#c9a374"/></g><g transform="rotate(12 138 544)"><rect x="124" y="538" width="30" height="8" rx="1.5" fill="#c8503c"/><rect x="124" y="538" width="30" height="3" rx="1" fill="#fff" opacity=".6"/></g>`;
   // 本人
   if(leaveRoom){const k=Math.min(1,(Date.now()-leaveRoom.t0)/leaveRoom.dur);const e=k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2;const cx=300+(437-300)*e,fy=591+(438-591)*e,sc=1-0.52*e;const bob=Math.abs(Math.sin(k*Math.PI*7))*3;
     if(k<0.93)g+=`<g transform="translate(${cx.toFixed(1)} ${fy.toFixed(1)}) scale(${sc.toFixed(3)}) translate(${(-cx).toFixed(1)} ${(-fy).toFixed(1)})" opacity="${k>0.8?((0.93-k)/0.13).toFixed(2):1}">`+charSVG(cx,fy-bob,{still:true,walkFace:true})+'</g>';}
@@ -1352,11 +1369,11 @@ function renderHome(force){if(view!=='home')return;const now=Date.now();const j0
   if(rk&&!leaveRoom){const nxt=nextStopText();const L=curTransitLeg();const who=rk==='plane'?'機内':rk==='lounge'?'搭乗待ち':'車内';const cxs={train:240,bus:200,taxi:300,plane:240,lounge:240,ferry:240};const seatY={train:372,bus:380,taxi:392,plane:430,lounge:440,ferry:380};const bx=(cxs[rk]||240)-105,by=(seatY[rk]||380)-232+70;h+=`<div class="ov bubble" style="${P(bx,by)};width:44%">${esc((Math.floor(now/60000)%3===1?(roomQuip.m===Math.floor(now/60000)?roomQuip.t:(roomQuip={m:Math.floor(now/60000),t:quip(quipKind())||''}).t):'')||nxt||(L&&L.to?L.to.n+'まで あと'+Math.max(1,Math.ceil((L.t1-now)/60000))+'分':'移動中'))}</div><div class="ov tag" style="${P(16,598)};max-width:62%;overflow:hidden;text-overflow:ellipsis">${who} · ${esc(st)}</div><div class="ov doorTag tap" data-open="map" style="${P(352,596)}">地図で見る 🗺️</div>`;const ov0=$('ov');ov0.innerHTML=h;ov0.querySelectorAll('[data-open]').forEach(el=>{el.onclick=e=>{e.stopPropagation();manualViewAt=Date.now();setView('map');};});return;}
   h+=`<div class="ov tag" style="${P(38,216)}">${esc(S.weather&&S.weather.town||S.townName||'家')}の空 ${wxNow()?wxText(wxNow().code):''}${temp?' '+temp:''}${rainLater()!=null?' · '+rainLater()+'時から雨':''}</div>`;
   h+=`<div class="ov shelfItems tap" data-open="friends" style="${PB(34,342)};width:46%">${phP?`<div class="frame"><img src="${esc(ph[1].src)}" alt=""><small>${esc(phP.n)}</small></div>`:''}<div class="stampbook">📮 ${nst}</div>${gifts.map(g=>`<div class="gift"><span>${esc(g.town)}</span></div>`).join('')}</div>`;
-  h+=`<div class="ov doorTag tap" data-open="map" style="${P(392,444)}">${atHome?'外を見る 🚪':'外出中 🚪'}</div>`;
-  if(atHome)h+=`<div class="ov goTag tap" data-goout="1" style="${P(318,478)}">いま出かけて 🚶</div>`;
+  {const items=[];if(atHome&&!showPick)items.push(`<button class="rb" data-open="plan"><span class="k">今日</span>${esc(PLAN_LABEL[todayPlan(now)]||'おまかせ')}</button>`);if(atHome)items.push(`<button class="rb acc" data-goout="1">いま出かけて</button>`);items.push(`<button class="rb dark" data-open="map">${atHome?'外を見る':'外出中 · 地図'}</button>`);h+=`<div class="roomBar">${items.join('')}</div>`;}
+  
   if(atHome){h+=`<div class="ov bubble" style="${P(150,346)};width:48%">${esc(say)}</div><div class="ov charTap" data-say="1" style="${P(250,400)};width:21%;height:30%"></div>`;
     if(showPick)h+=`<div class="ov memo" style="${P(10,436)};width:44%"><div class="q">今日はどうする?</div>${Object.entries(PLAN_LABEL).map(([k,v])=>`<button data-plan="${k}">${v}</button>`).join('')}<button data-goout="1" class="buy" style="background:var(--acc);color:#fff;border-color:var(--acc)">いま出かけて</button></div>`;
-    else h+=`<div class="ov tag tap" data-open="plan" style="${P(36,486)};background:#fdf3b5;border-color:#e2cf6a">今日: ${esc(PLAN_LABEL[todayPlan(now)]||'おまかせ')}</div>`;}
+    }
   else if(leaveRoom){h+=`<div class="ov bubble" style="${P(220,300)};width:40%">${esc(roomSayUntil>now?roomSayText:'いってきます!')}</div>`;}
   else{h+=`<div class="ov memo tap" data-open="map" style="${P(120,330)};width:52%;transform:none"><div class="q">${esc(S.name)}は外出中</div>${esc(st)}${last?'<br><small style="color:var(--dim)">'+fmtT(last.t)+' '+esc(last.text.length>40?last.text.slice(0,40)+'…':last.text)+'</small>':''}<div style="margin-top:.4em;color:var(--acc);font-weight:700">地図で見る ›</div></div>`;}
   const ov=$('ov');ov.innerHTML=h;
@@ -1537,7 +1554,7 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>この人を別の端末へ<small>引き継ぎコードを出す → 別の端末の「読み込む」に貼る。街のデータは向こうで取り直す</small></div><span><button id="bExport">コードを出す</button> <button id="bImport">読み込む</button></span></div>
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v51 (2026-09-19)</div>';
+    h+='<div class="note">版: v52 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
