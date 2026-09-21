@@ -221,7 +221,7 @@ a.shop{color:var(--ink);font-weight:700;text-decoration:underline dotted;text-de
 .sc .g{display:grid;grid-template-columns:72px 1fr;gap:8px 10px;align-items:center}.sc .g>span:nth-child(odd){font:600 12px var(--fb);color:var(--dim)}
 .sc small{display:block;color:var(--dim);font-size:11.5px;line-height:1.5;margin-top:3px}
 .sc .inl{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;width:100%}.sc .inl input{flex:1;min-width:160px}
-.addrSt{display:block;font:600 12.5px/1.4 var(--fb);margin:2px 0 6px}.addrSt.ok{color:var(--ok)}.addrSt.warn{color:#b07a1a}.addrSt.ng{color:var(--ng)}
+.addrSt{display:block;font:600 12.5px/1.4 var(--fb);margin:2px 0 6px}.addrSt.ok{color:var(--ok)}.addrSt.warn{color:#b07a1a}.addrSt.ng{color:var(--ng)}.addrSt.zip{color:var(--ink2);font-weight:500;margin-bottom:2px}.zipTowns{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}.zipTowns button{border-radius:999px;font-size:12.5px;padding:6px 11px;background:#fff}
 .addrC{display:block;margin:2px 0;font-size:12.5px}.addrC.one{background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 8px}
 .mmap{position:relative;height:150px;border-radius:12px;overflow:hidden;margin:6px 0 4px;border:1px solid var(--line);background:#e8e4da}.mmap .tiles{position:absolute;left:0;top:0;width:768px;height:768px}.mmap .tiles img{position:absolute;width:256px;height:256px}.mmap .pin{position:absolute;left:50%;top:50%;transform:translate(-50%,-100%);filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}.mmap .attr{position:absolute;right:4px;bottom:2px;font-size:9px;background:rgba(255,255,255,.8);padding:0 4px;border-radius:3px;color:#555;margin:0}
 .sc textarea{width:100%;box-sizing:border-box;font:500 13px var(--fb);padding:7px 9px;border:1px solid var(--line);border-radius:10px;background:#fff;resize:vertical}
@@ -366,6 +366,9 @@ function kanjiToNum(s){return String(s||'').replace(/[一二三四五六七八�
 function looksLikeAddress(q){return /[都道府県市区町村郡]/.test(q)&&/(\d|[一二三四五六七八九十]+丁目)/.test(kanjiToNum(q));}
 function muniOf(q){const m=kanjiToNum(q).replace(/^.*?[都道府県]/,'').match(/^(.+?[市区町村])/);return m?m[1]:'';}
 /* GSI の結果を Nominatim と同じ形にする */
+/* 郵便番号: 〒123-4567 / 1234567 / １２３－４５６７。続きの文字は番地として扱う */
+function parseZip(q){const n=String(q||'').replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[－‐―ー−]/g,'-').trim();const m=n.match(/^〒?\s*(\d{3})-?(\d{4})(?!\d)\s*(.*)$/);if(!m)return null;return {zip:m[1]+m[2],rest:m[3].trim()};}
+async function zipLookup(zip){const r=await fetch('https://zipcloud.ibsnet.co.jp/api/search?limit=20&zipcode='+zip);if(!r.ok)throw new Error('zip '+r.status);const j=await r.json();return (j.results||[]).map(x=>({pref:x.address1,city:x.address2,town:x.address3,full:x.address1+x.address2+x.address3}));}
 async function geocodeGSI(q){const nq=addrVariants(q)[0];const r=await fetch('https://msearch.gsi.go.jp/address-search/AddressSearch?q='+encodeURIComponent(nq));if(!r.ok)throw new Error('gsi '+r.status);const js=await r.json();
   const mu=muniOf(nq);const out=[];
   for(const x of (js||[])){const t=(x.properties&&x.properties.title)||'';if(mu&&!kanjiToNum(t).includes(mu))continue;const [lo,la]=x.geometry.coordinates;
@@ -1830,7 +1833,7 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>この人を別の端末へ<small>引き継ぎコードを出す → 別の端末の「読み込む」に貼る。街のデータは向こうで取り直す</small></div><span><button id="bExport">コードを出す</button> <button id="bImport">読み込む</button></span></div>
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v58 (2026-09-19)</div>';
+    h+='<div class="note">版: v59 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
@@ -1884,7 +1887,7 @@ function renderPanel(){if(!tab)return;let h='';
 function showSetup(){const days='日月火水木金土';
   mbox.classList.add('setup');
   mbox.innerHTML=`<div class="setupHead"><svg id="sLookPrev" viewBox="150 340 300 240" width="150" height="120"></svg><div class="ttl"><h2>オフィストラベル</h2><p>あなたが働いている間、もう1人のあなたが本物の街を歩きます。仕事の"収穫"がお小遣いになります。</p></div></div>
-   <section class="sc"><h3><i>1</i>家</h3><div class="g"><span>住所</span><span><span class="inl"><input id="sAddr" placeholder="例: 東京都武蔵野市御殿山2-10-3" value="${S.homeAddr||''}"><button id="sFind" type="button">探す</button></span><div id="sCands" style="margin-top:4px;text-align:left"></div><small>住所か駅名。地図と店は OpenStreetMap から取り込みます(1〜2分)。${typeof KICHI!=='undefined'?'<a href="#" id="sSample" style="color:var(--ad)">サンプルの街(吉祥寺)で試す</a>':''}</small></span></div></section>
+   <section class="sc"><h3><i>1</i>家</h3><div class="g"><span>住所</span><span><span class="inl"><input id="sAddr" autocomplete="off" placeholder="例: 〒123-4567 1-2-3 / ○○県○○市○○1-2-3" value="${S.homeAddr||''}"><button id="sFind" type="button">探す</button></span><div id="sCands" style="margin-top:4px;text-align:left"></div><small>郵便番号・住所・駅名のどれでも。郵便番号のあとに番地を続けると家の位置が正確になります。地図と店は OpenStreetMap から取り込みます(1〜2分)。${typeof KICHI!=='undefined'?'<a href="#" id="sSample" style="color:var(--ad)">サンプルの街(吉祥寺)で試す</a>':''}</small></span></div></section>
    <section class="sc"><h3><i>2</i>名前と見た目</h3><div class="g"><span>名前</span><input id="sName" value="${S.name}" maxlength="12" style="width:160px">
      <span>髪型</span><select id="sHair">${Object.entries(HAIRS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select>
      <span>髪の色</span><span id="sHairC" class="sws">${HAIR_COLORS.map(c=>`<i class="sw" data-c="${c.c}" title="${c.n}" style="background:${c.c}"></i>`).join('')}</span>
@@ -1908,21 +1911,30 @@ function showSetup(){const days='日月火水木金土';
   let chosen=S.homeLL?{la:S.homeLL[0],lo:S.homeLL[1],label:S.townName||'',addr:S.homeAddr||''}:null;
   const cands=$('sCands');if(chosen)cands.innerHTML=`<div style="color:var(--ok)">📍 ${chosen.addr||chosen.label}</div>`;
   let findSeq=0,lastQ='';
-  const doFind=async(auto)=>{const q=$('sAddr').value.trim();if(!q||q.length<2)return false;if(auto&&q===lastQ)return !!chosen;lastQ=q;const my=++findSeq;cands.innerHTML='<span class="addrSt">🔎 探しています…</span>';
-    try{const rs=await geocode(q);if(my!==findSeq)return false;if(!rs.length){chosen=null;cands.innerHTML='<span class="addrSt ng">見つかりませんでした。「東京都武蔵野市御殿山2-10-3」のように市区町村から、または駅名で</span>';return false;}
+  const doFind=async(auto)=>{let q=$('sAddr').value.trim();if(!q||q.length<2)return false;if(auto&&q===lastQ)return !!chosen;lastQ=q;const my=++findSeq;cands.innerHTML='<span class="addrSt">🔎 探しています…</span>';
+    let zipNote='';
+    try{const pz=parseZip(q);
+      if(pz){const zs=await zipLookup(pz.zip);if(my!==findSeq)return false;
+        if(!zs.length){chosen=null;cands.innerHTML='<span class="addrSt ng">〒'+pz.zip.slice(0,3)+'-'+pz.zip.slice(3)+' は見つかりませんでした。番号をもう一度確かめてください</span>';return false;}
+        if(zs.length>1&&!pz.rest.match(/^[^\d]+/)){chosen=null;cands.innerHTML=`<div class="addrSt">〒${pz.zip.slice(0,3)}-${pz.zip.slice(3)} は町が${zs.length}つあります。どれですか</div><div class="zipTowns">${zs.map((z,i)=>`<button type="button" data-zt="${i}">${esc(z.city+z.town)}</button>`).join('')}</div>`;
+          cands.querySelectorAll('[data-zt]').forEach(b=>b.onclick=()=>{const z=zs[+b.dataset.zt];$('sAddr').value=z.full+(pz.rest?pz.rest:'');lastQ='';doFind(false);});return false;}
+        const z=zs[0];const rest=pz.rest&&!/[都道府県市区町村]/.test(pz.rest)?pz.rest:'';q=z.full+rest;zipNote=`〒${pz.zip.slice(0,3)}-${pz.zip.slice(3)} → ${z.full}`;
+        const ai=$('sAddr');ai.value=q;lastQ=q;if(!rest){try{ai.focus();ai.setSelectionRange(q.length,q.length);}catch(e){}}}
+      const rs=await geocode(q);if(my!==findSeq)return false;if(!rs.length){chosen=null;cands.innerHTML='<span class="addrSt ng">見つかりませんでした。「〒123-4567 1-2-3」か「○○県○○市○○1-2-3」のように、郵便番号か市区町村から入れてください</span>';return false;}
       const exact=!!rs[0]._exact;const approx=!exact&&rs[0]._q&&rs[0]._q!==addrVariants(q)[0];
       const pick=i=>{const r=rs[i];const a=r.address||{};chosen={la:+r.lat,lo:+r.lon,label:a.suburb||a.neighbourhood||a.quarter||a.town||a.city||a.village||r.display_name.split(',')[0],addr:q,exact:!!r._exact};
         cands.querySelector('.addrMap').innerHTML=miniMapHTML(chosen.la,chosen.lo,17);};
-      cands.innerHTML=`<div class="addrSt ${exact?'ok':approx?'warn':'ok'}">${exact?'📍 番地まで見つかりました':approx?'📍 番地までは見つからず、'+esc(rs[0]._q)+' のあたりに置きます':'📍 見つかりました'}</div>`
+      const zipOnly=!!zipNote&&!/\d/.test(q.replace(/^.*?[市区町村]/,''));
+      cands.innerHTML=(zipNote?`<div class="addrSt zip">${esc(zipNote)}</div>`:'')+`<div class="addrSt ${exact?'ok':(approx||zipOnly)?'warn':'ok'}">${exact?'📍 番地まで見つかりました':zipOnly?'📍 町のあたりに置きます。続けて番地を入れると家の位置が正確になります':approx?'📍 番地までは見つからず、'+esc(rs[0]._q)+' のあたりに置きます':'📍 見つかりました'}</div>`
         +(rs.length>1?rs.map((r,i)=>`<label class="addrC"><input type="radio" name="sCand" value="${i}" ${i===0?'checked':''}> ${esc(r._gsi?r.display_name:r.display_name.split(',').slice(0,4).join(' '))}</label>`).join(''):`<div class="addrC one">${esc(rs[0]._gsi?rs[0].display_name:rs[0].display_name.split(',').slice(0,4).join(' '))}</div>`)
         +`<div class="addrMap"></div><small>ピンの位置が家になります。ずれていたら番地まで入れ直してください</small>`;
       pick(0);cands.querySelectorAll('input[name=sCand]').forEach(el=>el.onchange=()=>pick(+el.value));return true;}
     catch(e){if(my===findSeq)cands.innerHTML='<span class="addrSt ng">住所検索がうまくいきませんでした。少し待ってもう一度</span>';return false;}};
   $('sFind').onclick=()=>doFind(false);
   {const ai=$('sAddr');let tmr=null;ai.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();clearTimeout(tmr);doFind(false);}});
-   ai.addEventListener('input',()=>{clearTimeout(tmr);const q=ai.value.trim();if(q!==lastQ){chosen=null;}if(looksLikeAddress(q)||/駅$/.test(q))tmr=setTimeout(()=>doFind(true),900);});}
+   ai.addEventListener('input',()=>{clearTimeout(tmr);const q=ai.value.trim();if(q!==lastQ){chosen=null;}if(looksLikeAddress(q)||/駅$/.test(q)||parseZip(q))tmr=setTimeout(()=>doFind(true),900);});}
   if(chosen&&chosen.la)cands.innerHTML=`<div class="addrSt ok">📍 ${esc(chosen.addr||chosen.label)}</div><div class="addrMap">${miniMapHTML(chosen.la,chosen.lo,17)}</div>`;
-  const smp=$('sSample');if(smp)smp.onclick=(ev)=>{ev.preventDefault();chosen={sample:true,la:KICHI.home[0],lo:KICHI.home[1],label:'吉祥寺',addr:'サンプル: 吉祥寺(御殿山)'};cands.innerHTML='<div style="color:var(--ok)">📍 サンプルの街(吉祥寺)</div>';};
+  const smp=$('sSample');if(smp)smp.onclick=(ev)=>{ev.preventDefault();chosen={sample:true,la:KICHI.home[0],lo:KICHI.home[1],label:'吉祥寺',addr:'サンプル: 吉祥寺'};cands.innerHTML='<div style="color:var(--ok)">📍 サンプルの街(吉祥寺)</div>';};
   $('sOk').onclick=async()=>{const [sh,sm]=$('sStart').value.split(':').map(Number),[eh,em]=$('sEnd').value.split(':').map(Number);const st=sh*60+sm,en=eh*60+em;if(!(en>st)){toast('終了は開始より後に','var(--ng)');return;}
     if(!chosen&&$('sAddr').value.trim()){const ok=await doFind(false);if(!ok){toast('家の住所が見つからなかった。入れ直して','var(--ng)');return;}}if(!chosen){toast('家の住所を入れてください','var(--ng)');return;}
     const daysSel=[...document.querySelectorAll('.sDay:checked')].map(c=>+c.value);if(!daysSel.length){toast('曜日を1つは','var(--ng)');return;}
