@@ -1331,7 +1331,7 @@ function px(la,lo){if(MAPBASE&&basemapReady){const p=MAPBASE.project([lo,la]);re
 function nightness(h){const w=S.weather;let sr=5.6,ss=18.4;if(w&&w.sunrise&&w.sunset){const a=new Date(w.sunrise),b=new Date(w.sunset);sr=a.getHours()+a.getMinutes()/60;ss=b.getHours()+b.getMinutes()/60;}if(h<sr-0.7||h>=ss+0.9)return 1;if(h<sr+0.5)return 1-(h-(sr-0.7))/1.2;if(h>=ss-0.3)return (h-(ss-0.3))/1.2;return 0;}
 function draw(now){const hr=hour(Date.now());const night=nightness(hr);
   const j=S.j;const target=(Date.now()<viewHomeUntil)?[HOME.la,HOME.lo]:(j.pos||[HOME.la,HOME.lo]);cam.la+=(target[0]-cam.la)*0.08;cam.lo+=(target[1]-cam.lo)*0.08;
-  const farNow=(j.state==='walk'&&j.straight&&j.straight.move>120)||(j.at>=0&&POIS[j.at]&&POIS[j.at].far)||(j.state==='walk'&&j.transit&&(()=>{const L=curTransitLeg();return L&&L.mode!=='WALK'&&dist([L.from.la,L.from.lo],[L.to.la,L.to.lo])>1200;})());
+  const farNow=(j.state==='walk'&&j.straight&&j.straight.move>120)||(j.at>=0&&POIS[j.at]&&POIS[j.at].far)||(j.state==='walk'&&j.transit&&(()=>{const L=curTransitLeg();return L&&L.mode!=='WALK'&&L.mode!=='CYCLE'&&L.mode!=='LUUP'&&L.mode!=='TAXI'&&dist([L.from.la,L.from.lo],[L.to.la,L.to.lo])>1200;})());
   const veryFar=j.state==='walk'&&j.transit&&(()=>{const L=curTransitLeg();return L&&L.mode!=='WALK'&&dist([L.from.la,L.from.lo],[L.to.la,L.to.lo])>30000;})();const flying=j.state==='walk'&&j.transit&&(()=>{const L=curTransitLeg();return L&&L.mode==='AIRPLANE'&&Date.now()>=L.t0;})();
   scaleTarget=(flying?0.0012:veryFar?0.004:farNow?0.13:1.35)*((flying||veryFar)?1:userScaleMul);SCALE+=(scaleTarget-SCALE)*0.15;const zoomedOut=(MAPBASE&&basemapReady)?MAPBASE.getZoom()<13.5:SCALE<0.5;
   const BASE=!!(MAPBASE&&basemapReady);
