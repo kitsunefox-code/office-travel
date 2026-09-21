@@ -122,6 +122,9 @@
   #mapLoad{position:absolute;left:10px;right:10px;top:50%;transform:translateY(-50%);margin:0 auto;max-width:360px;background:rgba(250,246,238,.97);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);z-index:5;text-align:center}
 #mapLoad.hidden{display:none}
 #panel{z-index:40}
+.frs{display:flex;flex-direction:column;gap:6px}.fr{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:8px 10px}.fr .av{flex:none;width:44px;height:44px;border-radius:50%;overflow:hidden;background:var(--paper2);box-shadow:0 0 0 2px #fff,0 0 0 3px var(--line)}.fr .av svg{width:100%;height:100%;display:block}.fr .fb{flex:1;min-width:0}.fr .fn{font:700 14px/1.3 var(--fd);display:flex;align-items:center;gap:4px;flex-wrap:wrap}.fr .fn small{font:500 11px var(--fb);color:var(--ink2)}.fr .lv{margin-left:auto;font-size:11px;color:#e0245e;letter-spacing:.5px}.fr .lv i{font-style:normal;color:var(--line)}.fr .fm{font-size:11.5px;color:var(--ink);line-height:1.4}.fr .fm.dim{color:var(--dim)}.fr button{white-space:nowrap;border-radius:999px;font-size:12px}
+.stamps{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 6px}.stp{width:60px;height:60px;border-radius:50%;border:2px solid #c8503c;color:#c8503c;display:flex;flex-direction:column;align-items:center;justify-content:center;font:700 12px/1.1 var(--fd);position:relative;background:radial-gradient(circle at 50% 50%,rgba(200,80,60,.06),rgba(200,80,60,0) 70%)}.stp::before{content:'';position:absolute;inset:4px;border-radius:50%;border:1px dashed rgba(200,80,60,.6)}.stp small{font:600 9px/1 var(--fb);margin-top:3px;opacity:.85}
+.gifts{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}.gift2{position:relative;background:linear-gradient(160deg,#fff5ea,#f7e4cf);border:1px solid #e9d4bb;border-radius:12px;padding:12px 10px 8px;display:flex;flex-direction:column;gap:2px}.gift2 .rib{position:absolute;left:50%;top:0;width:10px;height:100%;background:rgba(200,80,60,.18);transform:translateX(-50%)}.gift2::before{content:'';position:absolute;left:0;right:0;top:14px;height:8px;background:rgba(200,80,60,.14)}.gift2 b{font:700 13px var(--fd);position:relative}.gift2 small{font-size:11px;color:var(--ink2);position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gift2 em{font:600 11px var(--fb);color:var(--gold);font-style:normal;position:relative}
 .seeds{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px}.seeds .seed{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;border-radius:12px;background:#fff}.seeds .seed .em{font-size:20px;letter-spacing:-2px}.seeds .seed .nm{font:600 12px var(--fb);color:var(--ink)}.seeds .seed .pr{font:600 11px var(--fb);color:var(--gold)}.seeds .seed.on{background:var(--ink);color:#fff}.seeds .seed.on .nm,.seeds .seed.on .pr{color:#fff}.seeds .seed:disabled{opacity:1}
 #mapLoad .q{font:700 15px var(--fd);margin-bottom:6px}
 #mapLoad .opts{display:flex;gap:6px;justify-content:center;margin-top:8px}
@@ -172,11 +175,11 @@ body.vhome #bViewMe{display:none!important}
   #panel button.on{color:var(--acc);border-color:var(--acc);background:#fff}
   #panel input,#panel select,#panel textarea{font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink)}
   #panel input:focus,#panel textarea:focus,#panel select:focus{outline:2px solid var(--acc2);border-color:var(--acc)}
-  .polaroid{display:inline-block;width:110px;background:#fff;color:#222;padding:7px 7px 9px;margin:4px 6px 6px 0;border-radius:3px;box-shadow:0 3px 10px rgba(40,30,10,.18);transform:rotate(-1.2deg);vertical-align:top}
-  .polaroid:nth-child(even){transform:rotate(1.2deg)}
-  .polaroid .pic{height:74px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:34px;overflow:hidden}
-  .polaroid .pic img{width:100%;height:100%;object-fit:cover;border-radius:2px;display:block}
-  .polaroid .cap{font-size:10.5px;line-height:1.3;margin-top:6px;color:#333;font-family:var(--fd)}
+  .polaroid{display:inline-block;width:112px;background:linear-gradient(160deg,#ffffff 0%,#fbf8f1 60%,#f3eee2 100%);color:#222;padding:8px 8px 12px;margin:8px 6px 6px 0;border-radius:2px;box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 6px 14px rgba(40,30,10,.22),0 1px 2px rgba(40,30,10,.18);transform:rotate(-1.6deg);vertical-align:top;position:relative;transition:transform .2s}.polaroid:hover{transform:rotate(0) translateY(-3px) scale(1.03);z-index:2}.polaroid::before{content:'';position:absolute;left:50%;top:-7px;width:46px;height:14px;transform:translateX(-50%) rotate(-3deg);background:rgba(255,236,170,.75);border:1px solid rgba(180,150,60,.25);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .polaroid:nth-child(even){transform:rotate(1.4deg)}.polaroid:nth-child(even)::before{transform:translateX(-50%) rotate(4deg)}
+  .polaroid .pic{height:78px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:34px;overflow:hidden;position:relative;box-shadow:0 0 0 1px rgba(0,0,0,.06) inset}.polaroid .pic::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 55%,rgba(60,40,20,.22) 100%);pointer-events:none}.polaroid .pic:not(:has(img)){background-image:radial-gradient(circle at 30% 30%,rgba(255,255,255,.55),rgba(255,255,255,0) 60%)}
+  .polaroid .pic img{width:100%;height:100%;object-fit:cover;border-radius:2px;display:block;filter:saturate(.92) contrast(1.04) sepia(.08)}
+  .polaroid .cap{font-size:10.5px;line-height:1.3;margin-top:8px;color:#3a3530;font-family:var(--fd);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.polaroid .cap::first-line{letter-spacing:.02em}
   .polaroid .credit{font-size:8px;color:#999;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .dl{display:grid;grid-template-columns:40px 22px 1fr auto;gap:8px;align-items:start;padding:7px 0;border-bottom:1px dashed var(--line);font:13.5px/1.6 var(--fb);color:var(--ink)}
 .dl .ic{display:inline-flex;width:22px;height:22px;border-radius:50%;align-items:center;justify-content:center;background:var(--paper2);color:var(--ink2);margin-top:2px}.dl .ic svg{width:14px;height:14px}
@@ -1317,9 +1320,20 @@ function draw(now){const hr=hour(Date.now());const night=nightness(hr);
     if(now<bubble.until){ctx.font='500 12.5px sans-serif';const tw=ctx.measureText(bubble.text).width+16;ctx.fillStyle='#fff';ctx.strokeStyle='rgba(0,0,0,.15)';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(x-tw/2,y-48,tw,22,8);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(x-4,y-26);ctx.lineTo(x+4,y-26);ctx.lineTo(x,y-21);ctx.fill();ctx.fillStyle='#333';ctx.textAlign='center';ctx.fillText(bubble.text,x,y-32);ctx.textAlign='left';}}
   // 雨・雪(実天気)
   if(rainy()&&S.weather){const snow=[71,73,75,77,85,86].includes(S.weather.code);ctx.save();ctx.fillStyle='rgba(90,110,150,.08)';ctx.fillRect(0,0,W,H);const ph=now/1000;ctx.strokeStyle='rgba(120,150,200,.45)';ctx.lineWidth=1.2;ctx.fillStyle='rgba(255,255,255,.85)';
-    for(let i=0;i<70;i++){const sp=snow?40:420;let x=((i*137.5)%W+(snow?Math.sin(ph+i)*20:-ph*60))%W;const y=((i*91.7)+ph*sp)%H;if(x<0)x+=W;if(snow){ctx.beginPath();ctx.arc(x,y,1.6,0,7);ctx.fill();}else{ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-2,y+10);ctx.stroke();}}ctx.restore();}
-  // 夜のトーン
+    for(let i=0;i<70;i++){const sp=snow?40:420;let x=((i*137.5)%W+(snow?Math.sin(ph+i)*20:-ph*60))%W;const y=((i*91.7)+ph*sp)%H;if(x<0)x+=W;if(snow){ctx.beginPath();ctx.arc(x,y,1.6,0,7);ctx.fill();}else{ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-2,y+10);ctx.stroke();}}
+    if(!snow){/* 濡れた路面: 水たまりと波紋 */
+      ctx.fillStyle='rgba(120,150,200,.10)';ctx.fillRect(0,0,W,H);
+      for(let i=0;i<9;i++){const qx=((i*211.3)%W),qy=((i*157.9)%H);ctx.fillStyle='rgba(150,180,220,.28)';ctx.beginPath();ctx.ellipse(qx,qy,18+((i*7)%14),5+((i*3)%4),0,0,7);ctx.fill();ctx.fillStyle='rgba(255,255,255,.35)';ctx.beginPath();ctx.ellipse(qx-5,qy-1.5,6,1.5,0,0,7);ctx.fill();}
+      ctx.strokeStyle='rgba(255,255,255,.45)';ctx.lineWidth=1;for(let i=0;i<14;i++){const t=((ph*1.4)+i*0.37)%1;const rx=((i*173.1)%W),ry=((i*119.7)%H);ctx.globalAlpha=(1-t)*0.7;ctx.beginPath();ctx.ellipse(rx,ry,2+t*12,(2+t*12)*0.4,0,0,7);ctx.stroke();}ctx.globalAlpha=1;}
+    ctx.restore();}
+  // 夜のトーンと街灯
   if(!BASE&&!RASTER&&night>0&&night<=0.5){ctx.fillStyle=`rgba(40,40,80,${night*0.35})`;ctx.fillRect(0,0,W,H);}
+  if((BASE||RASTER)&&night>0.25){ctx.fillStyle=`rgba(16,20,48,${(Math.min(1,(night-0.25)/0.6)*0.42).toFixed(2)})`;ctx.fillRect(0,0,W,H);}
+  if(night>0.35&&!zoomedOut&&typeof EDGES!=='undefined'&&EDGES.length){ctx.save();ctx.globalCompositeOperation='lighter';const a=Math.min(1,(night-0.35)/0.4);let cnt=0;
+    for(let k=0;k<EDGES.length&&cnt<90;k+=1){const e=EDGES[k];if(e[3]<2||(e[0]%3))continue;const [lx,ly]=px(NODES[e[0]][0],NODES[e[0]][1]);if(!vis(lx,ly))continue;cnt++;
+      const g=ctx.createRadialGradient(lx,ly,0,lx,ly,26);g.addColorStop(0,`rgba(255,214,140,${(0.55*a).toFixed(2)})`);g.addColorStop(0.5,`rgba(255,200,120,${(0.18*a).toFixed(2)})`);g.addColorStop(1,'rgba(255,200,120,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(lx,ly,26,0,7);ctx.fill();
+      ctx.fillStyle=`rgba(255,240,200,${(0.95*a).toFixed(2)})`;ctx.beginPath();ctx.arc(lx,ly-6,1.8,0,7);ctx.fill();}
+    ctx.restore();}
   // 畑(パネル/部屋)
   {const fv=document.getElementById('field');if(fv)drawFieldOn(fv,now);}
 }
@@ -1347,6 +1361,26 @@ const P=(x,y)=>'left:'+((x-ROOM.x0)/ROOM.uw*100).toFixed(2)+'%;top:'+((y-ROOM.y0
 const PB=(x,yb)=>'left:'+((x-ROOM.x0)/ROOM.uw*100).toFixed(2)+'%;bottom:'+((ROOM.uh-(yb-ROOM.y0))/ROOM.uh*100).toFixed(2)+'%';
 window.addEventListener('resize',()=>{if(view==='home')fitRoom();});
 /* 家の背景(窓の空・時計・家具・本人)。1秒ごとに描き直しても軽い */
+/* 季節の小物(月で切替。祝いは日付で) */
+function seasonDecor(d,n){const m=d.getMonth()+1,day=d.getDate();let g='';
+  if(m===12||m<=2){/* 冬: こたつ(ちゃぶ台に布団)・みかん・ストーブ */
+    g+=`<path d="M22 548 Q112 522 202 548 L214 596 Q112 612 10 596 Z" fill="#c8503c"/><path d="M22 548 Q112 522 202 548 L214 596 Q112 612 10 596 Z" fill="url(#kotatsuP)" opacity=".9"/><ellipse cx="112" cy="548" rx="84" ry="21" fill="#d1a877"/><ellipse cx="112" cy="548" rx="84" ry="21" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="2"/>`;
+    g+=`<circle cx="120" cy="542" r="7" fill="#f2a63a"/><circle cx="132" cy="546" r="7" fill="#f2a63a"/><circle cx="126" cy="537" r="7" fill="#f7b24a"/><rect x="125" y="529" width="2" height="4" fill="#5f9a5a"/>`;
+    g+=`<g transform="translate(22 340)"><rect x="0" y="40" width="40" height="52" rx="4" fill="#d9d4c8" stroke="#9a948a"/><rect x="6" y="48" width="28" height="30" rx="2" fill="#2a2f3a"/><rect x="9" y="52" width="22" height="22" rx="2" fill="#ff7a3c"/><rect x="9" y="52" width="22" height="22" rx="2" fill="#ffd27a" opacity="${(0.4+0.3*Math.sin(Date.now()/300)).toFixed(2)}"/></g>`;
+    if(m===12&&day>=1)g+=`<g transform="translate(262 350)"><path d="M0 60 L18 20 L36 60 Z" fill="#2f7d4f"/><path d="M4 42 L18 10 L32 42 Z" fill="#3a9a63"/><circle cx="18" cy="8" r="4" fill="#f2c744"/><circle cx="12" cy="40" r="2.5" fill="#c8503c"/><circle cx="24" cy="50" r="2.5" fill="#f2c744"/><circle cx="20" cy="30" r="2" fill="#9fd0f0"/><rect x="14" y="60" width="8" height="6" fill="#8d6a47"/></g>`;
+    if(m===1&&day<=7)g+=`<g transform="translate(262 372)"><ellipse cx="18" cy="42" rx="20" ry="5" fill="#8d6a47"/><ellipse cx="18" cy="34" rx="16" ry="9" fill="#fff"/><ellipse cx="18" cy="24" rx="12" ry="7" fill="#fff"/><circle cx="18" cy="14" r="6" fill="#f2a63a"/><rect x="16" y="6" width="4" height="4" fill="#5f9a5a"/></g>`;}
+  else if(m>=3&&m<=5){/* 春: 桜の枝と花びら */
+    g+=`<g transform="translate(200 300)"><rect x="-6" y="24" width="12" height="20" rx="3" fill="#8fb0d4"/><path d="M0 24 q-6 -20 -14 -30 M0 24 q6 -22 12 -34" fill="none" stroke="#6b4a2f" stroke-width="2"/>`;for(let i=0;i<7;i++){const px_=[-14,-8,-2,12,6,0,-10][i],py_=[-6,-14,-2,-10,-20,-24,4][i];g+=`<circle cx="${px_}" cy="${py_}" r="3.2" fill="#f7b6c9"/>`;}g+=`</g>`;
+    for(let i=0;i<5;i++)g+=`<ellipse cx="${60+i*40}" cy="${210+(i%2)*3}" rx="3" ry="1.6" fill="#f7b6c9" transform="rotate(${-20+i*15} ${60+i*40} ${210})"/>`;}
+  else if(m>=6&&m<=8){/* 夏: 扇風機・風鈴・スイカ */
+    const sp=(Date.now()/60)%360;g+=`<g transform="translate(262 372)"><rect x="12" y="44" width="12" height="18" fill="#9a948a"/><ellipse cx="18" cy="62" rx="14" ry="4" fill="#8a8479"/><circle cx="18" cy="24" r="22" fill="#e8e6e1" stroke="#9a948a" stroke-width="2"/><g transform="rotate(${sp.toFixed(0)} 18 24)"><path d="M18 24 l-14 -8 a16 16 0 0 1 14 -8z M18 24 l14 -8 a16 16 0 0 1 0 16z M18 24 l-2 16 a16 16 0 0 1 -12 -8z" fill="#9fd0f0" opacity=".85"/></g><circle cx="18" cy="24" r="3" fill="#5b6270"/></g>`;
+    g+=`<g transform="translate(240 36)"><line x1="0" y1="0" x2="0" y2="14" stroke="#5a4634"/><path d="M-8 14 q8 -8 16 0 v10 q-8 6 -16 0z" fill="#9fd0f0" opacity=".85" stroke="#fff"/><line x1="0" y1="24" x2="${(Math.sin(Date.now()/500)*3).toFixed(1)}" y2="40" stroke="#5a4634"/><rect x="-5" y="40" width="10" height="16" fill="#fff" stroke="#c9c3b6"/></g>`;
+    g+=`<g transform="translate(140 540)"><path d="M-16 0 a16 16 0 0 1 32 0z" fill="#2f7d4f"/><path d="M-12 0 a12 12 0 0 1 24 0z" fill="#e0524c"/><circle cx="-4" cy="-4" r="1" fill="#2a2f3a"/><circle cx="4" cy="-6" r="1" fill="#2a2f3a"/><circle cx="0" cy="-2" r="1" fill="#2a2f3a"/></g>`;}
+  else{/* 秋: 紅葉の枝・柿・栗 */
+    g+=`<g transform="translate(200 300)"><rect x="-6" y="24" width="12" height="20" rx="3" fill="#c9a374"/><path d="M0 24 q-6 -20 -14 -30 M0 24 q6 -22 12 -34" fill="none" stroke="#6b4a2f" stroke-width="2"/>`;for(let i=0;i<6;i++){const px_=[-14,-8,-2,12,6,0][i],py_=[-6,-14,-2,-10,-20,-26][i];g+=`<path transform="translate(${px_} ${py_}) scale(.55)" d="M0 -8 L3 -2 L9 -3 L5 2 L7 8 L0 5 L-7 8 L-5 2 L-9 -3 L-3 -2 Z" fill="${i%2?'#d9532b':'#e9a03a'}"/>`;}g+=`</g>`;
+    g+=`<g transform="translate(150 540)"><ellipse cx="0" cy="4" rx="12" ry="3" fill="#8d6a47" opacity=".5"/><circle cx="-5" cy="-2" r="6" fill="#f08a2e"/><circle cx="6" cy="-1" r="6" fill="#f08a2e"/><rect x="-7" y="-9" width="4" height="3" fill="#5f9a5a"/><rect x="4" y="-8" width="4" height="3" fill="#5f9a5a"/><path d="M-16 4 q3 -8 6 0 z M-11 4 q3 -8 6 0z" fill="#6b4a2f"/></g>`;
+    if(m===10&&day>=20)g+=`<g transform="translate(262 386)"><ellipse cx="18" cy="16" rx="18" ry="14" fill="#f08a2e"/><path d="M18 2 q-2 -8 4 -8" fill="none" stroke="#5f9a5a" stroke-width="3"/><path d="M8 12 l4 -6 l4 6z M22 12 l4 -6 l4 6z M10 20 q8 6 16 0" fill="#2a2f3a"/></g>`;}
+  return g;}
 function drawScene(){{const rk=curRideKind();if(rk&&!leaveRoom){$('scene').innerHTML=rideSceneSVG(rk);return;}}const now=new Date();const hr=hour(now.getTime());const n=nightness(hr);const w=S.weather&&Date.now()-S.weather.t<3*3600e3?S.weather:null;const rain=rainy();const cloudy=w&&(w.code>=2);const snow=w&&[71,73,75,77,85,86].includes(w.code);
   const dusk=(hr>=16.5&&hr<19)||(hr>=5&&hr<7.5);
   let top=mix('#8fc6e8','#1a2442',n),bot=mix('#dcefFA'.toLowerCase(),'#3b4a72',n);if(cloudy||rain){top=mix('#9aa7b5','#1a2442',n);bot=mix('#cfd6dc','#3b4a72',n);}if(dusk&&!rain){bot=mix(bot,'#f0a870',0.55);}
@@ -1407,6 +1441,7 @@ function drawScene(){{const rk=curRideKind();if(rk&&!leaveRoom){$('scene').inner
   g+='</g>';
   // ちゃぶ台(左)
   g+=`<ellipse cx="112" cy="552" rx="84" ry="23" fill="#b98f66"/><ellipse cx="112" cy="548" rx="84" ry="21" fill="#d1a877"/><rect x="52" y="562" width="8" height="32" fill="#8d6a47"/><rect x="166" y="562" width="8" height="32" fill="#8d6a47"/><rect x="108" y="568" width="8" height="28" fill="#8d6a47"/><ellipse cx="112" cy="548" rx="84" ry="21" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="2"/><g><ellipse cx="86" cy="546" rx="10" ry="4" fill="#fff"/><rect x="76" y="536" width="20" height="10" rx="3" fill="#fff"/><path d="M96 538 q7 2 0 7" fill="none" stroke="#fff" stroke-width="2"/><ellipse cx="86" cy="536" rx="8" ry="2.5" fill="#c9a374"/></g><g transform="rotate(12 138 544)"><rect x="124" y="538" width="30" height="8" rx="1.5" fill="#c8503c"/><rect x="124" y="538" width="30" height="3" rx="1" fill="#fff" opacity=".6"/></g>`;
+  g+=`<defs><pattern id="kotatsuP" width="18" height="18" patternUnits="userSpaceOnUse"><rect width="18" height="18" fill="none"/><circle cx="9" cy="9" r="3" fill="#fff" opacity=".5"/><rect x="0" y="0" width="18" height="1" fill="#fff" opacity=".15"/></pattern></defs>`+seasonDecor(now,n);
   // 本人
   if(leaveRoom){const k=Math.min(1,(Date.now()-leaveRoom.t0)/leaveRoom.dur);const e=k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2;const cx=300+(437-300)*e,fy=591+(438-591)*e,sc=1-0.52*e;const bob=Math.abs(Math.sin(k*Math.PI*7))*3;
     if(k<0.93)g+=`<g transform="translate(${cx.toFixed(1)} ${fy.toFixed(1)}) scale(${sc.toFixed(3)}) translate(${(-cx).toFixed(1)} ${(-fy).toFixed(1)})" opacity="${k>0.8?((0.93-k)/0.13).toFixed(2):1}">`+charSVG(cx,fy-bob,{still:true,walkFace:true})+'</g>';}
@@ -1575,6 +1610,10 @@ function gmaps(p){return 'https://www.google.com/maps/search/?api=1&query='+enco
 function gmapsQ(name,town){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(String(name||'')+' '+(town||(S.trip?S.trip.city:'')||S.townName||''));}
 function shopLink(name,town){return '<a class="shop" href="'+esc(gmapsQ(name,town))+'" target="_blank" rel="noopener" title="地図で調べる">'+esc(name)+'</a>';}
 function gmapsLL(p){return 'https://www.google.com/maps/search/?api=1&query='+p.la+','+p.lo;}
+/* 友達の顔(名前から髪色・肌・服を決める) */
+function friendAvatar(f){let hsh=0;for(const ch of String(f.name||''))hsh=(hsh*31+ch.charCodeAt(0))>>>0;const hairs=['#2a2f3a','#4a3226','#7a4b2a','#8a9099','#a8683a'],skins=['#f6d5b8','#e8bf99','#c9956a'],tops=['#5d7bb0','#c8503c','#5f9a5a','#e9c46a','#b48ac2','#e08a3c'];
+  const hc=hairs[hsh%hairs.length],sk=skins[(hsh>>3)%skins.length],tp=tops[(hsh>>6)%tops.length];const glasses=((hsh>>9)%4)===0;const long=((hsh>>11)%3)===0;
+  return `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="${tp}" opacity=".18"/><rect x="12" y="30" width="24" height="18" rx="8" fill="${tp}"/>${long?`<rect x="10" y="14" width="28" height="22" rx="8" fill="${hc}"/>`:''}<circle cx="24" cy="19" r="10" fill="${sk}"/><path d="M14 19 A10 10 0 0 1 34 19 L34 17 Q24 10 14 17 Z" fill="${hc}"/><circle cx="20.5" cy="20" r="1.2" fill="#2a2f3a"/><circle cx="27.5" cy="20" r="1.2" fill="#2a2f3a"/><path d="M21 24 q3 2 6 0" fill="none" stroke="#2a2f3a" stroke-width="1.2" stroke-linecap="round"/>${glasses?`<circle cx="20.5" cy="20" r="3" fill="none" stroke="#2a2f3a" stroke-width="1"/><circle cx="27.5" cy="20" r="3" fill="none" stroke="#2a2f3a" stroke-width="1"/>`:''}</svg>`;}
 function renderPanel(){if(!tab)return;let h='';
   if(tab==='diary'){h+=`<h3>${S.name}の日記</h3><div style="margin:-4px 0 6px"><button id="bCopyDay">今日の日記をコピー</button> <button id="bCopyWeek">7日分をコピー</button></div>`;
     const days={};S.diary.slice().reverse().filter(e=>e.kind!=='harvest').forEach(e=>{(days[todayKey(e.t)]=days[todayKey(e.t)]||[]).push(e);});
@@ -1641,8 +1680,17 @@ function renderPanel(){if(!tab)return;let h='';
     for(const k of S.wish){const p=poiOf(k);if(!p)continue;const v=S.visited[k];h+=`<div class="row"><div>${info(p).e} <b>${p.n}</b><small>${p.town?p.town+' / ':''}${p.c?p.c+' / ':''}${info(p).label}${v?' / '+S.name+'は'+v.n+'回':''}${S.went[k]?' / <span style="color:var(--ok)">あなたも行った('+fmtD(S.went[k])+')</span>':''}</small><small><a href="${gmapsLL(p)}" target="_blank" rel="noopener">Googleマップで開く(人気メニュー・経路はこちら)</a></small></div>
       <div>${LODGING.has(p.k)?'<div><small>'+hotelLinks(p.n,p.town)+'</small></div>':''}${S.went[k]?'':`<button data-went="${k}">行ってきた</button>`}<button data-unwish="${k}">✕</button></div></div>`;}
     const mem=Object.keys(S.went).length;h+=`<div class="note">ふたりで行った店: ${mem}軒</div>`;}
-  if(tab==='friends'){const stamps=Object.entries(S.stamps);h+=`<h3>友達とコレクション</h3>${closetHTML()}<div class="sec">スタンプ帳(都道府県 ${stamps.length})</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">${stamps.length?stamps.map(([k,v])=>`<span style="border:1.5px solid var(--acc);color:var(--acc);border-radius:50%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;font:700 11px var(--fd);text-align:center;transform:rotate(${(k.length*7)%9-4}deg)">${k.replace(/(都|府|県)$/,'')}</span>`).join(''):'<span class=note>まだありません。街に着くと押されます</span>'}</div>${S.souvenirs.length?`<div class="sec">お土産(${S.souvenirs.length})</div>`+S.souvenirs.slice().reverse().slice(0,12).map(x=>`<div class="row"><div>🎁 <b>${x.town}</b><small>${x.shop} / ${fmtD(x.t)}</small></div><span style="color:var(--ink2)">¥${fmt(x.price)}</span></div>`).join(''):''}<div class="sec">友達帳</div>`;if(!S.friends.length)h+='<div class="note">まだいません。同じ店に何度か通うと仲良くなります。</div>';
-    for(const f of S.friends.slice().reverse()){h+=`<div class="row"><div>${'★'.repeat(Math.min(5,f.level))} <b>${f.name}</b>さん<small>${f.pn||''}の${f.role} / ${fmtD(f.t)}に出会った</small></div></div>`;}}
+  if(tab==='friends'){const stamps=Object.entries(S.stamps);h+=`<h3>友達とコレクション</h3>`;
+    /* 友達帳 */
+    h+=`<div class="sec">友達帳(${S.friends.length}人)</div>`;
+    if(!S.friends.length)h+='<div class="note">まだいません。同じ店に何度か通うと、店の人や常連さんと仲良くなります。</div>';
+    else h+='<div class="frs">'+S.friends.slice().reverse().map(f=>{const idx=idxOf(f.pk);const v=S.visited[f.pk]||{};const lv=Math.min(5,f.level||1);return `<div class="fr"><div class="av">${friendAvatar(f)}</div><div class="fb"><div class="fn">${esc(f.name)}<small>さん</small><span class="lv">${'♥'.repeat(lv)}<i>${'♥'.repeat(5-lv)}</i></span></div><div class="fm">${esc(f.pn||'')}の${esc(f.role||'')}</div><div class="fm dim">${fmtD(f.t)}に出会う${v.last?' · 最後に会ったのは '+fmtD(v.last):''}${v.n?' · 通った回数 '+v.n:''}</div></div>${idx>=0?`<button data-meet="${f.pk}" title="行きたいに入れる">会いに</button>`:''}</div>`;}).join('')+'</div>';
+    h+=closetHTML();
+    /* スタンプ帳 */
+    h+=`<div class="sec">スタンプ帳(都道府県 ${stamps.length}/47)</div><div class="stamps">${stamps.length?stamps.map(([k,v])=>`<span class="stp" style="transform:rotate(${(k.length*7)%9-4}deg)"><b>${k.replace(/(都|府|県)$/,'')}</b><small>${v}回</small></span>`).join(''):'<span class="note" style="flex:1">まだありません。ほかの街に着くと押されます</span>'}</div>`;
+    /* お土産 */
+    if(S.souvenirs.length)h+=`<div class="sec">お土産(${S.souvenirs.length})</div><div class="gifts">`+S.souvenirs.slice().reverse().slice(0,12).map(x=>`<div class="gift2"><div class="rib"></div><b>${esc(x.town)}</b><small>${esc(x.shop)}</small><em>¥${fmt(x.price)} · ${fmtD(x.t)}</em></div>`).join('')+'</div>';
+  }
   if(tab==='more'){h+=`<h3>設定</h3><div class="grid3"><button data-tab2="teach"><i>✎</i>教える</button><button data-tab2="wish"><i>♡</i>行きたい</button><button data-tab2="friends"><i>👥</i>友達と<br>コレクション</button></div><div class="sec">プロフィール</div><div class="row"><div>家<small>${S.homeAddr||'サンプルの街(吉祥寺)'}${S.trip?' / いまは '+S.trip.city+' に滞在':''} / この街の店・場所 ${POIS.length}件</small></div></div>`;
     h+=`<div class="row"><div>好きなこと・性格<small>${S.persona&&S.persona.text?esc(S.persona.text.slice(0,60))+(S.persona.text.length>60?'…':'')+' → '+esc(personaSummary(S.persona)):'未記入(設定の「変える」から書けます)'}</small></div></div><div class="row"><div>設定<small>${S.name} / ${(JOBS[S.job]||JOBS.other).n} / ${V().e}${V().n} / 勤務 ${fmtHM(S.work.start)}〜${fmtHM(S.work.end)} / 好み: ${S.prefs.map(k=>PREF_LIST.find(x=>x[0]===k)[1]).join('・')}</small></div><button id="bSetup">変える</button></div>`;
     h+=`<div class="sec">データ</div><div class="row"><div>飛行機(国内 ODPT)<small>公共交通オープンデータセンター(ODPT)のアクセストークンを貼ると、JAL・ANA国内線の実ダイヤで飛ぶ。${S.keys.odpt?(FLIGHTS?'便データ '+FLIGHTS.length+'件 読み込み済み':'鍵あり(次の遠出で読み込み)'):'未設定(それまでは鉄道だけ)'}</small></div><button id="bOdpt">${S.keys.odpt?'変更':'鍵を貼る'}</button></div>
@@ -1659,7 +1707,7 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>この人を別の端末へ<small>引き継ぎコードを出す → 別の端末の「読み込む」に貼る。街のデータは向こうで取り直す</small></div><span><button id="bExport">コードを出す</button> <button id="bImport">読み込む</button></span></div>
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v54 (2026-09-19)</div>';
+    h+='<div class="note">版: v55 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
@@ -1672,6 +1720,7 @@ function renderPanel(){if(!tab)return;let h='';
   panel.querySelectorAll('[data-ansp]').forEach(b=>b.onclick=()=>{const [id,key]=b.dataset.ansp.split('|');const a=S.asks.find(x=>String(x.id)===id);if(a&&!a.done)resolveAsk(a,key,false);renderPanel();});
   panel.querySelectorAll('[data-goout]').forEach(b=>b.onclick=()=>{if(goOutNow()){tab=null;panel.classList.add('hidden');syncTabs();}});
   panel.querySelectorAll('[data-dfilter]').forEach(b=>b.onclick=()=>{diaryFilter=b.dataset.dfilter;renderPanel();});
+  panel.querySelectorAll('[data-meet]').forEach(b=>b.onclick=()=>{const pk=b.dataset.meet;if(!S.wish.includes(pk))S.wish.push(pk);const f=S.friends.find(x=>x.pk===pk);toast((f?f.name+'さんの':'')+'いる店を「行きたい」に入れた','var(--acc)');save();renderPanel();});
   panel.querySelectorAll('[data-seed]').forEach(b=>b.onclick=()=>buySkin(b.dataset.seed));
   panel.querySelectorAll('[data-farby]').forEach(b=>b.onclick=()=>{const cn=b.dataset.city||(S.j.transit&&S.j.transit.city&&S.j.transit.city.name);if(!cn)return;const v=b.dataset.farby;if(v)S.taught.farBy[cn]=v;else delete S.taught.farBy[cn];const FB={rail:'新幹線・電車',air:'飛行機',coach:'高速バス'};addDiary({kind:'note',tag:'you',text:v?'あなたに教わった: '+cn+'は'+FB[v]+'で行く。次からそうする。':cn+'への手段は比べて決めることにした。',t:Date.now()});toast(cn+': '+(v?'次から'+FB[v]+'で':'比べて決める'),'var(--acc)');renderPanel();save();});
   panel.querySelectorAll('[data-plan2]').forEach(b=>b.onclick=()=>{S.plan={k:todayKey(),mode:b.dataset.plan2};toast('今日は「'+PLAN_LABEL[b.dataset.plan2]+'」','var(--acc)');renderPanel();save();});
