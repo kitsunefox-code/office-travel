@@ -8,6 +8,13 @@
   },
   "h5": false,
   "rakuten": "",
-  "vc": { "sid": "", "pid": "" },
-  "tp": ""
+  "vc": {
+    "sid": "",
+    "pid": ""
+  },
+  "tp": "",
+  "places": {
+    "_説明": "Google Places API (New) のブラウザ用キー。Google Cloud で HTTP リファラーを kusayakyu-navi.com/* に制限して作る。空なら口コミは Googleマップで開く",
+    "key": ""
+  }
 }
