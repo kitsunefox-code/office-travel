@@ -844,8 +844,8 @@ function rideName(l){if(l.mode==='TAXI')return l.line||'タクシー';if(l.mode=
 function taxiFare(m){return Math.max(500,Math.round((500+Math.max(0,m-1000)/250*100)/10)*10);}
 function legStops(l){const arr=l.intermediateStops||[];return arr.slice(0,40).map(x=>({n:jaOnly(x.name||''),la:x.lat,lo:x.lon,t:Date.parse(x.arrival||x.departure||l.endTime)})).filter(x=>x.la&&x.lo);}
 function decodePoly(str,prec){const f=Math.pow(10,prec);let idx=0,lat=0,lon=0;const out=[];const rd=()=>{let b,sh=0,res=0;do{b=str.charCodeAt(idx++)-63;res+=(b&0x1f)*Math.pow(2,sh);sh+=5;}while(b>=0x20);return (res%2)?-(res+1)/2:res/2;};while(idx<str.length){lat+=rd();lon+=rd();out.push([lat/f,lon/f]);}return out;}
-function legGeo(l){try{const g=l.legGeometry;if(!g||!g.points||l.mode==='WALK')return null;let pts=null;for(const prec of [g.precision||7,g.precision===7?6:7]){try{const p=decodePoly(g.points,prec);if(p.length>1&&dist(p[0],[l.from.lat,l.from.lon])<800){pts=p;break;}}catch(e){}}
-  if(!pts)return null;if(pts.length>60){const step=(pts.length-1)/59;const out=[];for(let i=0;i<60;i++)out.push(pts[Math.round(i*step)]);pts=out;}return pts.map(p=>[+p[0].toFixed(5),+p[1].toFixed(5)]);}catch(e){return null;}}
+function legGeo(l){try{const g=l.legGeometry;if(!g||!g.points)return null;let pts=null;for(const prec of [g.precision||7,g.precision===7?6:7]){try{const p=decodePoly(g.points,prec);if(p.length>1&&dist(p[0],[l.from.lat,l.from.lon])<800){pts=p;break;}}catch(e){}}
+  if(!pts)return null;{const mx=/RAIL|SUBWAY|TRAM|METRO|AIR|FERRY|TRAIN/.test(l.mode||'')?80:300;if(pts.length>mx){const step=(pts.length-1)/(mx-1);const out=[];for(let i=0;i<mx;i++)out.push(pts[Math.round(i*step)]);pts=out;}}return pts.map(p=>[+p[0].toFixed(5),+p[1].toFixed(5)]);}catch(e){return null;}}
 /* 区間内の位置: 停車駅の時刻で区切り、線形に沿って進む */
 function posOnLeg(L,now){if(now<L.t0)return [L.from.la,L.from.lo];if(now>=L.t1)return [L.to.la,L.to.lo];
   if(!L.geo||L.geo.length<2){const f=(now-L.t0)/Math.max(1,L.t1-L.t0);return [L.from.la+(L.to.la-L.from.la)*f,L.from.lo+(L.to.lo-L.from.lo)*f];}
@@ -872,7 +872,7 @@ function requestTransit(toPoi,t,toLL,city,fb){const j=S.j;const from=j.pos||[HOM
 function startTransitPlan(plan,toPoi,t,city,from,fb){const j=S.j;
     if(!plan||plan.legs.every(l=>l.mode==='WALK')){if(city){addDiary({kind:'note',text:city.name+'への経路が見つからなかった。今日はこの街で過ごす',t:Date.now()});j.cityTarget=null;}else{const alt=fb&&((fb.cycle&&fb.cycle.fare<=S.wallet)?fb.cycle:(fb.taxi&&fb.taxi.fare<=S.wallet*0.6)?fb.taxi:null);if(alt){addDiary({kind:'note',tag:'think',text:'電車もバスも見つからない。'+(alt.micro==='TAXI'?alt.legs[0].line+'を使う。':alt.legs[1].line+'で行く。'),t:Date.now()});startTransitPlan(alt,toPoi,t,null,from);return;}noTransit[toPoi]=true;}j.state='stay';j.until=Date.now();return;}
     const last=plan.legs[plan.legs.length-1];{const startName=j.at>=0&&POIS[j.at]?POIS[j.at].n:(S.trip?'泊まった所':'家');const endName=city?city.name+'駅前':(toPoi>=0?POIS[toPoi].n:'家');plan.legs.forEach(l=>{if(l.from.n==='START')l.from.n=startName;if(l.to.n==='END')l.to.n=endName;if(l.from.n==='END')l.from.n=endName;if(l.to.n==='START')l.to.n=startName;});}
-    j.transit=plan;j.transit.city=city||null;j.straight=null;j.path=[];j.target=toPoi;j.state='walk';j.walkStart=t;j.eta=last.t1;j.pos=from.slice();
+    j.transit=plan;j.transit.city=city||null;try{roadifyPlan(plan);}catch(e){console.log('roadify',e);}j.straight=null;j.path=[];j.target=toPoi;j.state='walk';j.walkStart=t;j.eta=last.t1;j.pos=from.slice();
     if(city&&!city.home&&!city.fareTaught&&!plan.coach&&plan.legs.some(l=>l.mode==='HIGHSPEED_RAIL')){city.fare=shinkansenFare(dist(from,[city.la,city.lo])/1000);city.fareNote='(新幹線の相場から)';}
     if(city&&city.fare){const pay=Math.min(city.fare,S.wallet);S.wallet-=pay;S.stats.spent+=pay;addDiary({kind:'visit',pn:city.name+'行きの切符',pla:from[0],plo:from[1],text:city.name+'までの切符を買った'+(city.fareTaught?'(運賃はあなたに教わった額)':(city.fareNote||'(運賃は距離からの推定)')),cost:pay,emoji:'🎫',color:'#d9c8a0',t:Date.now()});}
     const rides=plan.legs.filter(l=>l.mode!=='WALK');const first=rides[0];
@@ -1087,6 +1087,34 @@ async function arriveCity(city,t){const j=S.j;j.cityTarget=null;if(!city.resume)
 const MICRO={luup:{n:'LUUP',speed:3.6,unlock:120,ret:60,fare:sec=>50+15*Math.ceil(sec/60)},docomo:{n:'ドコモ・バイクシェア',speed:3.9,unlock:150,ret:60,fare:sec=>165*Math.max(1,Math.ceil(sec/1800))},hello:{n:'HELLO CYCLING',speed:3.7,unlock:150,ret:60,fare:sec=>130*Math.max(1,Math.ceil(sec/1800))},other:{n:'シェアサイクル',speed:3.6,unlock:150,ret:60,fare:sec=>165*Math.max(1,Math.ceil(sec/1800))}};
 function nearestNodeIdx(la,lo){let b=0,bd=1e18;for(let i=0;i<NODES.length;i++){const d=(NODES[i][0]-la)**2+((NODES[i][1]-lo)*COSL)**2;if(d<bd){bd=d;b=i;}}return b;}
 function pathGeo(a,b){return route(a,b).map(i=>[NODES[i][0],NODES[i][1]]);}
+/* 車の通れる道だけ(歩道・小道・階段を除く)で探す仮の経路 */
+let adjCar=null,adjCarN=null;
+function carGeo(from,to){if(!NODES||!NODES.length)return [from,to];if(adjCarN!==NODES){adjCar=NODES.map(()=>[]);EDGES.forEach(([a,b,len,wd])=>{if(wd>=2){adjCar[a].push([b,len]);adjCar[b].push([a,len]);}});adjCarN=NODES;}
+  const ok=i=>adjCar[i].length>0;const near=(la,lo)=>{let b=-1,bd=1e18;for(let i=0;i<NODES.length;i++){if(!ok(i))continue;const d=(NODES[i][0]-la)**2+((NODES[i][1]-lo)*COSL)**2;if(d<bd){bd=d;b=i;}}return b;};
+  const a=near(from[0],from[1]),b=near(to[0],to[1]);if(a<0||b<0)return [from,to];const keep=adj;adj=adjCar;let p;try{p=route(a,b);}finally{adj=keep;}
+  if(p.length<2&&a!==b)return [from,to];return [from,...p.map(i=>[NODES[i][0],NODES[i][1]]),to];}
+/* 本物の道路の経路: car / bike / foot。結果は覚えておく */
+const ROAD_PROF={car:'routed-car/route/v1/driving',bike:'routed-bike/route/v1/bike',foot:'routed-foot/route/v1/foot'};const roadMem=new Map();
+function thinGeo(g,max){if(g.length<=max)return g;const step=(g.length-1)/(max-1);const out=[];for(let i=0;i<max;i++)out.push(g[Math.round(i*step)]);return out;}
+async function roadRoute(from,to,prof){const k=prof+':'+from.map(x=>x.toFixed(4)).join(',')+'>'+to.map(x=>x.toFixed(4)).join(',');if(roadMem.has(k))return roadMem.get(k);
+  const u='https://routing.openstreetmap.de/'+ROAD_PROF[prof]+'/'+from[1].toFixed(6)+','+from[0].toFixed(6)+';'+to[1].toFixed(6)+','+to[0].toFixed(6)+'?overview=full&geometries=geojson';
+  const ctl=typeof AbortController!=='undefined'?new AbortController():null;const tm=setTimeout(()=>{try{ctl&&ctl.abort();}catch(e){}},12000);
+  try{const r=await fetch(u,ctl?{signal:ctl.signal}:{});if(!r.ok)throw new Error('road '+r.status);const J=await r.json();const R=J.routes&&J.routes[0];if(!R||!R.geometry)throw new Error('no road');
+    const g=thinGeo(R.geometry.coordinates.map(c=>[+c[1].toFixed(6),+c[0].toFixed(6)]),400);const out={geo:[from,...g,to],dist:R.distance,dur:R.duration};roadMem.set(k,out);if(roadMem.size>200)roadMem.delete(roadMem.keys().next().value);return out;}
+  finally{clearTimeout(tm);}}
+function profOf(mode){return (mode==='TAXI'||mode==='CAR'||mode==='BUS'||mode==='COACH')?'car':(mode==='CYCLE'||mode==='LUUP'||mode==='BIKE')?'bike':mode==='WALK'?'foot':null;}
+/* 乗換案内・配車の区間に道の線形を付ける(道路を走る区間で、線形が無い/仮のもの) */
+function roadifyPlan(plan){if(!plan||!plan.legs)return;for(const L of plan.legs){const pf=profOf(L.mode);if(!pf)continue;if(L.geo&&L.geo.length>2&&!L.geoRough)continue;
+    const a=[L.from.la,L.from.lo],b=[L.to.la,L.to.lo];if(!(a[0]&&b[0])||dist(a,b)<60||dist(a,b)>60000)continue;
+    roadRoute(a,b,pf).then(R=>{if(S.j.transit!==plan)return;L.geo=R.geo;L.geoRough=false;delete L._cum;delete L._anchors;L.roadM=Math.round(R.dist);
+      const now=Date.now();if(L.mode==='TAXI'&&now<L.t0){const nr=R.dur*1.15*1000+60000;const d=Math.round(L.t0+nr-L.t1);if(Math.abs(d)>30000){L.t1+=d;const i=plan.legs.indexOf(L);for(let k=i+1;k<plan.legs.length;k++){plan.legs[k].t0+=d;plan.legs[k].t1+=d;}S.j.eta=plan.legs[plan.legs.length-1].t1;}L.fare=taxiFare(R.dist);}
+      save();}).catch(e=>console.log('road skip',pf,e.message));}}
+/* 自分の車・自転車・教わった手段(直線で持っていた移動)にも道の線形を付ける */
+function roadifyStraight(st){const pf=(st.kind==='taxi'||st.kind==='car'||st.kind==='bus'||(!st.kind&&S.vehicle==='car'))?'car':(st.kind==='bike'||st.kind==='luup'||(!st.kind&&S.vehicle==='bike'))?'bike':null;if(!pf)return;
+  if(pf==='car'&&!st.geo)st.geo=carGeo(st.from,st.to);
+  roadRoute(st.from,st.to,pf).then(R=>{if(S.j.straight!==st)return;st.geo=R.geo;delete st._cum;const now=Date.now();
+    if(now<st.t0+st.prep*1000&&!st.label){const sp=dist(st.from,st.to)/Math.max(1,st.move);const nm=Math.max(st.move,R.dist/Math.max(0.5,sp));st.move=nm;S.j.eta=st.t0+(st.prep+st.move+st.park)*1000;}save();}).catch(e=>console.log('road skip',e.message));}
+function geoAt(o,f){const g=o.geo;if(!o._cum){const c=[0];for(let i=1;i<g.length;i++)c.push(c[i-1]+dist(g[i-1],g[i]));o._cum=c;}const c=o._cum,d=c[c.length-1]*f;let i=1;while(i<c.length-1&&c[i]<d)i++;const seg=Math.max(1e-6,c[i]-c[i-1]);const q=Math.min(1,Math.max(0,(d-c[i-1])/seg));const a=g[i-1],b=g[i];return [a[0]+(b[0]-a[0])*q,a[1]+(b[1]-a[1])*q];}
 function geoLen(g){let s=0;for(let i=1;i<g.length;i++)s+=dist(g[i-1],g[i]);return s;}
 function microPlan(toPoi,t){const j=S.j;const from=j.pos||[HOME.la,HOME.lo];const to=toPoi>=0?[POIS[toPoi].la,POIS[toPoi].lo]:[HOME.la,HOME.lo];const toName=toPoi>=0?POIS[toPoi].n:'家';const dd=dist(from,to);if(dd<900||!NODES||!NODES.length)return null;const hr0=hour(t);const late0=hr0>=23.5||hr0<5;
   const ports=POIS.filter(p=>p.k==='port');const near=(pt,lim)=>{let best=null,bd=lim;for(const p of ports){const d=dist(pt,[p.la,p.lo]);if(d<bd){bd=d;best=p;}}return best;};
@@ -1094,9 +1122,9 @@ function microPlan(toPoi,t){const j=S.j;const from=j.pos||[HOME.la,HOME.lo];cons
   if(pa&&pb&&pa!==pb&&!rainy()&&dd>=1800){const op=MICRO[pa.op]||MICRO.other;const nA=nearestNodeIdx(from[0],from[1]),nB=nearestNodeIdx(to[0],to[1]);const g1=pathGeo(nA,pa.nn),g2=pathGeo(pa.nn,pb.nn),g3=pathGeo(pb.nn,nB);const w1=geoLen(g1)/1.15,rd=geoLen(g2),ride=rd/op.speed,w3=geoLen(g3)/1.15;
     const walkAll=dd*1.25/1.15;const saves=walkAll-(w1+op.unlock+ride+op.ret+w3);
     if(rd>1500&&saves>=12*60){const t1=t+w1*1000,t2=t1+op.unlock*1000,t3=t2+ride*1000,t4=t3+op.ret*1000,t5=t4+w3*1000;const fare=op.fare(ride);const mode=pa.op==='luup'?'LUUP':'CYCLE';
-      cycle={legs:[{mode:'WALK',route:'',agency:'',headsign:'',from:{n:'START',la:from[0],lo:from[1]},to:{n:pa.n,la:pa.la,lo:pa.lo},t0:t,t1:t1,geo:g1},{mode,line:op.n,route:'',agency:'',headsign:'',kind:'',from:{n:pa.n,la:pa.la,lo:pa.lo},to:{n:pb.n,la:pb.la,lo:pb.lo},t0:t2,t1:t3,geo:g2,stops:[],fare},{mode:'WALK',route:'',agency:'',headsign:'',from:{n:pb.n,la:pb.la,lo:pb.lo},to:{n:'END',la:to[0],lo:to[1]},t0:t4,t1:t5,geo:g3}],dur:Math.round((t5-t)/1000),micro:mode,fare,total:t5-t};}}
-  let taxi=null;if(dd>=1500||(late0&&dd>=900)){const g=pathGeo(nearestNodeIdx(from[0],from[1]),nearestNodeIdx(to[0],to[1]));const rd=Math.max(dd,geoLen(g));const wait=(3+Math.random()*4)*60;const ride=rd/6.5+60;const fare=taxiFare(rd);const app=Math.random()<0.45;const t0=t+wait*1000,t1=t0+ride*1000;
-    taxi={legs:[{mode:'TAXI',line:app?'配車(GO・Uber)':'タクシー',route:'',agency:'',headsign:'',kind:'',from:{n:'START',la:from[0],lo:from[1]},to:{n:'END',la:to[0],lo:to[1]},t0,t1,geo:g,stops:[],fare,app}],dur:Math.round((t1-t)/1000),micro:'TAXI',fare,total:t1-t};}
+      cycle={legs:[{mode:'WALK',route:'',agency:'',headsign:'',from:{n:'START',la:from[0],lo:from[1]},to:{n:pa.n,la:pa.la,lo:pa.lo},t0:t,t1:t1,geo:g1},{mode,line:op.n,route:'',agency:'',headsign:'',kind:'',from:{n:pa.n,la:pa.la,lo:pa.lo},to:{n:pb.n,la:pb.la,lo:pb.lo},t0:t2,t1:t3,geo:g2,geoRough:true,stops:[],fare},{mode:'WALK',route:'',agency:'',headsign:'',from:{n:pb.n,la:pb.la,lo:pb.lo},to:{n:'END',la:to[0],lo:to[1]},t0:t4,t1:t5,geo:g3}],dur:Math.round((t5-t)/1000),micro:mode,fare,total:t5-t};}}
+  let taxi=null;if(dd>=1500||(late0&&dd>=900)){const g=carGeo(from,to);const rd=Math.max(dd,geoLen(g));const wait=(3+Math.random()*4)*60;const ride=rd/6.5+60;const fare=taxiFare(rd);const app=Math.random()<0.45;const t0=t+wait*1000,t1=t0+ride*1000;
+    taxi={legs:[{mode:'TAXI',line:app?'配車(GO・Uber)':'タクシー',route:'',agency:'',headsign:'',kind:'',from:{n:'START',la:from[0],lo:from[1]},to:{n:'END',la:to[0],lo:to[1]},t0,t1,geo:g,geoRough:true,stops:[],fare,app}],dur:Math.round((t1-t)/1000),micro:'TAXI',fare,total:t1-t};}
   const thrift=S.taught.habits.cheap||trait('thrift')>0,lux=trait('luxury')>0,walker=trait('walker')>0;const hr=hour(t);const late=hr>=23.5||hr<5;const tired=S.energy<25;
   let use=null;
   if(taxi&&taxi.fare<=S.wallet*0.5&&((rainy()&&(lux||tired||Math.random()<0.35))||late||(lux&&dd>1500&&Math.random()<0.5)||(tired&&dd>1800&&!thrift&&Math.random()<0.4)))use=taxi;
@@ -1193,7 +1221,7 @@ function taughtRouteFor(toPoi){const j=S.j;const toName=toPoi>=0?POIS[toPoi].n:'
   return S.taught.routes.find(r=>(hereNames.some(n=>n.includes(r.from)||r.from.includes(n)))&&(toName.includes(r.to)||r.to.includes(toName)))||null;}
 function labelKind(by){by=String(by||'');if(/タクシー|uber|\bgo\b|配車|ハイヤー/i.test(by))return 'taxi';if(/luup|ループ|キック/i.test(by))return 'luup';if(/サイクル|自転車|cycle|bike/i.test(by))return 'bike';if(/バス|bus/i.test(by))return 'bus';if(/車|カー|car/i.test(by))return 'car';return 'bus';}
 function startTaught(toPoi,t,r){const j=S.j;const from=j.pos||[HOME.la,HOME.lo];const to=toPoi>=0?[POIS[toPoi].la,POIS[toPoi].lo]:[HOME.la,HOME.lo];const dd=dist(from,to);const wait=r.every?Math.floor(Math.random()*r.every):3;
-  j.straight={from,to,t0:t,prep:(3+wait)*60,move:Math.max(60,(r.min||10)*60),park:120,label:r.by,kind:labelKind(r.by)};j.path=[];j.seg=0;j.segPos=0;j.target=toPoi;j.state='walk';j.pos=from.slice();j.walkStart=t;j.pathLen=dd;j.eta=t+(j.straight.prep+j.straight.move+j.straight.park)*1000;j.arrivedBy=r.by;
+  j.straight={from,to,t0:t,prep:(3+wait)*60,move:Math.max(60,(r.min||10)*60),park:120,label:r.by,kind:labelKind(r.by)};roadifyStraight(j.straight);j.path=[];j.seg=0;j.segPos=0;j.target=toPoi;j.state='walk';j.pos=from.slice();j.walkStart=t;j.pathLen=dd;j.eta=t+(j.straight.prep+j.straight.move+j.straight.park)*1000;j.arrivedBy=r.by;
   if(r.fare){const pay=Math.min(r.fare,S.wallet);S.wallet-=pay;S.stats.spent+=pay;}
   addDiary({kind:'note',text:'あなたに教わった通り、'+r.by+'で'+(toPoi>=0?POIS[toPoi].n:'家')+'へ('+(r.min||'?')+'分'+(r.fare?'、¥'+r.fare:'')+(wait?'、'+wait+'分待ち':'')+')',t});}
 /* 行動決定 */
@@ -1226,7 +1254,7 @@ function candidates(t){const h=hour(t);const nightNow=actMode()!=='work'&&(h<5.5
 function startWalk(toPoi,t){const j=S.j;const v=V();
   const from=j.pos||[HOME.la,HOME.lo];const to=toPoi>=0?[POIS[toPoi].la,POIS[toPoi].lo]:[HOME.la,HOME.lo];const dd=dist(from,to);
   const useVehicle=(S.vehicle!=='walk')&&((toPoi>=0&&POIS[toPoi].far)||(j.at>=0&&POIS[j.at].far)||(S.vehicle==='car'&&dd>900)||(S.vehicle==='bike'&&dd>500));
-  if(useVehicle){const move=dd/v.speed;j.straight={from,to,t0:t,prep:v.prep*60,move,park:v.park*60};j.path=[];j.seg=0;j.segPos=0;j.target=toPoi;j.state='walk';j.pos=from.slice();j.walkStart=t;j.pathLen=dd;j.eta=t+(j.straight.prep+move+j.straight.park)*1000;return;}
+  if(useVehicle){const move=dd/v.speed;j.straight={from,to,t0:t,prep:v.prep*60,move,park:v.park*60};roadifyStraight(j.straight);j.path=[];j.seg=0;j.segPos=0;j.target=toPoi;j.state='walk';j.pos=from.slice();j.walkStart=t;j.pathLen=dd;j.eta=t+(j.straight.prep+move+j.straight.park)*1000;return;}
   j.straight=null;
   const nearestNode=(la,lo)=>{let b=0,bd=1e18;for(let i=0;i<NODES.length;i++){const d=(NODES[i][0]-la)**2+((NODES[i][1]-lo)*0.81)**2;if(d<bd){bd=d;b=i;}}return b;};
   const fromNode=j.at>=0&&!POIS[j.at].far?POIS[j.at].nn:(HOME.nn>=0&&dist(from,[HOME.la,HOME.lo])<300?HOME.nn:nearestNode(from[0],from[1]));const toNode=toPoi>=0?POIS[toPoi].nn:(HOME.nn>=0?HOME.nn:nearestNode(HOME.la,HOME.lo));
@@ -1361,7 +1389,7 @@ function simTo(now,r){const j=S.j;if(!j.t)j.t=now;if(!j.pos)j.pos=[HOME.la,HOME.
       j.t=now;break;}
     if(j.state==='walk'&&j.straight){const L=j.straight;const total=L.prep+L.move+L.park;const endT=L.t0+total*1000;const el=(Math.min(now,endT)-L.t0)/1000;
       if(now>=endT){j.t=L.t0+total*1000;j.pos=L.to.slice();j.straight=null;arrive(j.t,r);continue;}
-      const f=Math.max(0,Math.min(1,(el-L.prep)/Math.max(1,L.move)));j.pos=[L.from[0]+(L.to[0]-L.from[0])*f,L.from[1]+(L.to[1]-L.from[1])*f];j.t=now;break;}
+      const f=Math.max(0,Math.min(1,(el-L.prep)/Math.max(1,L.move)));j.pos=(L.geo&&L.geo.length>1)?geoAt(L,f):[L.from[0]+(L.to[0]-L.from[0])*f,L.from[1]+(L.to[1]-L.from[1])*f];j.t=now;break;}
     if(j.state==='walk'){ // 次のセグメントの終わり or now まで進む
       const speed=S.vehicle==='bike'?2.6:1.15;if(j.seg>=j.path.length-1){j.t=Math.max(j.t,Math.min(now,j.t));arrive(j.t,r);continue;}
       const a=NODES[j.path[j.seg]],b=NODES[j.path[j.seg+1]];const segLen=dist(a,b);const remain=segLen-j.segPos;const dtMax=(now-j.t)/1000;const canGo=speed*dtMax;
@@ -1488,7 +1516,7 @@ function draw(now){const hr=hour(Date.now());const night=nightness(hr);
     ctx.font='bold 12px sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,.9)';ctx.strokeText('家',x+17,y+3);ctx.fillStyle='#333';ctx.fillText('家',x+17,y+3);}
   // 経路
   if(j.state==='walk'&&j.transit){ctx.lineWidth=2.5;for(const l of j.transit.legs){const [x1,y1]=px(l.from.la,l.from.lo),[x2,y2]=px(l.to.la,l.to.lo);ctx.strokeStyle=l.mode==='WALK'?'rgba(70,120,220,.5)':l.mode==='BUS'?'rgba(230,120,40,.7)':l.mode==='TAXI'?'rgba(220,180,30,.8)':l.mode==='AIRPLANE'?'rgba(90,120,200,.6)':'rgba(40,140,90,.7)';ctx.setLineDash(l.mode==='WALK'?[5,5]:[]);ctx.beginPath();if(l.geo&&l.geo.length>1){l.geo.forEach((g,gi)=>{const [gx,gy]=px(g[0],g[1]);if(gi)ctx.lineTo(gx,gy);else ctx.moveTo(gx,gy);});}else{ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);}ctx.stroke();if(l.stops&&l.stops.length&&!zoomedOut){ctx.fillStyle='#fff';ctx.strokeStyle='#666';ctx.lineWidth=1;ctx.setLineDash([]);for(const st of l.stops){const [sx,sy]=px(st.la,st.lo);ctx.beginPath();ctx.arc(sx,sy,2.5,0,7);ctx.fill();ctx.stroke();}ctx.lineWidth=2.5;}if(l.mode!=='WALK'){ctx.fillStyle='#fff';ctx.strokeStyle='#555';ctx.lineWidth=1;ctx.setLineDash([]);for(const [sx,sy] of [[x1,y1],[x2,y2]]){ctx.beginPath();ctx.arc(sx,sy,3.5,0,7);ctx.fill();ctx.stroke();}}}ctx.setLineDash([]);}
-  if(j.state==='walk'&&j.straight){const [x1,y1]=px(j.pos[0],j.pos[1]),[x2,y2]=px(j.straight.to[0],j.straight.to[1]);ctx.strokeStyle='rgba(70,120,220,.55)';ctx.lineWidth=2.5;ctx.setLineDash([6,6]);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.setLineDash([]);}
+  if(j.state==='walk'&&j.straight){const st=j.straight;ctx.strokeStyle='rgba(70,120,220,.55)';ctx.lineWidth=2.5;ctx.setLineDash([6,6]);ctx.beginPath();const [x1,y1]=px(j.pos[0],j.pos[1]);ctx.moveTo(x1,y1);if(st.geo&&st.geo.length>1){let bi=0,bd=1e18;st.geo.forEach((g,i)=>{const d=(g[0]-j.pos[0])**2+(g[1]-j.pos[1])**2;if(d<bd){bd=d;bi=i;}});for(let i=bi+1;i<st.geo.length;i++){const [gx,gy]=px(st.geo[i][0],st.geo[i][1]);ctx.lineTo(gx,gy);}}else{const [x2,y2]=px(st.to[0],st.to[1]);ctx.lineTo(x2,y2);}ctx.stroke();ctx.setLineDash([]);}
   if(j.state==='walk'&&!j.straight&&j.path.length>1){ctx.strokeStyle='rgba(70,120,220,.55)';ctx.lineWidth=2.5;ctx.setLineDash([5,5]);ctx.beginPath();for(let k=j.seg;k<j.path.length;k++){const [x,y]=px(NODES[j.path[k]][0],NODES[j.path[k]][1]);if(k===j.seg){const [cx,cy]=px(j.pos[0],j.pos[1]);ctx.moveTo(cx,cy);}else ctx.lineTo(x,y);}ctx.stroke();ctx.setLineDash([]);}
   // もう1人の自分
   {let [x,y]=px(j.pos?j.pos[0]:HOME.la,j.pos?j.pos[1]:HOME.lo);if(j.at===-1&&j.state!=='walk'&&!j.transit){x+=18;y+=9;}
@@ -2083,7 +2111,7 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>この人を別の端末へ<small>引き継ぎコードを出す → 別の端末の「読み込む」に貼る。街のデータは向こうで取り直す</small></div><span><button id="bExport">コードを出す</button> <button id="bImport">読み込む</button></span></div>
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v63 (2026-09-19)</div>';
+    h+='<div class="note">版: v64 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;setTimeout(()=>{try{paginatePanel();}catch(e){console.warn('pg',e);}},0);$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
