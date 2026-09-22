@@ -1,0 +1,13 @@
+{
+  "_説明": "広告の設定。値を入れた所だけ有効になる。空のままなら広告もPRリンクも出ない。",
+  "adsense": {
+    "client": "ca-pub-6423402285554400",
+    "slotDiary": "",
+    "slotStory": "",
+    "on": false
+  },
+  "h5": false,
+  "rakuten": "",
+  "vc": { "sid": "", "pid": "" },
+  "tp": ""
+}

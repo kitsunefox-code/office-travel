@@ -151,6 +151,11 @@
   #mapLoad{position:absolute;left:10px;right:10px;top:50%;transform:translateY(-50%);margin:0 auto;max-width:360px;background:rgba(250,246,238,.97);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);z-index:5;text-align:center}
 #mapLoad.hidden{display:none}
 #panel{z-index:40}
+.pr{font-style:normal;font:700 9px/1 var(--fb);color:#8a6d1f;background:#f6e7b0;border-radius:4px;padding:2px 4px;margin-left:3px;vertical-align:1px}
+.adbox{margin:12px 0;padding:8px 10px 10px;border:1px dashed var(--line);border-radius:14px;background:#fffdf7;min-height:60px}.adbox small{display:block;font:600 10px/1 var(--fb);color:var(--dim);margin-bottom:6px;letter-spacing:.08em}
+#story .adbox{margin:12px auto 0;max-width:420px;background:rgba(255,255,255,.92)}
+.gift2 .gpr{display:block;margin-top:4px;font-size:11px}
+.rwd{width:100%;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:10px;align-items:center;text-align:left;margin:0 0 10px;padding:10px 14px;border-radius:16px;border:0;background:linear-gradient(135deg,#5f9a5a,#4a8a4a);color:#fff;box-shadow:0 4px 12px rgba(74,138,74,.35);cursor:pointer}.rwd span{grid-row:1/3;font-size:24px}.rwd b{font:700 15px/1.2 var(--fd)}.rwd small{font:500 11px/1.3 var(--fb);opacity:.9}
 .chips .hb{background:var(--acc)!important;color:#fff!important;border-color:var(--acc)!important;font-weight:700}
 .wkg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0 0 8px}.wkg button{display:flex;align-items:center;gap:6px;text-align:left;border-radius:12px;padding:9px 10px;font:600 13px/1.25 var(--fb);background:#fff}.wkg button.on{background:var(--ink);color:#fff;border-color:var(--ink)}.wkg button:disabled{opacity:.4}.wkg button i{font-style:normal;font-size:17px}
 .pgbar{position:sticky;top:-18px;z-index:3;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -14px 10px;padding:8px 14px;background:var(--paper);border-bottom:1px solid var(--line)}.pgbar::-webkit-scrollbar{display:none}
@@ -975,7 +980,7 @@ async function planIntlFlight(from,city,t){if(!flightsAvailable())return null;
       if(toAp2){const a2=toAp2.legs[toAp2.legs.length-1].t1;if(a2<=dep-buffer*0.7){toAp=toAp2;arriveAp=a2;}}
       else if(!toAp){arriveAp=Math.min(dep-buffer,leaveAt+estDur);}}
     if(!toAp){const t0=Math.max(t,arriveAp-estDur);const dm=dist(from,[A[1],A[2]]);toAp={legs:[{mode:'TAXI',route:'',agency:'',headsign:A[0],from:{n:'START',la:from[0],lo:from[1]},to:{n:A[0],la:A[1],lo:A[2]},t0,t1:arriveAp,fare:taxiFare(dm)}]};}}
-  const url='https://www.aviasales.com'+(f.link?(f.link.startsWith('/')?'':'/')+f.link:'/search/'+best.o+ymd(dep).slice(8,10)+ymd(dep).slice(5,7)+destCode+'1')+(S.keys.travelpayouts?(f.link&&f.link.includes('?')?'&':'?')+'marker='+encodeURIComponent(S.keys.travelpayouts):'');
+  const url='https://www.aviasales.com'+(f.link?(f.link.startsWith('/')?'':'/')+f.link:'/search/'+best.o+ymd(dep).slice(8,10)+ymd(dep).slice(5,7)+destCode+'1')+((ADS.tp||S.keys.travelpayouts)?(f.link&&f.link.includes('?')?'&':'?')+'marker='+encodeURIComponent(ADS.tp||S.keys.travelpayouts):'');
   let fromCity=null;try{fromCity=await planTransit(await airportAccess(destCode),[city.la,city.lo],arr+45*60000);}catch(e){}
   if(toAp)toAp.legs.forEach(l=>{if(l.to.n==='END')l.to.n=A[0];});if(fromCity)fromCity.legs.forEach(l=>{if(l.from.n==='START')l.from.n=B[0];});
   const legs=[];if(toAp)legs.push(...toAp.legs);
@@ -1155,11 +1160,38 @@ function pickLodging(t){const here=S.j.pos||[HOME.la,HOME.lo];const hb=S.taught.
   const afford=cands.filter(x=>x.price<=S.wallet);if(!afford.length)return {none:false,cheapest:cands.sort((a,b)=>a.price-b.price)[0]};
   afford.forEach(x=>{x.sc=Math.random()*2-x.d/800-(hb.cheap?x.price/3000:x.price/9000)+(x.p.k==='ryokan'?1:0)+(x.p.s>=3?0.8:0)-(x.p.b?0.5:0);});
   afford.sort((a,b)=>b.sc-a.sc);return {pick:afford[0]};}
+/* 広告の設定(サイト運営者が data/ads.json に書く。利用者は触らない) */
+let ADS={adsense:{client:'',slotDiary:'',slotStory:'',on:false},h5:false,rakuten:'',vc:{sid:'',pid:''},tp:''};
+async function loadAds(){try{const r=await fetch('data/ads.json',{cache:'no-cache'});if(!r.ok)return;const J=await r.json();ADS=Object.assign(ADS,J||{});ADS.adsense=Object.assign({client:'',slotDiary:'',slotStory:'',on:false},J.adsense||{});ADS.vc=Object.assign({sid:'',pid:''},J.vc||{});if(ADS.adsense.on&&ADS.adsense.client)loadAdScript();}catch(e){}}
+let adScript=false;
+function loadAdScript(){if(adScript||location.protocol==='file:')return;adScript=true;const sc=document.createElement('script');sc.async=true;sc.crossOrigin='anonymous';sc.src='https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='+encodeURIComponent(ADS.adsense.client);
+  if(ADS.h5){sc.setAttribute('data-ad-frequency-hint','120s');}document.head.appendChild(sc);window.adsbygoogle=window.adsbygoogle||[];if(ADS.h5){window.adBreak=window.adConfig=function(o){window.adsbygoogle.push(o);};try{adConfig({preloadAdBreaks:'on',sound:'off'});}catch(e){}}}
+function affRakutenId(){return ADS.rakuten||S.keys.rakutenAff||'';}
+function affVC(){return (ADS.vc&&ADS.vc.sid&&ADS.vc.pid)?ADS.vc:(S.keys.vcSid&&S.keys.vcPid?{sid:S.keys.vcSid,pid:S.keys.vcPid}:null);}
+function rakutenWrap(u){const id=affRakutenId();return id?`https://hb.afl.rakuten.co.jp/hgc/${encodeURIComponent(id)}/?pc=${encodeURIComponent(u)}&m=${encodeURIComponent(u)}`:null;}
+function vcWrap(u){const v=affVC();return v?`https://ck.jp.ap.valuecommerce.com/servlet/referral?sid=${encodeURIComponent(v.sid)}&pid=${encodeURIComponent(v.pid)}&vc_url=${encodeURIComponent(u)}`:null;}
+const PR='<i class="pr">PR</i>';
+function prA(href,label){return href?`<a href="${esc(href)}" target="_blank" rel="noopener sponsored">${label}${PR}</a>`:'';}
+/* 飲食店はホットペッパー、お土産・服は楽天市場(成果の入る形にできる時だけ出す) */
+const FOOD_K=new Set(['restaurant','cafe','fast_food','pub','bar','sweets','bakery','food_court','ice_cream']);
+function visitPR(e){const b=S.book[e.pk]||POIS.find(p=>PK(p)===e.pk)||{};const k=b.k||'';
+  if(FOOD_K.has(k))return prA(vcWrap('https://www.hotpepper.jp/CSP/psh010/doBasic?FWT='+encodeURIComponent(e.pn)),'予約・クーポン');
+  if(k==='clothes'||k==='shop')return prA(rakutenWrap('https://search.rakuten.co.jp/search/mall/'+encodeURIComponent(e.pn)+'/'),'通販で見る');return '';}
+function souvenirPR(x){return prA(rakutenWrap('https://search.rakuten.co.jp/search/mall/'+encodeURIComponent((x.town||'')+' お土産')+'/'),'取り寄せる');}
+/* ディスプレイ広告の枠(設定が無ければ空) */
+function adUnit(slot,cls){if(!(ADS.adsense&&ADS.adsense.on&&ADS.adsense.client&&slot))return '';return `<div class="adbox ${cls||''}"><small>スポンサー</small><ins class="adsbygoogle" style="display:block" data-ad-client="${esc(ADS.adsense.client)}" data-ad-slot="${esc(slot)}" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;}
+function fillAds(root){if(!root||!window.adsbygoogle)return;root.querySelectorAll('ins.adsbygoogle:not([data-adsbygoogle-status])').forEach(()=>{try{window.adsbygoogle.push({});}catch(e){}});}
+/* リワード: 広告を最後まで見たら畑が全部実る(1日1回) */
+function rewardReady(){return !!(ADS.h5&&ADS.adsense&&ADS.adsense.on&&typeof window.adBreak==='function')&&S.rewardDay!==todayKey();}
+function watchReward(){if(!rewardReady())return;let given=false;
+  adBreak({type:'reward',name:'farm_water',beforeAd:()=>{},afterAd:()=>{},beforeReward:show=>show(),adDismissed:()=>{toast('最後まで見ると水やりできます','var(--ng)');},
+    adViewed:()=>{given=true;S.rewardDay=todayKey();const now=Date.now();const F=S.field;for(const sl of F.slots)sl.born=Math.min(sl.born,now-GROW_MS[2]);toast('水やりした。畑が全部実った!','var(--acc)');save();renderPanel();},
+    adBreakDone:pi=>{if(!given&&pi&&pi.breakStatus!=='viewed'&&pi.breakStatus!=='dismissed')toast('いまは見られる広告がありません。あとで','var(--dim)');}});}
 function hotelLinks(name,town){const q=encodeURIComponent(name+' '+(town||''));const K=S.keys;
   const rakutenTarget='https://search.travel.rakuten.co.jp/ds/hotellist/?f_query='+encodeURIComponent(name);const jalanTarget='https://www.jalan.net/uw/uwp2011/uww2011init.do?keyword='+encodeURIComponent(name);
-  const rakuten=K.rakutenAff?`https://hb.afl.rakuten.co.jp/hgc/${encodeURIComponent(K.rakutenAff)}/?pc=${encodeURIComponent(rakutenTarget)}&m=${encodeURIComponent(rakutenTarget)}`:`https://www.google.com/search?q=${encodeURIComponent('site:travel.rakuten.co.jp '+name)}`;
-  const jalan=(K.vcSid&&K.vcPid)?`https://ck.jp.ap.valuecommerce.com/servlet/referral?sid=${encodeURIComponent(K.vcSid)}&pid=${encodeURIComponent(K.vcPid)}&vc_url=${encodeURIComponent(jalanTarget)}`:`https://www.google.com/search?q=${encodeURIComponent('site:jalan.net '+name)}`;
-  return `<a href="${rakuten}" target="_blank" rel="noopener sponsored">楽天トラベル</a> / <a href="${jalan}" target="_blank" rel="noopener sponsored">じゃらん</a> / <a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">地図</a>`;}
+  const rakuten=affRakutenId()?rakutenWrap(rakutenTarget):`https://www.google.com/search?q=${encodeURIComponent('site:travel.rakuten.co.jp '+name)}`;
+  const jalan=affVC()?vcWrap(jalanTarget):`https://www.google.com/search?q=${encodeURIComponent('site:jalan.net '+name)}`;
+  return `<a href="${rakuten}" target="_blank" rel="noopener sponsored">楽天トラベル${affRakutenId()?PR:''}</a> / <a href="${jalan}" target="_blank" rel="noopener sponsored">じゃらん${affVC()?PR:''}</a> / <a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">地図</a>`;}
 function stayOvernight(t){const j=S.j;const r=pickLodging(t);const townName=M?M.name:'';
   if(r.pick){const {p,i,price}=r.pick;S.wallet-=price;S.stats.spent+=price;const pk=remember(p);j.at=i;j.pos=[p.la,p.lo];
     addDiary({kind:'visit',pk,pn:p.n,pla:p.la,plo:p.lo,town:townName,lodging:true,text:p.n+'に泊まる(1泊 ¥'+fmt(price)+'、料金は種類からの推定)',cost:price,emoji:info(p).e,color:COLORS[p.k],t});
@@ -1758,9 +1790,9 @@ function storyHTML(d){const dt=new Date(d.k);const wd='日月火水木金土'[dt
     <div class="stLine">「${esc(d.line)}」</div>
     <div class="stStats"><span><b>${d.vis.length}</b>軒</span><span><b>${d.km.toFixed(1)}</b>km</span><span><b>¥${fmt(d.spent)}</b>使った</span>${d.towns.length?`<span>${esc(d.towns.slice(0,2).join('・'))}</span>`:''}</div>
     ${d.rides.length?`<div class="stRides">${esc(d.rides.slice(0,4).join(' → '))}</div>`:''}
-    <div class="stBtns"><button id="stSave" class="buy">画像で保存・共有</button><button id="stMap">思い出マップ</button><button id="stClose">閉じる</button></div></div>`;}
+    <div class="stBtns"><button id="stSave" class="buy">画像で保存・共有</button><button id="stMap">思い出マップ</button><button id="stClose">閉じる</button></div>${adUnit(ADS.adsense.slotStory,'inStory')}</div>`;}
 function showStory(k,auto){k=k||todayKey();const d=storyData(k);let el=$('story');if(!el){el=document.createElement('div');el.id='story';document.body.appendChild(el);}
-  el.innerHTML=storyHTML(d);el.classList.remove('hidden');if(auto){S.storyDay=k;save();}
+  el.innerHTML=storyHTML(d);el.classList.remove('hidden');setTimeout(()=>fillAds(el),50);if(auto){S.storyDay=k;save();}
   $('stClose').onclick=()=>el.classList.add('hidden');el.onclick=e=>{if(e.target===el)el.classList.add('hidden');};
   $('stMap').onclick=()=>{el.classList.add('hidden');openMemory(1);};
   $('stSave').onclick=async()=>{const b=$('stSave');b.disabled=true;b.textContent='画像を作っています…';try{await saveStoryImage(d);}catch(e){console.warn(e);toast('画像を作れなかった','var(--ng)');}b.disabled=false;b.textContent='画像で保存・共有';};}
@@ -2084,12 +2116,12 @@ function renderPanel(){if(!tab)return;let h='';
       h+='<div class="tl2">'+es.map(e=>{let tx=esc(e.text||'');if(e.kind==='visit'&&e.pn)tx=tx.replace(esc(e.pn),shopLink(e.pn,e.town));const tg=diaryTag(e);
         /* 読みやすく: 「。」で改行、時刻と駅名を強調 */
         tx=tx.replace(/。(?!$)/g,'。<br>').replace(/(\d{1,2}:\d{2})/g,'<span class="tm">$1</span>');
-        const acts=e.kind==='visit'?` <span class="acts"><button data-wish="${e.pk}" class="${S.wish.includes(e.pk)?'on':''}">${S.wish.includes(e.pk)?'♥':'♡'}</button>${e.lodging?hotelLinks(e.pn,e.town):`<a href="${gmapsLL({n:e.pn,la:e.pla,lo:e.plo})}" target="_blank" rel="noopener">地図</a>`}</span>`:'';
+        const acts=e.kind==='visit'?` <span class="acts"><button data-wish="${e.pk}" class="${S.wish.includes(e.pk)?'on':''}">${S.wish.includes(e.pk)?'♥':'♡'}</button>${e.lodging?hotelLinks(e.pn,e.town):`<a href="${gmapsLL({n:e.pn,la:e.pla,lo:e.plo})}" target="_blank" rel="noopener">地図</a>`+visitPR(e)}</span>`:'';
         const ic=e.kind==='visit'?`<span class="em" style="background:${e.color||'#ddd'}">${e.emoji||''}</span>`:`<span class="ic t-${tg}" title="${TAG_JA[tg]||''}">${ICON[tg]||ICON.note}</span>`;
-        return `<div class="dl t-${tg}${e.kind==='visit'?' v':''}"><time>${fmtT(e.t)}</time>${ic}<div class="dt">${tx}${e.url?' <a href="'+esc(e.url)+'" target="_blank" rel="noopener" style="color:var(--info)">この便を見る</a>':''}${acts}</div>${e.cost?`<span class="cost">¥${fmt(e.cost)}</span>`:'<span></span>'}</div>`;}).join('')+'</div>';}}
+        return `<div class="dl t-${tg}${e.kind==='visit'?' v':''}"><time>${fmtT(e.t)}</time>${ic}<div class="dt">${tx}${e.url?' <a href="'+esc(e.url)+'" target="_blank" rel="noopener" style="color:var(--info)">この便を見る</a>':''}${acts}</div>${e.cost?`<span class="cost">¥${fmt(e.cost)}</span>`:'<span></span>'}</div>`;}).join('')+'</div>';if(k===keys[0])h+=adUnit(ADS.adsense.slotDiary,'inDiary');}}
   if(tab==='farm'){const J=(JOBS[S.job]||JOBS.other);const ready=S.field.slots.filter(x=>x.stage===2).length;
     h+=`<h3>お小遣いの畑</h3><div class="note" style="margin:0 0 8px">あなたが働いているあいだ、${fieldSkin()==='job'?'仕事('+J.n+')の'+J.item+J.e:SEEDS[fieldSkin()].n}が育つ。実ったらタップして収穫。それが${S.name}のお小遣いになる。放っておくと勝手に片づいて半分(日記には書かない)。</div>
-      <canvas id="field"></canvas>
+      ${rewardReady()?`<button id="bReward" class="rwd"><span>📺</span><b>広告を見て水やり</b><small>最後まで見ると畑が全部すぐ実る(1日1回)</small></button>`:''}<canvas id="field"></canvas>
       <div class="row"><div>いま収穫できる<small>${ready}個 / 育つのに約5分、約1分半に1個生える</small></div><b style="color:var(--gold)">¥${fmt(ready*YIELD[2])}</b></div>
       <div class="sec">種屋 · 実りの見た目</div><div class="note" style="margin:0 0 6px">いまは「${SEEDS[fieldSkin()].n}」。買った種は${S.name}のお小遣い(財布 ¥${fmt(S.wallet)})から払う。実際のお金での購入(課金)はまだつないでいない。</div>
       <div class="seeds">${Object.entries(SEEDS).map(([k,K])=>{const owned=(S.field.owned||['job']).includes(k);const cur=fieldSkin()===k;const em=k==='job'?J.e:K.alt[0]+K.alt[1]+K.alt[2];return `<button class="seed${cur?' on':''}" data-seed="${k}" ${cur?'disabled':''}><span class="em">${em}</span><span class="nm">${K.n}</span><span class="pr">${cur?'いま':owned?'使う':'¥'+fmt(K.price)}</span></button>`;}).join('')}</div>
@@ -2147,14 +2179,14 @@ function renderPanel(){if(!tab)return;let h='';
     /* スタンプ帳 */
     h+=`<div class="sec">スタンプ帳(都道府県 ${stamps.length}/47)</div><div class="stamps">${stamps.length?stamps.map(([k,v])=>`<span class="stp" style="transform:rotate(${(k.length*7)%9-4}deg)"><b>${k.replace(/(都|府|県)$/,'')}</b><small>${v}回</small></span>`).join(''):'<span class="note" style="flex:1">まだありません。ほかの街に着くと押されます</span>'}</div>`;
     /* お土産 */
-    if(S.souvenirs.length)h+=`<div class="sec">お土産(${S.souvenirs.length})</div><div class="gifts">`+S.souvenirs.slice().reverse().slice(0,12).map(x=>`<div class="gift2"><div class="rib"></div><b>${esc(x.town)}</b><small>${esc(x.shop)}</small><em>¥${fmt(x.price)} · ${fmtD(x.t)}</em></div>`).join('')+'</div>';
+    if(S.souvenirs.length)h+=`<div class="sec">お土産(${S.souvenirs.length})</div><div class="gifts">`+S.souvenirs.slice().reverse().slice(0,12).map(x=>`<div class="gift2"><div class="rib"></div><b>${esc(x.town)}</b><small>${esc(x.shop)}</small><em>¥${fmt(x.price)} · ${fmtD(x.t)}</em>${souvenirPR(x)?'<span class="gpr">'+souvenirPR(x)+'</span>':''}</div>`).join('')+'</div>';
   }
   if(tab==='more'){h+=`<h3>設定</h3><div class="grid3"><button data-tab2="teach"><i>✎</i>教える</button><button data-tab2="wish"><i>♡</i>行きたい</button><button data-tab2="friends"><i>👥</i>友達と<br>コレクション</button></div><div class="sec">プロフィール</div><div class="row"><div>家<small>${S.homeAddr||'サンプルの街(吉祥寺)'}${S.trip?' / いまは '+S.trip.city+' に滞在':''} / この街の店・場所 ${POIS.length}件</small></div></div>`;
     h+=`<div class="row"><div>好きなこと・性格<small>${S.persona&&S.persona.text?esc(S.persona.text.slice(0,60))+(S.persona.text.length>60?'…':'')+' → '+esc(personaSummary(S.persona)):'未記入(設定の「変える」から書けます)'}</small></div></div><div class="row"><div>設定<small>${S.name} / ${(JOBS[S.job]||JOBS.other).n} / ${V().e}${V().n} / 勤務 ${fmtHM(S.work.start)}〜${fmtHM(S.work.end)} / 好み: ${S.prefs.map(k=>PREF_LIST.find(x=>x[0]===k)[1]).join('・')}</small></div><button id="bSetup">変える</button></div>`;
     h+=`<div class="sec">動く時間</div><div class="row"><div>${S.name}が動く時間<small>${actMode()==='always'?'24時間。疲れたら・深夜は家か宿で朝まで眠る':actMode()==='awake'?'起きている間('+fmtHM(S.active.wake??420)+'〜'+fmtHM((S.active.sleep??1440)%1440)+')':'あなたの勤務時間だけ('+fmtHM(S.work.start)+'〜'+fmtHM(S.work.end)+')'}</small></div></div><div class="actm">${[['always','24時間'],['awake','起きている間'],['work','勤務時間だけ']].map(([k,l])=>`<button data-actm="${k}" class="${actMode()===k?'on':''}">${l}</button>`).join('')}</div>${actMode()==='awake'?`<div class="mgrid"><label>起きる<input id="actWake" type="time" value="${fmtHM(S.active.wake??420)}"></label><label>寝る<input id="actSleep" type="time" value="${fmtHM((S.active.sleep??1440)%1440)}"></label></div>`:''}<div class="sec">データ</div><div class="row"><div>飛行機(国内 ODPT)<small>公共交通オープンデータセンター(ODPT)のアクセストークンを貼ると、JAL・ANA国内線の実ダイヤで飛ぶ。${S.keys.odpt?(FLIGHTS?'便データ '+FLIGHTS.length+'件 読み込み済み':'鍵あり(次の遠出で読み込み)'):'未設定(それまでは鉄道だけ)'}</small></div><button id="bOdpt">${S.keys.odpt?'変更':'鍵を貼る'}</button></div>
       <div class="row"><div>国際線の時刻表<small>どれか1つで飛べる。AirLabs(airlabs.co、無料枠 月1,000回)か AeroDataBox(RapidAPI、無料枠あり)。${S.keys.airlabs?'AirLabs 鍵あり':S.keys.aerodatabox?'AeroDataBox 鍵あり':'未設定'}</small></div><span><button id="bAirlabs">${S.keys.airlabs?'AirLabs 変更':'AirLabs'}</button> <button id="bAdb">${S.keys.aerodatabox?'AeroDataBox 変更':'AeroDataBox'}</button></span></div>
       <div class="row"><div>飛行機(Aviasales の便データ)<small>実在の便・出発時刻・最安値。国内も海外も。データは GitHub が6時間ごとに取り直す。${FLIGHTS_STATIC?'最終更新 '+esc(String(FLIGHTS_STATIC.updated).replace('T',' ').slice(0,16))+'・'+FLIGHTS_STATIC.pairs.length+'路線':FLIGHTS_STATIC===false?'まだ届いていない(GitHub の TP_TOKEN を設定すると始まる)':'確認中'} / 紹介 marker ${S.keys.travelpayouts?'あり':'未設定'}</small></div><span><button id="bTpM">${S.keys.travelpayouts?'marker 変更':'marker'}</button> <button id="bTp" style="font-size:11px">token(直接)</button></span></div>`;
-    h+=`<div class="sec">収益化</div><div class="row"><div>アフィリエイト<small>楽天アフィリエイトID、じゃらん(バリューコマース)のsid/pid。入れると宿リンクが成果の入る形になる。${S.keys.rakutenAff?'楽天: 設定済 ':''}${S.keys.vcSid?'じゃらん: 設定済':''}</small></div><button id="bAff">設定</button></div>`;
+    h+=`<div class="sec">収益化</div><div class="row"><div>広告について<small>このアプリは広告とアフィリエイト(「PR」と付いたリンク)の収益で運営しています。${S.name}の行き先は広告で変わりません。<a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a></small></div></div><div class="row"><div>アフィリエイト(自分用)<small>運営者の設定(data/ads.json)が優先されます。自分で試す場合だけ: 楽天アフィリエイトID、じゃらん(バリューコマース)のsid/pid。${S.keys.rakutenAff?'楽天: 設定済 ':''}${S.keys.vcSid?'じゃらん: 設定済':''}</small></div><button id="bAff">設定</button></div>`;
     h+=`<div class="row"><div>写真<small>近くで撮られた本物の写真をWikimedia Commonsから。Mapillaryの無料トークンを入れると街角の写真も(任意)</small></div><button id="bMly">${S.mlyToken?'設定済':'トークン'}</button></div>`;
     h+=`<div class="sec">お金のリズム</div><div class="row"><div>給料日・家賃・スマホ代<small>給料日が土日なら前の金曜。家賃は月末、スマホ代は1日に引かれる</small></div></div><div class="mgrid"><label>給料日<select id="mPay">${Array.from({length:31},(_,i)=>i+1).map(d=>`<option value="${d}" ${S.money.payday===d?'selected':''}>${d===31?'月末':d+'日'}</option>`).join('')}</select></label><label>お給料<input id="mSal" type="number" step="500" value="${S.money.salary}"></label><label>家賃の分担<input id="mRent" type="number" step="500" value="${S.money.rent}"></label><label>スマホ代<input id="mPhone" type="number" step="100" value="${S.money.phone}"></label></div><div class="sec">その他</div><div class="row"><div>地図の描き方<small>${S.mapMode==='canvas'?'画像タイル(軽い・WebGL不要)':'自動(ベクトル地図。届かなければ画像タイル)'}${rasterStyle?' / いまは画像タイルで表示中':''}</small></div><button id="bMapMode">${S.mapMode==='canvas'?'自動に戻す':'画像タイルにする'}</button></div><div class="row"><div>お小遣いを渡す<small>手持ち ¥${fmt(S.wallet)}。収穫のほかに、直接渡すこともできる(試作用)</small></div><button id="bGive">+¥1,000</button></div>`;
     h+=`<div class="row"><div>統計<small>収穫 ¥${fmt(S.stats.harvest)} / 使った ¥${fmt(S.stats.spent)} / 寄った ${S.stats.visits}軒 / 友達 ${S.friends.length}人</small></div></div>`;
@@ -2165,9 +2197,9 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>この人を別の端末へ<small>引き継ぎコードを出す → 別の端末の「読み込む」に貼る。街のデータは向こうで取り直す</small></div><span><button id="bExport">コードを出す</button> <button id="bImport">読み込む</button></span></div>
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v65 (2026-09-19)</div>';
+    h+='<div class="note">版: v66 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
-  panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;setTimeout(()=>{try{paginatePanel();}catch(e){console.warn('pg',e);}},0);$('pClose').onclick=()=>openTab(tab);
+  panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;setTimeout(()=>{try{paginatePanel();}catch(e){console.warn('pg',e);}try{fillAds(panel);}catch(e){}},0);$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
   panel.querySelectorAll('[data-wish]').forEach(b=>b.onclick=()=>{const k=b.dataset.wish;if(S.wish.includes(k))S.wish=S.wish.filter(x=>x!==k);else{S.wish.push(k);const p=poiOf(k);if(p)remember(p);}renderPanel();save();});
   panel.querySelectorAll('[data-unwish]').forEach(b=>b.onclick=()=>{const k=b.dataset.unwish;S.wish=S.wish.filter(x=>x!==k);renderPanel();save();});
@@ -2182,6 +2214,7 @@ function renderPanel(){if(!tab)return;let h='';
   {const aw=$('actWake'),as=$('actSleep');const sv=()=>{const p=v=>{const [h,m]=String(v||'0:0').split(':').map(Number);return h*60+m;};S.active.wake=p(aw.value);let sl=p(as.value);if(sl<=S.active.wake)sl+=1440;S.active.sleep=sl;save();toast('起きる '+aw.value+' / 寝る '+as.value,'var(--acc)');};if(aw)aw.onchange=sv;if(as)as.onchange=sv;}
   panel.querySelectorAll('[data-walk]').forEach(b=>b.onclick=()=>{const k=b.dataset.walk;const t=Date.now();if(!k){S.walkPick=null;toast('歩き方はおまかせ','var(--acc)');}else{S.walkPick={k,day:todayKey(t)};const out=S.j.at!==-1||S.j.state==='walk';if(out||S.walk&&S.walk.day===todayKey(t))pickWalk(t,'あなたの提案で、');toast('「'+WALKS.find(w=>w.k===k).n+'」で歩きます','var(--acc)');}dockSig='';homeSig='';save();renderPanel();});
   {const ch=$('bComeHome');if(ch)ch.onclick=()=>{comeHome();renderPanel();};}
+  {const rw=$('bReward');if(rw)rw.onclick=()=>watchReward();}
   {const bs=$('bStory');if(bs)bs.onclick=()=>showStory(todayKey());const bm=$('bMem');if(bm)bm.onclick=()=>openMemory(7);}
   {const pd=$('mPay');if(pd){const sv=()=>{S.money.payday=+$('mPay').value||25;S.money.salary=Math.max(0,+$('mSal').value||0);S.money.rent=Math.max(0,+$('mRent').value||0);S.money.phone=Math.max(0,+$('mPhone').value||0);save();toast('お金のリズムを変えた','var(--acc)');};['mPay','mSal','mRent','mPhone'].forEach(id=>{const x=$(id);if(x)x.onchange=sv;});}}
   panel.querySelectorAll('[data-meet]').forEach(b=>b.onclick=()=>{const pk=b.dataset.meet;if(!S.wish.includes(pk))S.wish.push(pk);const f=S.friends.find(x=>x.pk===pk);toast((f?f.name+'さんの':'')+'いる店を「行きたい」に入れた','var(--acc)');save();renderPanel();});
@@ -2347,7 +2380,7 @@ async function notify(title,body){try{if(!S.notify||document.visibilityState==='
   if(reg&&reg.showNotification)await reg.showNotification(title,{body,icon:'icon-192.png',badge:'icon-192.png',tag:'officetravel'});else new Notification(title,{body,icon:'icon-192.png'});}catch(e){console.warn('notify',e);}}
 async function enableNotify(){if(typeof Notification==='undefined'){toast('このブラウザは通知に対応していない','var(--ng)');return;}let p=Notification.permission;if(p==='default'){try{p=await Notification.requestPermission();}catch(e){}}
   if(p==='granted'){S.notify=true;save();toast('通知をオンにした。画面を閉じている間の到着・宿・雨を知らせる','var(--acc)');}else{S.notify=false;save();toast('通知が許可されなかった(ブラウザの設定で許可できる)','var(--ng)');}renderPanel();}
-(function boot(){document.querySelectorAll('#btns i[data-ic]').forEach(i=>{i.innerHTML=ICON[i.dataset.ic]||'';});setTimeout(()=>{if(S.setup)refreshTownPois();},20000);setTimeout(()=>{refineHome();},6000);setInterval(()=>{if(S.setup)refreshTownPois();},30*60000);
+(function boot(){try{loadAds();}catch(e){}document.querySelectorAll('#btns i[data-ic]').forEach(i=>{i.innerHTML=ICON[i.dataset.ic]||'';});setTimeout(()=>{if(S.setup)refreshTownPois();},20000);setTimeout(()=>{refineHome();},6000);setInterval(()=>{if(S.setup)refreshTownPois();},30*60000);
 let town=null;try{const raw=localStorage.getItem(TOWN_KEY);if(raw)town=JSON.parse(raw);}catch(e){}
   if(S.trip){let away=null;try{const a=JSON.parse(localStorage.getItem(AWAY_KEY)||'null');if(a&&a.name===S.trip.city)away=a.nodes?a:townCacheGet(a.name,a.la,a.lo);}catch(e){}if(away)town=away;}
   const j=S.j;j.planning=null;j.cityTarget=null;const wasLoading=j.loadingTown;j.loadingTown=null;
