@@ -3,7 +3,7 @@
    - data/ 配下(便のデータ・街の初期データ)は「まずネット、だめならキャッシュ」
    - 他サイト(地図タイル・乗換案内・天気)は触らない
 */
-const VER='ot-v64';
+const VER='ot-v65';
 const SHELL=['./','index.html','manifest.webmanifest','icon-192.png','icon-512.png','data/kichijoji.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(VER).then(c=>c.addAll(SHELL).catch(()=>{})).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==VER).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});

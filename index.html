@@ -60,6 +60,8 @@
 .dp:active{transform:scale(.97)}.dp.calm{background:linear-gradient(135deg,#3b4254,#2a2f3a);box-shadow:0 6px 16px rgba(42,47,58,.35)}
 .dp .di{flex:none;width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.2);display:inline-flex;align-items:center;justify-content:center}.dp .di svg{width:22px;height:22px}
 .dp .dtx{flex:1;min-width:0;display:flex;flex-direction:column}.dp .dtx b{font:700 17px/1.2 var(--fd);letter-spacing:.02em}.dp .dtx small{font:500 11.5px/1.35 var(--fb);opacity:.88;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dp .chev{font:700 26px/1 var(--fd);opacity:.7}
+.dprow{display:flex;gap:8px}.dprow .dp{flex:1;min-width:0}
+.dhome{flex:none;width:74px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;border-radius:18px;background:#fff;color:var(--ink);box-shadow:0 2px 8px rgba(40,30,10,.12);cursor:pointer;border:1px solid var(--line)}.dhome span{display:inline-flex;color:var(--acc)}.dhome svg{width:24px;height:24px}.dhome b{font:700 11px/1.1 var(--fd)}.dhome:active{transform:scale(.95)}
 .dts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:9px}
 .dt{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:76px;padding:8px 4px;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:0 2px 6px rgba(40,30,10,.06);cursor:pointer;transition:transform .12s}
 .dt:active{transform:scale(.95)}.dt .di{color:var(--acc);display:inline-flex}.dt .di svg{width:24px;height:24px}.dt .dlb{font:600 10.5px/1.2 var(--fb);color:var(--dim);white-space:nowrap}.dt b{font:700 13px/1.2 var(--fd);color:var(--ink);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -149,6 +151,8 @@
   #mapLoad{position:absolute;left:10px;right:10px;top:50%;transform:translateY(-50%);margin:0 auto;max-width:360px;background:rgba(250,246,238,.97);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);z-index:5;text-align:center}
 #mapLoad.hidden{display:none}
 #panel{z-index:40}
+.chips .hb{background:var(--acc)!important;color:#fff!important;border-color:var(--acc)!important;font-weight:700}
+.wkg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0 0 8px}.wkg button{display:flex;align-items:center;gap:6px;text-align:left;border-radius:12px;padding:9px 10px;font:600 13px/1.25 var(--fb);background:#fff}.wkg button.on{background:var(--ink);color:#fff;border-color:var(--ink)}.wkg button:disabled{opacity:.4}.wkg button i{font-style:normal;font-size:17px}
 .pgbar{position:sticky;top:-18px;z-index:3;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -14px 10px;padding:8px 14px;background:var(--paper);border-bottom:1px solid var(--line)}.pgbar::-webkit-scrollbar{display:none}
 .pgbar button{flex:none;border-radius:999px;padding:8px 14px;font:700 13px/1.1 var(--fd);background:#fff;white-space:nowrap}.pgbar button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .pg{display:none}.pg.on{display:block}.pg.on.anim{animation:pgIn .16s ease-out}@keyframes pgIn{from{transform:translateY(5px)}to{transform:none}}
@@ -1011,7 +1015,13 @@ function tiredToday(){return S.energy<30;}
 function kickNow(t){const w=workWindow(t);if(w&&t>=w.st&&t<w.en)return;const d=new Date(t);d.setHours(0,0,0,0);const en0=d.getTime()+S.work.end*60000;S.kick={k:todayKey(t),st:t-1000,en:Math.max(en0,t+4*3600e3)};}
 /* あなたの指定: いまから向かう */
 /* いま出かけて: 家にいる本人を今すぐ外へ(勤務時間外でも) */
-function goOutNow(){const t=Date.now();const j=S.j;const atHome=j.at===-1&&j.state!=='walk'&&!j.transit&&!S.trip;if(!atHome){toast(S.name+'はもう外にいます');return false;}
+/* 家に戻す: いまの移動をやめて帰る。帰ったら2時間は家にいる(「出かけて」でいつでも解除) */
+function comeHome(){const j=S.j;const t=Date.now();const atHome=j.at===-1&&j.state!=='walk'&&!j.transit&&!S.trip;
+  if(atHome){S.homeHold=t+2*3600e3;j.state='stay';j.until=S.homeHold;toast(S.name+'は家にいます。しばらく出かけません','var(--acc)');dockSig='';homeSig='';save();return;}
+  if(j.state==='walk'&&j.target===-1&&!S.trip){S.homeHold=t+2*3600e3;toast('もう家に向かっています','var(--acc)');save();return;}
+  S.homeHold=t+2*3600e3;addDiary({kind:'note',tag:'you',text:'あなたに「家に戻って」と言われた。'+(S.trip?'旅はここまで。':'寄り道はやめて、')+'帰る。',t});
+  requestNow({name:'家',la:HOME.la,lo:HOME.lo,home:true});try{roomSay('はーい、帰ります',4000);}catch(e){}toast(S.name+'は家に帰ります','var(--acc)');dockSig='';homeSig='';save();}
+function goOutNow(){S.homeHold=0;const t=Date.now();const j=S.j;const atHome=j.at===-1&&j.state!=='walk'&&!j.transit&&!S.trip;if(!atHome){toast(S.name+'はもう外にいます');return false;}
   kickNow(t);if(!(S.plan&&S.plan.k===todayKey(t))||S.plan.mode==='rest')S.plan={k:todayKey(t),mode:'auto'};j.state='home';j.until=0;j.longTripTried=null;j.rainStayDay=null;S.taught.habits.noRainToday=todayKey(t);
   addDiary({kind:'note',text:'あなたに「出かけて」と言われて、支度をする。',t});roomSay('いってきます!',5000);if(view!=='home'){manualViewAt=0;setView('home');}save();return true;}
 /* 行き先を選んだら、見積もりを見せて「決定」で出発 */
@@ -1132,7 +1142,7 @@ function microPlan(toPoi,t){const j=S.j;const from=j.pos||[HOME.la,HOME.lo];cons
   return {use,from,taxi,cycle,dd};}
 function go(toPoi,t){const j=S.j;
   const tr=taughtRouteFor(toPoi);if(tr){startTaught(toPoi,t,tr);return;}
-  let mp=null;try{mp=microPlan(toPoi,t);}catch(e){console.warn('micro',e);}
+  let mp=null;{const cw=curWalk(t);if(cw&&cw.walkOnly&&toPoi>=0&&!POIS[toPoi].far){startWalk(toPoi,t);return;}}try{mp=microPlan(toPoi,t);}catch(e){console.warn('micro',e);}
   if(mp&&mp.use){j.state='stay';j.until=t+30000;startTransitPlan(mp.use,toPoi,t,null,mp.from);return;}
   if(TRANSIT_OK&&needTransit(toPoi)&&!noTransit[toPoi]){j.state='stay';j.until=t+60000;requestTransit(toPoi,t,undefined,undefined,mp);return;}
   if(mp&&mp.cycle&&mp.cycle.fare<=S.wallet&&needTransitBase(toPoi)){j.state='stay';j.until=t+30000;startTransitPlan(mp.cycle,toPoi,t,null,mp.from);return;}
@@ -1226,6 +1236,41 @@ function startTaught(toPoi,t,r){const j=S.j;const from=j.pos||[HOME.la,HOME.lo];
   addDiary({kind:'note',text:'あなたに教わった通り、'+r.by+'で'+(toPoi>=0?POIS[toPoi].n:'家')+'へ('+(r.min||'?')+'分'+(r.fare?'、¥'+r.fare:'')+(wait?'、'+wait+'分待ち':'')+')',t});}
 /* 行動決定 */
 function hour(t){const d=new Date(t);return d.getHours()+d.getMinutes()/60;}
+/* 散歩のしかた: 出かけるたびに1つ決める。候補の選び方(種類・距離・初めてか)に効く。条件(時間・天気・季節・財布)に合うものだけ */
+const WALKS=[
+ {k:'cafe',n:'喫茶店はしご',e:'☕',kinds:['cafe','sweets'],bon:4,say:['今日はコーヒーの気分。何杯いけるか','喫茶店を渡り歩く。胃がちゃぷちゃぷになるまで']},
+ {k:'books',n:'本屋と古本屋めぐり',e:'📚',kinds:['books','library'],test:p=>p.c==='second_hand'||p.c==='books',bon:4.5,say:['本の匂いをかぎに行く','読まない本がまた増える予感']},
+ {k:'green',n:'緑をたどる',e:'🌳',kinds:['park','garden','shrine','temple'],bon:4,ok:()=>!rainy(),say:['木の多い道を選んで歩く','光合成しに行く']},
+ {k:'eat',n:'食べ歩き',e:'🍡',kinds:['bakery','sweets','fast_food','ice_cream','market','deli'],bon:3.5,cheap:800,ok:()=>S.wallet>=600,say:['少しずつ、いろいろ食べる日','「ひと口だけ」を何回も言う日']},
+ {k:'jinja',n:'寺社めぐり',e:'⛩',kinds:['shrine','temple'],bon:5.5,say:['神社とお寺をつないで歩く','お賽銭用の小銭を確かめてから出る']},
+ {k:'roji',n:'路地裏探検',e:'🐈',fn:(p,d,v)=>(!v?3.5:-1)+(p.b?-3:0)+(p.s<=2?1:0)+(d>250&&d<900?1:0),say:['大通りを避けて、細い道へ','猫が曲がった角を曲がってみる']},
+ {k:'far',n:'遠回り散歩',e:'🚶',fn:(p,d)=>(d>900&&d<2200?3.5:d<500?-2.5:0),ok:()=>S.energy>=50&&S.vehicle==='walk',walkOnly:true,say:['わざと遠回りして歩く','足が棒になるまで歩いてみる']},
+ {k:'usual',n:'いつもの店めぐり',e:'🏠',fn:(p,d,v)=>v&&v.n>=2?4.5:-1,ok:()=>Object.values(S.visited).filter(v=>v.n>=2).length>=3,say:['なじみの店に顔を出して回る','「いつもの」で通じる店へ']},
+ {k:'new',n:'はじめての店だけ',e:'✨',fn:(p,d,v)=>!v?5:-4,say:['入ったことのない店だけに入る','知らない扉を開ける日']},
+ {k:'zakka',n:'雑貨と服を見る',e:'🛍',kinds:['shop','clothes','variety_store','gift','toys','mall'],bon:4,say:['見るだけ、見るだけ……','買わないつもりで雑貨屋へ']},
+ {k:'photo',n:'写真散歩',e:'📷',kinds:['attraction','viewpoint','artwork','park','garden','museum'],fn:p=>p.s>=4?2:0,bon:2.5,ok:()=>!rainy(),say:['いい景色を探して歩く','スマホの容量が心配']},
+ {k:'night',n:'夜の散歩',e:'🌙',kinds:['pub','bar','karaoke','conv','fast_food'],test:p=>p.c==='ramen',bon:3.5,ok:t=>hour(t)>=19||hour(t)<2,say:['夜の街を少しだけ','街灯の下を歩く。ラーメンの匂いに負けそう']},
+ {k:'rain',n:'雨宿りめぐり',e:'☔',fn:p=>INDOOR.has(p.k)?4:-3,ok:()=>rainy(),say:['屋根から屋根へ、雨宿りしながら','傘をたたむたびに店に入る']},
+ {k:'dir',n:'気まぐれ一方向',e:'🧭',dirFn:true,say:['今日は{dir}へまっすぐ行ってみる','{dir}に何があるか確かめに行く']},
+ {k:'season',n:'季節さがし',e:'🍁',kinds:['park','garden','temple','shrine'],bon:5,ok:t=>{const ss=seasonNow(t);return !!(ss.sakura||ss.koyo);},say:['いまの季節の色を見に行く','木の色が変わっていないか確かめに']},
+ {k:'coin',n:'小銭で散歩',e:'🪙',fn:(p,d,v,price)=>price<=300?4:price>800?-5:0,ok:t=>moneyMood(t)==='tight'||S.wallet<1500,say:['財布の中は小銭だけ。それでも楽しむ','300円で一日遊べるか試す']},
+ {k:'slow',n:'のんびり近所',e:'🐢',fn:(p,d)=>d<450?3:d>800?-4:0,ok:()=>S.energy<55,say:['今日はゆっくり、近くだけ','疲れているので、のそのそ歩く']}];
+const DIR_JA=['北','北東','東','南東','南','南西','西','北西'];
+function walkOK(w,t){return !w.ok||w.ok(t);}
+function curWalk(t){const W=S.walk;if(!W||W.day!==todayKey(t))return null;return WALKS.find(w=>w.k===W.k)||null;}
+function pickWalk(t,why){const k=todayKey(t);const forced=S.walkPick&&S.walkPick.day===k?S.walkPick.k:null;let w=forced?WALKS.find(x=>x.k===forced):null;
+  if(!w){const prev=S.walk&&S.walk.day===k?S.walk.k:null;const hist=(S.walkHist||[]).slice(-6);const pool=WALKS.filter(x=>walkOK(x,t)&&x.k!==prev);
+    const wt=x=>{let v=1;if(hist.includes(x.k))v*=0.35;if(x.k==='cafe'&&S.prefs.includes('coffee'))v*=2.2;if(x.k==='books'&&S.prefs.includes('books'))v*=2.2;if((x.k==='green'||x.k==='photo')&&S.prefs.includes('park'))v*=1.8;if(x.k==='jinja'&&S.prefs.includes('shrine'))v*=2.5;if(x.k==='eat'&&(S.prefs.includes('sweets')||S.taught.habits.foodie))v*=2;if(x.k==='zakka'&&S.prefs.includes('shop'))v*=2;if(x.k==='rain'||x.k==='season')v*=2.5;if(x.k==='coin'||x.k==='slow')v*=2;if(x.k==='far'&&trait('walker')>0)v*=2.5;if(x.k==='roji'&&trait('cat')>0)v*=2;if(x.k==='night'&&(trait('nightowl')>0||trait('alcohol')>0))v*=2;return v;};
+    let sum=0;pool.forEach(x=>sum+=wt(x));let r=Math.random()*sum;for(const x of pool){r-=wt(x);if(r<=0){w=x;break;}}if(!w)w=pool[0];}
+  if(!w)return null;const dirI=Math.floor(Math.random()*8);S.walk={k:w.k,day:k,t,stops:0,dir:dirI,forced:!!forced};S.walkHist=((S.walkHist||[]).concat(w.k)).slice(-12);
+  const line=w.say[Math.floor(Math.random()*w.say.length)].replace('{dir}',DIR_JA[dirI]);addDiary({kind:'note',tag:'think',text:(why||'')+'今日の歩き方は「'+w.e+' '+w.n+'」。'+line+'。',t});try{roomSay(w.e+' '+w.n,4000);}catch(e){}return w;}
+function walkBonus(p,d,t,price){const w=curWalk(t);if(!w)return 0;const v=S.visited[PK(p)];let b=0;
+  if(w.kinds&&(w.kinds.includes(p.k)||(w.test&&w.test(p))))b+=w.bon||3;else if(w.kinds&&!w.fn)b-=2.5;
+  if(w.fn)b+=w.fn(p,d,v,price);if(w.cheap&&price<=w.cheap)b+=1;
+  if(w.dirFn){const at=S.j.pos||[HOME.la,HOME.lo];const want=(S.walk.dir||0)*Math.PI/4;const dy=p.la-at[0],dx=(p.lo-at[1])*COSL;const ang=Math.atan2(dx,dy);const c=Math.cos(ang-want);b+=d>200?c*3.5:-1;}
+  return b*1.9;}
+/* 何軒か回ったら気分が変わることがある */
+function walkStep(t){const W=S.walk;if(!W||W.day!==todayKey(t)||W.forced)return;W.stops=(W.stops||0)+1;if(W.stops>=3&&Math.random()<0.35){const old=curWalk(t);pickWalk(t,(old?'「'+old.n+'」は満喫した。':'')+'気分を変えて、');}}
 function candidates(t){const h=hour(t);const nightNow=actMode()!=='work'&&(h<5.5||h>=23);const meal=(h>=11.3&&h<14)||(h>=17.5&&h<20.5);const evening=h>=17.5;const today=todayKey(t);
   const kindsToday={};S.diary.filter(e=>e.kind==='visit'&&todayKey(e.t)===today&&e.pk).forEach(e=>{const b=S.book[e.pk];if(b)kindsToday[b.k]=(kindsToday[b.k]||0)+1;});
   const at=S.j.at>=0?[POIS[S.j.at].la,POIS[S.j.at].lo]:(S.j.pos||[HOME.la,HOME.lo]);
@@ -1249,7 +1294,7 @@ function candidates(t){const h=hour(t);const nightNow=actMode()!=='work'&&(h<5.5
     if(S.wish.includes(pk))sc+=2.5;
     const ts=S.taught.shops[pk];if(ts){if(ts.mode==='avoid')return {i,sc:-999,price,d:0};if(ts.mode==='like')sc+=4;}
     const hb=S.taught.habits;if(hb.cheap&&price>1500)sc-=3;if(hb.foodie&&(p.k==='sweets'||p.k==='bakery'||p.k==='fast_food'||p.k==='market'||p.k==='michinoeki'))sc+=2;if(hb.foodie&&isFood&&!meal&&h>=10&&h<20)sc+=2.5;if(hb.coffee&&p.k==='cafe'&&h>=13&&h<15.5)sc+=3;
-    const d=dist(at,[p.la,p.lo]);sc-=d/(S.vehicle==='car'?1600:S.vehicle==='bike'?900:(p.far&&TRANSIT_OK)?2500:400);if(i===S.j.at)sc-=99;if(tiredToday()||todayPlan(t)==='near'){if(p.far||d>700)sc-=8;if(p.k==='cafe'||p.k==='park'||p.k==='onsen')sc+=1.5;}
+    const d=dist(at,[p.la,p.lo]);sc+=walkBonus(p,d,t,price);sc-=d/(S.vehicle==='car'?1600:S.vehicle==='bike'?900:(p.far&&TRANSIT_OK)?2500:400);if(i===S.j.at)sc-=99;if(tiredToday()||todayPlan(t)==='near'){if(p.far||d>700)sc-=8;if(p.k==='cafe'||p.k==='park'||p.k==='onsen')sc+=1.5;}
     return {i,sc,price,d};}).sort((a,b)=>b.sc-a.sc);}
 function startWalk(toPoi,t){const j=S.j;const v=V();
   const from=j.pos||[HOME.la,HOME.lo];const to=toPoi>=0?[POIS[toPoi].la,POIS[toPoi].lo]:[HOME.la,HOME.lo];const dd=dist(from,to);
@@ -1288,11 +1333,13 @@ function decide(t,r){const j=S.j;const w=workWindow(t);TRANSIT_OK=(Date.now()-t<
    if(wl===30&&j.warnNote!==todayKey(t)){j.warnNote=todayKey(t);addDiary({kind:'note',tag:'wx',text:w0.name+'が出ている。遠くへは行かず、近くの屋根のある所だけにする。',t});}}
   {const ss=seasonNow(t);if((ss.sakura||ss.koyo)&&j.seasonNote!==todayKey(t)){j.seasonNote=todayKey(t);addDiary({kind:'note',tag:'wx',text:ss.sakura?(ss.st+'の気象台で桜が'+(ss.sakura==='full'?'満開':'開花')+'と観測された。公園に寄りたい。'):(ss.st+'のあたりで'+(ss.koyo==='kaede'?'かえでが色づく頃':'いちょうが黄色くなる頃')+'(気象庁の観測)。散歩日和。'),t});}}
   const PL=todayPlan(t);
+  if(S.homeHold&&S.homeHold>t&&!S.trip&&!S.request){if(j.at!==-1&&j.state!=='walk'){go(-1,t);return;}j.state='stay';j.until=Math.min(S.homeHold,t+30*60000);return;}
   if(PL==='rest'&&!S.trip){if(j.at!==-1&&j.state!=='walk'){go(-1,t);return;}if(j.restNoted!==todayKey(t)){j.restNoted=todayKey(t);addDiary({kind:'note',text:'今日は家でのんびりすることにした(あなたと相談して決めた)',t});}j.state='stay';j.until=w.en;return;}
   if(PL==='wish'&&j.wishDay!==todayKey(t)){j.wishDay=todayKey(t);const cand=S.wish.map(k=>idxOf(k)).filter(i=>i>=0&&!(S.visited[PK(POIS[i])]&&todayKey(S.visited[PK(POIS[i])].last)===todayKey(t)));if(cand.length){const i=cand[Math.floor(Math.random()*cand.length)];addDiary({kind:'note',text:'今日はあなたが行きたいと言っていた'+POIS[i].n+'へ、まず向かう',t});go(i,t);return;}else addDiary({kind:'note',text:'行きたいリストにこの街の店がないので、おまかせで',t});}
   if(S.taught.habits.noRain&&S.taught.habits.noRainToday!==todayKey(t)&&rainy()&&j.at===-1&&!S.trip){if(j.rainStayDay!==todayKey(t)){j.rainStayDay=todayKey(t);addDiary({kind:'note',text:'雨なので今日は家でのんびりすることにした(あなたに教わった通り)',t});}j.state='stay';j.until=Math.min(w.en,t+60*60000);return;}
   if(PL!=='near'&&PL!=='wish'&&maybeLongTrip(t))return;
   if(TRANSIT_OK_LIVE()&&maybeInvite(t)){j.state='stay';j.until=t+16*60000;return;}
+  if(j.at===-1&&!S.trip&&!curWalk(t)||(j.at===-1&&!S.trip&&S.walk&&S.walk.day===todayKey(t)&&t-(S.walk.t||0)>3*3600e3))pickWalk(t);
   const c=candidates(t);let pick=c[0];if(!TRANSIT_OK){const near=c.find(x=>x.d<1800&&x.sc>-500);if(near)pick=near;}if(!pick||pick.sc<-500){j.state='stay';j.until=t+30*60000;return;}
   go(pick.i,t);}
 function arrive(t,r){const j=S.j;if(!j.arrivedBy&&j.straight===null&&j.pathLen>800&&S.vehicle!=='walk')j.arrivedBy=V().n.replace('がある','');j.lastArrivedBy=!!j.arrivedBy;const idx=j.target;j.state='stay';j.at=idx;j.pos=idx>=0?[POIS[idx].la,POIS[idx].lo]:[HOME.la,HOME.lo];
@@ -1302,7 +1349,7 @@ function arrive(t,r){const j=S.j;if(!j.arrivedBy&&j.straight===null&&j.pathLen>8
   if(isOpen(p.h,new Date(t))===false){const v0=S.visited[pk]||(S.visited[pk]={n:0,last:0});v0.last=t;addDiary({kind:'note',text:p.n+'まで来たが閉まっていた(営業時間 '+p.h+')。別の所へ。',t});j.until=t+3*60000;return;}
   const h=hour(t);const reasons=[];if(S.wish.includes(pk))reasons.push('あなたが行きたいと言っていた所');if(S.taught.shops[pk]&&S.taught.shops[pk].mode==='like')reasons.push('あなたのおすすめ'+(S.taught.shops[pk].memo?'「'+S.taught.shops[pk].memo+'」':''));if(rainy()&&INDOOR.has(p.k))reasons.push('雨をよけて');if(hot()&&(INDOOR.has(p.k)||p.k==='cafe'))reasons.push('暑いので涼みに');if(cold()&&(p.k==='onsen'||p.k==='cafe'))reasons.push('寒いので温まりに');if(j.lastArrivedBy)reasons.push('せっかく遠くまで来たので');
   if(h>=11.3&&h<14&&['restaurant','fast_food','conv'].includes(p.k))reasons.push('お腹がすいたので');if(p.k==='cafe'&&h>=14&&h<17)reasons.push('少し歩き疲れたので');if(p.k==='park')reasons.push(rainy()?'雨がやんだので':'天気がよかったので');if(p.k==='onsen')reasons.push('歩き疲れたので湯に');if(p.k==='michinoeki')reasons.push('地の物を見たくて');
-  const v1=S.visited[pk];if(v1&&v1.n>=2)reasons.push('気に入っているので、また');const mood=reasons.length?reasons[Math.floor(Math.random()*reasons.length)]:null;
+  const v1=S.visited[pk];if(v1&&v1.n>=2)reasons.push('気に入っているので、また');{const cw=curWalk(t);if(cw&&walkBonus(p,0,t,price)>1.5)reasons.push('「'+cw.n+'」の途中で');}walkStep(t);const mood=reasons.length?reasons[Math.floor(Math.random()*reasons.length)]:null;
   if(pay>0){S.wallet-=pay;S.stats.spent+=pay;}
   if(!j.lastArrivedBy&&!j.straight&&Math.random()<0.12){const amt=[50,80,100,120,150,200,300][Math.floor(Math.random()*7)];const why=Math.random()<0.65?'歩いた分のポイントが貯まっていた':'自販機の下に小銭が落ちていた';S.wallet+=amt;S.stats.harvest+=amt;addDiary({kind:'note',text:why+'(+¥'+amt+')。',t:t-60000});}
   const v=S.visited[pk]||(S.visited[pk]={n:0,last:0});v.n++;v.last=t;S.stats.visits++;S.energy=Math.max(0,S.energy-(p.k==='park'||p.k==='cafe'||p.k==='onsen'?3:7)-(hot()?4:0)-(cold()?2:0));if(j.lastArrivedBy)S.energy=Math.max(0,S.energy-10);
@@ -1827,12 +1874,14 @@ const DICON={
  plan:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M9 14l2 2 4-4"/></svg>',
  wallet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M4 7l11-3v3"/><circle cx="16" cy="13.5" r="1.3" fill="currentColor"/></svg>',
  story:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><rect x="7" y="6" width="10" height="7" rx="1"/><path d="M8 16h8M8 18.5h5"/></svg>',
+ home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg>',
  memo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18c3-6 5-6 8-2s5 4 8-4"/><circle cx="4" cy="18" r="1.6" fill="currentColor"/><circle cx="20" cy="12" r="1.6" fill="currentColor"/></svg>'};
 let dockSig='';
 function renderDock(){const el=$('dockMain');if(!el)return;const now=Date.now();const j=S.j;const w=workWindow(now);const rk=curRideKind();
   const atHome=j.at===-1&&j.state!=='walk'&&j.state!=='hotel'&&!j.transit&&!S.trip;const asleep=atHome&&(hour(now)<6.5||hour(now)>=23);
   let p;/* 主ボタン */
   if(rk)p={ic:'map',t:'地図で見る',sub:(curTransitLeg()?rideName(curTransitLeg()):'移動中'),act:'map'};
+  else if(atHome&&S.homeHold>now)p={ic:'bed',t:'家でひと休み中',sub:fmtT(S.homeHold)+'まで。押すと出かける',act:'goout',calm:true};
   else if(j.state==='hotel')p={ic:'bed',t:'宿で休んでいる',sub:(S.trip?S.trip.city+'に滞在中':'一泊'),act:'map',calm:true};
   else if(!atHome)p={ic:'map',t:'いまの場所を見る',sub:statusText().replace(/^\S+\s/,''),act:'map'};
   else if(j.restUntil>now)p={ic:'moon',t:'ひと眠り中',sub:fmtT(j.restUntil)+'ごろ起きる',act:'plan',calm:true};
@@ -1840,12 +1889,13 @@ function renderDock(){const el=$('dockMain');if(!el)return;const now=Date.now();
   else if(asleep)p={ic:'moon',t:'おやすみ中',sub:'朝になったら動き出す',act:'plan',calm:true};
   else p={ic:'walk',t:'いま出かけて',sub:actMode()==='work'&&w&&now<w.st?fmtHM(S.work.start)+'に出発の予定。早めても大丈夫':(hour(now)>=22||hour(now)<5?'夜の街へ。開いている店だけ':'近くの街へ行ってくる'),act:'goout'};
   const ready=S.field.slots.filter(x=>x.stage===2).length;const k=todayKey(now);const vis=S.diary.filter(e=>todayKey(e.t)===k&&e.kind==='visit').length;const km=trailKm(k);
-  const sig=[p.t,p.sub,S.wallet,ready,vis,km.toFixed(1),todayPlan(now)].join('|');if(sig===dockSig)return;dockSig=sig;
+  const cw=curWalk(now);const canHome=!atHome&&!(j.state==='walk'&&j.target===-1&&!S.trip);const sig=[p.t,p.sub,S.wallet,ready,vis,km.toFixed(1),todayPlan(now),cw?cw.k:'',canHome].join('|');if(sig===dockSig)return;dockSig=sig;
   const tile=(ic,label,val,act,badge)=>`<button class="dt" data-dock="${act}"><span class="di">${DICON[ic]}</span><span class="dlb">${label}</span><b>${val}</b>${badge?`<em>${badge}</em>`:''}</button>`;
-  el.innerHTML=`<button class="dp${p.calm?' calm':''}" data-dock="${p.act}"><span class="di">${DICON[p.ic]}</span><span class="dtx"><b>${esc(p.t)}</b><small>${esc(p.sub||'')}</small></span><span class="chev">›</span></button>
-    <div class="dts">${tile('plan','今日',esc(PLAN_LABEL[todayPlan(now)]||'おまかせ'),'plan')}${tile('wallet','財布','¥'+fmt(S.wallet),'farm',ready?ready:'')}${tile('story','今日の話',vis+'か所','story')}${tile('memo','思い出',km.toFixed(1)+'km','memory')}</div>`;
+  el.innerHTML=`<div class="dprow"><button class="dp${p.calm?' calm':''}" data-dock="${p.act}"><span class="di">${DICON[p.ic]}</span><span class="dtx"><b>${esc(p.t)}</b><small>${esc(p.sub||'')}</small></span><span class="chev">›</span></button>${canHome?`<button class="dhome" data-dock="home"><span>${DICON.home}</span><b>家に戻す</b></button>`:''}</div>
+    <div class="dts">${tile('plan','歩き方',cw?cw.e+' '+esc(cw.n):esc(PLAN_LABEL[todayPlan(now)]||'おまかせ'),'plan')}${tile('wallet','財布','¥'+fmt(S.wallet),'farm',ready?ready:'')}${tile('story','今日の話',vis+'か所','story')}${tile('memo','思い出',km.toFixed(1)+'km','memory')}</div>`;
   el.querySelectorAll('[data-dock]').forEach(b=>b.onclick=e=>{e.stopPropagation();try{navigator.vibrate&&navigator.vibrate(8);}catch(x){}const a=b.dataset.dock;
     if(a==='goout'){if(goOutNow()){homeSig='';dockSig='';renderHome(true);}}
+    else if(a==='home'){comeHome();renderHome(true);}
     else if(a==='map'){manualViewAt=Date.now();setView('map');}
     else if(a==='story')showStory(todayKey());else if(a==='memory')openMemory(7);else openTab(a);});
   const h=$('homeDock').offsetHeight;if(h)document.documentElement.style.setProperty('--dockH',h+'px');}
@@ -1989,8 +2039,8 @@ function renderFoot(){const el=$('hfoot');if(!el)return;const now=Date.now();con
   if(doneToday){const es=S.diary.filter(e=>todayKey(e.t)===todayKey(now));const vis=es.filter(e=>e.kind==='visit');const spent=es.reduce((a,e)=>a+(e.cost||0),0);const towns=new Set(vis.map(e=>e.town).filter(Boolean));first=`<div class="big" data-open="diary"><small>今日のまとめ</small><b>${vis.length}軒 · ¥${fmt(spent)}${towns.size?' · '+[...towns].slice(0,2).join('・'):''}</b></div>`;}
   else first=`<div class="big" data-open="plan"><small>今日の予定</small><b>${esc(S.trip?S.trip.city+'を旅行中':(PLAN_LABEL[todayPlan(now)]||'おまかせ'))}</b></div>`;
   el.innerHTML=`<div class="two">${first}<div class="big money" data-open="farm"><small>お小遣い${ready?' · 畑で'+ready+'つ収穫できる':''}</small><b>¥${fmt(S.wallet)}</b></div></div>
-    <div class="chips"><button data-open="diary">📔 日記<i>${S.diary.length||''}</i></button><button data-open="wish">♡ 行きたい<i>${S.wish.length||''}</i></button><button data-open="friends">📮 スタンプ<i>${nst||''}</i></button>${S.souvenirs.length?`<button data-open="friends">🎁 お土産<i>${S.souvenirs.length}</i></button>`:''}${bk?`<button data-open="plan">🎯 今週<i>${bk}</i></button>`:''}<button data-mem="7">🗺 思い出</button><button data-story="1">🌙 今日の話</button><button data-open="teach">✎ 教える</button></div>`;
-  el.querySelectorAll('[data-open]').forEach(b=>b.onclick=e=>{e.stopPropagation();openTab(b.dataset.open);});el.querySelectorAll('[data-mem]').forEach(b=>b.onclick=e=>{e.stopPropagation();openMemory(+b.dataset.mem);});el.querySelectorAll('[data-story]').forEach(b=>b.onclick=e=>{e.stopPropagation();showStory(todayKey());});}
+    <div class="chips">${(S.j.at!==-1||S.j.state==='walk'||S.trip)&&!(S.j.state==='walk'&&S.j.target===-1&&!S.trip)?'<button data-comehome="1" class="hb">🏠 家に戻す</button>':''}<button data-open="diary">📔 日記<i>${S.diary.length||''}</i></button><button data-open="wish">♡ 行きたい<i>${S.wish.length||''}</i></button><button data-open="friends">📮 スタンプ<i>${nst||''}</i></button>${S.souvenirs.length?`<button data-open="friends">🎁 お土産<i>${S.souvenirs.length}</i></button>`:''}${bk?`<button data-open="plan">🎯 今週<i>${bk}</i></button>`:''}<button data-mem="7">🗺 思い出</button><button data-story="1">🌙 今日の話</button><button data-open="teach">✎ 教える</button></div>`;
+  el.querySelectorAll('[data-open]').forEach(b=>b.onclick=e=>{e.stopPropagation();openTab(b.dataset.open);});el.querySelectorAll('[data-mem]').forEach(b=>b.onclick=e=>{e.stopPropagation();openMemory(+b.dataset.mem);});el.querySelectorAll('[data-story]').forEach(b=>b.onclick=e=>{e.stopPropagation();showStory(todayKey());});el.querySelectorAll('[data-comehome]').forEach(b=>b.onclick=e=>{e.stopPropagation();comeHome();});}
 /* 家にいる時のひとこと(事実だけ) */
 function homeLine(now,w){const A=S.name;const hr=hour(now);if(hr<6.5||hr>=23)return 'おやすみ中';if(!w)return '今日は仕事が休みの日。'+A+'も家で過ごす';if(now<w.st){const m=Math.round((w.st-now)/60000);const rl=rainLater();const wx=rainy()?'。雨なので傘を持っていく':rl!=null?'。'+rl+'時ごろから雨らしい、傘を持っていこう':hot()?'。今日は暑い':cold()?'。今日は寒い':'';return (m>60?'出発は'+fmtHM(S.work.start)+'。まだ家':'出発まであと'+m+'分')+wx;}
   if(now>=w.en)return '今日はもう帰ってきた。'+(S.stats.visits?'':'');const PL=todayPlan(now);if(PL==='rest')return '今日は家でのんびりする日';return '家にいる。'+(rainy()?'雨がやむのを待っている':'これからどうするか考えている');}
@@ -2051,6 +2101,10 @@ function renderPanel(){if(!tab)return;let h='';
     if(S.j.transit&&S.j.transit.city&&!S.j.transit.city.home){const cn=S.j.transit.city.name;const cur=S.taught.farBy[cn]||'';h+=`<div class="row"><div>${esc(cn)}への行き方<small>次からの手段を教える(いまは${S.j.transit.legs.some(l=>l.mode==='AIRPLANE')?'飛行機':'鉄道'})</small></div><span><button data-farby="rail" ${cur==='rail'?'class="on"':''}>新幹線・電車で</button> <button data-farby="air" ${cur==='air'?'class="on"':''}>飛行機で</button> ${(COACH_ROUTES[cn]&&COACH_ROUTES[cn].to)||coachTaught(cn)?`<button data-farby="coach" ${cur==='coach'?'class="on"':''}>高速バスで</button> `:''}<button data-farby="" ${!cur?'class="on"':''}>比べて決める</button></span></div>`;}
     if(S.j.transit){h+='<div class="sec">いまの乗り継ぎ</div>'+S.j.transit.legs.map(l=>`<div class="tl"><span class="tlt">${fmtT(l.t0)}</span><span class="tle">${l.mode==='WALK'?'🚶':l.mode==='CHECKIN'?'🛂':l.mode==='BAGGAGE'?'🧳':vehSVG(l.mode)}</span><span>${l.mode==='WALK'?'歩く':l.mode==='CHECKIN'?'搭乗手続き・保安検査':l.mode==='BAGGAGE'?'荷物を受け取る':rideName(l)}<br><small style="color:var(--ink2)">${l.from.n} → ${l.to.n}(${fmtT(l.t1)}着)</small></span></div>`).join('');}
     const today=todayKey();const es=S.diary.filter(e=>todayKey(e.t)===today);
+    {const cw=curWalk(Date.now());const pick=S.walkPick&&S.walkPick.day===todayKey()?S.walkPick.k:'';const out=S.j.at!==-1||S.j.state==='walk'||S.trip;
+     h+='<div class="sec">散歩のしかた</div><div class="note" style="margin:0 0 8px">'+(cw?'いまは「'+cw.e+' '+esc(cw.n)+'」。':'まだ決めていない。')+(pick?'あなたが選んだ歩き方で回ります。':'出かけるたびに'+esc(S.name)+'が気分で決めます(途中で変わることも)。')+'</div>'
+       +'<div class="wkg"><button data-walk="" class="'+(pick?'':'on')+'"><i>🎲</i>おまかせ</button>'+WALKS.map(w=>'<button data-walk="'+w.k+'" class="'+(pick===w.k?'on':'')+'"'+(walkOK(w,Date.now())?'':' disabled title="いまは条件が合わない"')+'><i>'+w.e+'</i>'+esc(w.n)+'</button>').join('')+'</div>'
+       +(out?'<button id="bComeHome" class="buy" style="width:100%;margin-top:4px">🏠 家に戻す</button>':(S.homeHold>Date.now()?'<div class="note">'+fmtT(S.homeHold)+'まで家にいます。</div>':''));}
     h+='<div class="sec">今日の流れ</div>'+(es.length?es.map(e=>`<div class="tl"><span class="tlt">${fmtT(e.t)}</span><span class="tle">${e.emoji||(e.kind==='note'?'・':'')}</span><span>${e.text}${e.cost?'<span class="tlc">¥'+fmt(e.cost)+'</span>':''}</span></div>`).join(''):'<div class="note">まだ何も。</div>');
     if(S.bucket){h+='<div class="sec">今週やりたいこと</div>'+S.bucket.items.map(i=>`<div class="row" style="display:block"><div style="display:flex;justify-content:space-between"><span>${i.done?'🎯 ':''}${i.text}</span><span style="color:var(--ink2)">${i.progress}/${i.target}</span></div><div class="bar"><i style="width:${Math.round(100*i.progress/i.target)}%"></i></div></div>`).join('');}
     const pend=S.asks.filter(a=>!a.done);if(pend.length)h+='<div class="sec">相談中</div>'+pend.map(a=>`<div class="row" style="display:block"><div>${S.name}「${a.text}」</div><div class="opts" style="display:flex;gap:6px;margin-top:6px">${a.opts.map(o=>`<button data-ansp="${a.id}|${o.key}">${o.label}</button>`).join('')}</div></div>`).join('');
@@ -2111,7 +2165,7 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>この人を別の端末へ<small>引き継ぎコードを出す → 別の端末の「読み込む」に貼る。街のデータは向こうで取り直す</small></div><span><button id="bExport">コードを出す</button> <button id="bImport">読み込む</button></span></div>
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v64 (2026-09-19)</div>';
+    h+='<div class="note">版: v65 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;setTimeout(()=>{try{paginatePanel();}catch(e){console.warn('pg',e);}},0);$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
@@ -2126,6 +2180,8 @@ function renderPanel(){if(!tab)return;let h='';
   panel.querySelectorAll('[data-dfilter]').forEach(b=>b.onclick=()=>{diaryFilter=b.dataset.dfilter;renderPanel();});
   panel.querySelectorAll('[data-actm]').forEach(b=>b.onclick=()=>{S.active=Object.assign({wake:420,sleep:1440},S.active||{},{mode:b.dataset.actm});S.kick=null;S.j.restUntil=0;save();toast(({always:'24時間動く',awake:'起きている間だけ動く',work:'勤務時間だけ動く'})[b.dataset.actm],'var(--acc)');dockSig='';homeSig='';renderPanel();});
   {const aw=$('actWake'),as=$('actSleep');const sv=()=>{const p=v=>{const [h,m]=String(v||'0:0').split(':').map(Number);return h*60+m;};S.active.wake=p(aw.value);let sl=p(as.value);if(sl<=S.active.wake)sl+=1440;S.active.sleep=sl;save();toast('起きる '+aw.value+' / 寝る '+as.value,'var(--acc)');};if(aw)aw.onchange=sv;if(as)as.onchange=sv;}
+  panel.querySelectorAll('[data-walk]').forEach(b=>b.onclick=()=>{const k=b.dataset.walk;const t=Date.now();if(!k){S.walkPick=null;toast('歩き方はおまかせ','var(--acc)');}else{S.walkPick={k,day:todayKey(t)};const out=S.j.at!==-1||S.j.state==='walk';if(out||S.walk&&S.walk.day===todayKey(t))pickWalk(t,'あなたの提案で、');toast('「'+WALKS.find(w=>w.k===k).n+'」で歩きます','var(--acc)');}dockSig='';homeSig='';save();renderPanel();});
+  {const ch=$('bComeHome');if(ch)ch.onclick=()=>{comeHome();renderPanel();};}
   {const bs=$('bStory');if(bs)bs.onclick=()=>showStory(todayKey());const bm=$('bMem');if(bm)bm.onclick=()=>openMemory(7);}
   {const pd=$('mPay');if(pd){const sv=()=>{S.money.payday=+$('mPay').value||25;S.money.salary=Math.max(0,+$('mSal').value||0);S.money.rent=Math.max(0,+$('mRent').value||0);S.money.phone=Math.max(0,+$('mPhone').value||0);save();toast('お金のリズムを変えた','var(--acc)');};['mPay','mSal','mRent','mPhone'].forEach(id=>{const x=$(id);if(x)x.onchange=sv;});}}
   panel.querySelectorAll('[data-meet]').forEach(b=>b.onclick=()=>{const pk=b.dataset.meet;if(!S.wish.includes(pk))S.wish.push(pk);const f=S.friends.find(x=>x.pk===pk);toast((f?f.name+'さんの':'')+'いる店を「行きたい」に入れた','var(--acc)');save();renderPanel();});
