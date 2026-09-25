@@ -108,6 +108,8 @@ def good_title(t):
     if " / " in t or re.fullmatch(r"[A-Za-z0-9 &/:'\-]+", t) and len(t.split()) <= 3: return False
     core = re.sub(r"[「『」』（）()<>＜＞【】\[\]\s・:：]", "", t)
     if core in GENERIC or len(core) < 3: return False
+    if re.fullmatch(r"(開催中|開催予定|今後|これから|現在|次回|過去|最新|本日)の?(展覧会|展示|企画展|特別展|イベント|催し|催事)(情報|一覧|案内)?", core): return False
+    if re.search(r"(お祭り・イベント情報|常設展示室|常設展示$|基本情報|その他$|展示室$|・イベント$|ツアー・イベント)", t): return False
     ns = re.sub(r"\s+", "", t)
     if BAD.search(ns) and not re.search(r"[「『].{2,}[」』]", t): return False
     if re.search(r"(を終えて|について|のお知らせ|レポート|ブログ|記事|更新|トップ|ニュース|公式|観光サイト|続きを読む|宿泊|プラン|クーポン|リフト|予約受付|チケット|では、)", ns): return False
