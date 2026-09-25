@@ -100,20 +100,24 @@ def mkdate(y, m, d, ref_year):
     except Exception: return None
 
 BAD = re.compile(r"(お知らせ|ご案内|案内|一覧|次回|会期|会場|展示替|休止|休館|募集|期間|※|開催日|について|のみ|終了|延期|中止|日程|スケジュール|アーカイブ|過去の|詳しく|詳細|こちら|チラシ|PDF|ページ)")
-GENERIC = {"特別展","企画展","企画展示","イベント","展覧会","常設展","特集展示","テーマ展","展示","特別展示","コレクション展","収蔵品展","イベント情報","展覧会情報","現在の特別展","現在の企画展","開催中の展覧会","今後の展覧会","これからの展覧会","開催中の展示","現在の展示","Exhibition","Exhibitions","EXHIBITION"}
+GENERIC = {"特別展","企画展","企画展示","イベント","展覧会","常設展","特集展示","テーマ展","展示","特別展示","コレクション展","収蔵品展","イベント情報","展覧会情報","現在の特別展","常設展示","常設展","展示予定作品","これからのイベント","お祭り・イベント情報","イベント情報一覧","現在の企画展","開催中の展覧会","今後の展覧会","これからの展覧会","開催中の展示","現在の展示","Exhibition","Exhibitions","EXHIBITION"}
 def good_title(t):
-    if not t or "。" in t or "ます" in t or t.endswith(("を","に","は","が","で")): return False
+    if not t or "。" in t or "ます" in t or t.endswith(("を","に","は","が","で","…","...")): return False
+    if "、" in t and len(t) > 26 and not re.search(r"[「『].+[」』]", t): return False
+    if re.match(r"^\d{4}[./年]", t): return False
+    if " / " in t or re.fullmatch(r"[A-Za-z0-9 &/:'\-]+", t) and len(t.split()) <= 3: return False
     core = re.sub(r"[「『」』（）()<>＜＞【】\[\]\s・:：]", "", t)
     if core in GENERIC or len(core) < 3: return False
     ns = re.sub(r"\s+", "", t)
     if BAD.search(ns) and not re.search(r"[「『].{2,}[」』]", t): return False
-    if re.search(r"(を終えて|について|のお知らせ|レポート|ブログ|記事|更新|トップ|ニュース)", ns): return False
+    if re.search(r"(を終えて|について|のお知らせ|レポート|ブログ|記事|更新|トップ|ニュース|公式|観光サイト|続きを読む|宿泊|プラン|クーポン|リフト|予約受付|チケット|では、)", ns): return False
     return True
 def clean_title(t):
     t = re.sub(r"\s+", " ", t).strip(" 　:：|｜-–—")
     t = re.sub(r"^[^「『]{0,8}】\s*", "", t)
     t = re.sub(r"^【[^】]{0,12}】\s*", "", t)
     t = re.sub(r"^[^\w「『（(]+", "", t)
+    t = re.sub(r"[》>＞】\]]+$", "", t).strip()
     t = re.sub(r"[（(\[【]\s*$", "", t).strip()
     t = re.sub(r"^(開催中|会期中|終了間近|NEW|new|特集|お知らせ|展覧会|企画展|特別展)[\s:：・|｜]+", "", t)
     return t[:60]
