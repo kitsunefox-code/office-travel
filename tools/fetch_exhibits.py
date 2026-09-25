@@ -29,16 +29,37 @@ def http(url, timeout=12, maxbytes=1_500_000):
             except Exception: pass
         return raw.decode("utf-8", "ignore"), r.geturl()
 
+VCACHE = os.path.join(os.path.dirname(__file__), "..", "data", "exhibit_venues.json")
+REGIONS = [(24.0,122.9,31.0,132.0),(31.0,128.0,34.7,134.5),(33.0,130.8,36.2,136.0),(34.2,135.9,36.2,139.2),(35.0,139.2,36.0,140.9),(36.0,136.0,38.7,142.2),(38.7,139.0,41.6,142.2),(41.3,139.3,45.8,146.0)]
 def overpass():
-    q = '[out:json][timeout:180];area["ISO3166-1"="JP"]->.jp;nwr(area.jp)[tourism~"^(museum|gallery|aquarium|zoo)$"][website][name];out tags center qt;'
-    for host in ("https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"):
-        try:
-            req = urllib.request.Request(host, data=urllib.parse.urlencode({"data": q}).encode(), headers={"User-Agent": UA, "Accept": "application/json"})
-            with urllib.request.urlopen(req, timeout=240) as r:
-                return json.loads(r.read().decode("utf-8"))["elements"]
-        except Exception as e:
-            print("overpass", host, e, file=sys.stderr)
-    return []
+    """全国の館を地域ごとに取る。どこかで失敗したら、保存しておいた一覧を使う"""
+    out = []; ok = True
+    for (a, b, c, d) in REGIONS:
+        q = f'[out:json][timeout:120];nwr({a},{b},{c},{d})[tourism~"^(museum|gallery|aquarium|zoo)$"][website][name];out tags center qt;'
+        got = None
+        for host in ("https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://overpass.private.coffee/api/interpreter"):
+            try:
+                req = urllib.request.Request(host, data=urllib.parse.urlencode({"data": q}).encode(), headers={"User-Agent": UA, "Accept": "application/json"})
+                with urllib.request.urlopen(req, timeout=150) as r:
+                    got = json.loads(r.read().decode("utf-8"))["elements"]; break
+            except Exception as e:
+                print("overpass", host, (a, b), e, file=sys.stderr); time.sleep(5)
+        if got is None: ok = False; break
+        out += got
+    if ok and len(out) > 500:
+        seen = set(); uniq = []
+        for e in out:
+            k = (e.get("type"), e.get("id"))
+            if k in seen: continue
+            seen.add(k); uniq.append(e)
+        with open(VCACHE, "w", encoding="utf-8") as f:
+            json.dump({"updated": TODAY.isoformat(), "elements": [{"lat": e.get("lat") or (e.get("center") or {}).get("lat"), "lon": e.get("lon") or (e.get("center") or {}).get("lon"), "tags": e.get("tags", {})} for e in uniq]}, f, ensure_ascii=False, separators=(",", ":"))
+        return uniq
+    try:
+        with open(VCACHE, encoding="utf-8") as f: cached = json.load(f)["elements"]
+        print("use cached venues", len(cached), file=sys.stderr); return cached
+    except Exception as e:
+        print("no venue cache", e, file=sys.stderr); return []
 
 class Page(HTMLParser):
     def __init__(self):
@@ -217,6 +238,8 @@ def main():
         for r in ex.map(lambda v: (lambda: crawl(v))() if True else None, vs):
             if r: res.append(r)
     with_items = sum(1 for r in res if r["items"])
+    if not res or with_items == 0:
+        print("nothing collected; keep previous data", file=sys.stderr); sys.exit(1)
     data = {"updated": datetime.datetime.now(JST).strftime("%Y-%m-%dT%H:%M+09:00"), "source": "各館の公式サイト(JSON-LDと会期の記載)。OpenStreetMap の website/SNS タグ", "venues": res}
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
