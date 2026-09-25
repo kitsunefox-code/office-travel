@@ -1,0 +1,27 @@
+name: exhibits
+on:
+  schedule:
+    - cron: "0 18 * * 0"   # 月曜 03:00 JST
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: exhibits
+  cancel-in-progress: false
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch exhibitions from official museum sites
+        run: python tools/fetch_exhibits.py
+      - name: Commit data
+        run: |
+          git config user.name "exhibits-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/exhibits.json
+          if git diff --cached --quiet; then echo "no change"; else git commit -m "exhibits: update $(date -u +%Y-%m-%dT%H:%MZ)" && git pull --rebase && git push; fi
