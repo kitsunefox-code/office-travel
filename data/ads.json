@@ -16,5 +16,9 @@
   "places": {
     "_説明": "Google Places API (New) のブラウザ用キー。Google Cloud で HTTP リファラーを kusayakyu-navi.com/* に制限して作る。空なら口コミは Googleマップで開く",
     "key": ""
+  },
+  "hotpepper": {
+    "_説明": "ホットペッパーグルメ Webサービスの APIキー。下の key の \"\" の間に貼る。全員の口コミ画面にお店の一言・予算・クーポンが出る",
+    "key": ""
   }
 }
