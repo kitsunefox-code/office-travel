@@ -1397,8 +1397,14 @@ const FOOD_K=new Set(['restaurant','cafe','fast_food','pub','bar','sweets','bake
 function visitPR(e){const b=S.book[e.pk]||POIS.find(p=>PK(p)===e.pk)||{};const k=b.k||'';
   if(FOOD_K.has(k))return prA(vcWrap('https://www.hotpepper.jp/CSP/psh010/doBasic?FWT='+encodeURIComponent(e.pn)),'予約・クーポン');
   if(k==='clothes'||k==='shop')return prA(rakutenWrap('https://search.rakuten.co.jp/search/mall/'+encodeURIComponent(e.pn)+'/'),'通販で見る');return '';}
-/* 日記の行ごとの楽天リンク(成果の入る形にできる時だけ) */
-function diaryPR(e){if(!affRakutenId())return '';const out=[];
+/* Travelpayouts の提携先: [campaign_id, p]。trs はプロジェクト番号 */
+const TPP={klook:[137,4110],kkday:[633,9074],trip:[121,8980],airalo:[541,8310],kiwi:[1,647]};
+function tpWrap(k,u){const m=ADS.tp||S.keys.travelpayouts;const P=(ADS.tpp&&ADS.tpp[k])||TPP[k];if(!m||!P)return null;return 'https://tp.media/r?campaign_id='+P[0]+'&marker='+encodeURIComponent(m)+'&p='+P[1]+'&trs='+encodeURIComponent(ADS.tpTrs||'575854')+'&u='+encodeURIComponent(u);}
+function inJP(la,lo){return la>24&&la<46&&lo>122&&lo<146;}
+/* 日記の行ごとのPRリンク(成果の入る形にできる時だけ) */
+function diaryPR(e){const out=[];
+  if(e.arr&&e.jp===false){out.push(prA(tpWrap('kkday','https://www.kkday.com/ja/product/productlist?keyword='+encodeURIComponent(e.arr)),e.arr+'の体験・チケット'));out.push(prA(tpWrap('klook','https://www.klook.com/ja/'),'Klook'));out.push(prA(tpWrap('airalo','https://www.airalo.com/ja'),'海外eSIM'));out.push(prA(tpWrap('kiwi','https://kiwitaxi.com/'),'空港送迎'));}
+  if(!affRakutenId())return out.length?' <span class="acts">'+out.join('')+'</span>':'';
   if(e.mode==='COACH')out.push(prA(rakutenWrap('https://travel.rakuten.co.jp/bus/'),'高速バスを探す'));
   if(e.arr&&e.jp){out.push(prA(rakutenWrap('https://experiences.travel.rakuten.co.jp/'),'観光・体験'));out.push(prA(rakutenWrap('https://travel.rakuten.co.jp/cars/'),'レンタカー'));}
   if(e.exT){const q=e.exT.replace(/[「」『』《》【】]/g,' ').replace(/\s+/g,' ').trim().slice(0,40);if(q)out.push(prA(rakutenWrap('https://search.rakuten.co.jp/search/mall/'+encodeURIComponent(q+' 図録')+'/'),'図録・関連の本'));}
@@ -1520,7 +1526,8 @@ function destCommit(){const sel=destSel;if(!sel)return;const now=Date.now();
   if(destWhen==='now'){S.j.tripStay={city:sel.name,until:stayUntil(plan,now),stay:plan.stay,nights:plan.nights};S.homeHold=0;requestNow({name:sel.name,la:sel.la,lo:sel.lo,ap:sel.ap||undefined});toast(S.name+'が'+sel.name+'へ向かいます','var(--acc)');closeDest();save();return;}
   (S.plans=S.plans||[]).push(plan);addDiary({kind:'note',tag:'you',text:'あなたと予定を決めた。'+(+date.slice(5,7))+'月'+(+date.slice(8,10))+'日に'+sel.name+'へ'+(plan.stay==='night'?plan.nights+'泊で':'日帰りで')+'行く。',t:now});toast((+date.slice(5,7))+'/'+(+date.slice(8,10))+' '+sel.name+'へ行く予定にした','var(--acc)');destSel=null;save();renderDest();dockSig='';}
 function closeDest(){const el=$('destSheet');if(el)el.classList.remove('on');destSel=null;destQ='';destGeo=[];dockSig='';}
-function hotelLinks(name,town){const q=encodeURIComponent(name+' '+(town||''));const K=S.keys;
+function hotelLinks(name,town,la,lo){const q=encodeURIComponent(name+' '+(town||''));const K=S.keys;
+  if(la!=null&&!inJP(la,lo)){const tr=tpWrap('trip','https://jp.trip.com/hotels/');return (tr?`<a href="${esc(tr)}" target="_blank" rel="noopener sponsored">Trip.com${PR}</a> / `:'')+`<a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">地図</a>`;}
   const rakutenTarget='https://search.travel.rakuten.co.jp/ds/hotellist/?f_query='+encodeURIComponent(name);const jalanTarget='https://www.jalan.net/uw/uwp2011/uww2011init.do?keyword='+encodeURIComponent(name);
   const rakuten=affRakutenId()?rakutenWrap(rakutenTarget):`https://www.google.com/search?q=${encodeURIComponent('site:travel.rakuten.co.jp '+name)}`;
   const jalan=affVC()?vcWrap(jalanTarget):`https://www.google.com/search?q=${encodeURIComponent('site:jalan.net '+name)}`;
@@ -2490,7 +2497,7 @@ function renderPanel(){if(!tab)return;let h='';
       h+='<div class="tl2">'+es.map(e=>{let tx=esc(e.text||'');if(e.kind==='visit'&&e.pn)tx=tx.replace(esc(e.pn),shopLink(e.pn,e.town));const tg=diaryTag(e);
         /* 読みやすく: 「。」で改行、時刻と駅名を強調 */
         tx=tx.replace(/。(?!$)/g,'。<br>').replace(/(\d{1,2}:\d{2})/g,'<span class="tm">$1</span>');
-        const acts=e.kind==='visit'?` <span class="acts"><button data-wish="${e.pk}" class="${S.wish.includes(e.pk)?'on':''}">${S.wish.includes(e.pk)?'♥':'♡'}</button>${e.lodging?hotelLinks(e.pn,e.town):`<a href="${gmapsLL({n:e.pn,la:e.pla,lo:e.plo})}" target="_blank" rel="noopener">地図</a>`+revBtn(e.pn,e.pla,e.plo)+visitPR(e)}</span>`:'';
+        const acts=e.kind==='visit'?` <span class="acts"><button data-wish="${e.pk}" class="${S.wish.includes(e.pk)?'on':''}">${S.wish.includes(e.pk)?'♥':'♡'}</button>${e.lodging?hotelLinks(e.pn,e.town,e.pla,e.plo):`<a href="${gmapsLL({n:e.pn,la:e.pla,lo:e.plo})}" target="_blank" rel="noopener">地図</a>`+revBtn(e.pn,e.pla,e.plo)+visitPR(e)}</span>`:'';
         const ic=e.kind==='visit'?`<span class="em" style="background:${e.color||'#ddd'}">${e.emoji||''}</span>`:`<span class="ic t-${tg}" title="${TAG_JA[tg]||''}">${ICON[tg]||ICON.note}</span>`;
         return `<div class="dl t-${tg}${e.kind==='visit'?' v':''}"><time>${fmtT(e.t)}</time>${ic}<div class="dt">${tx}${e.url?' <a href="'+esc(e.url)+'" target="_blank" rel="noopener" style="color:var(--info)">'+esc(e.urlLabel||'この便を見る')+'</a>':''}${acts}${diaryPR(e)}</div>${e.cost?`<span class="cost">¥${fmt(e.cost)}</span>`:'<span></span>'}</div>`;}).join('')+'</div>';if(k===keys[0])h+=adUnit(ADS.adsense.slotDiary,'inDiary');}}
   if(tab==='farm'){const J=(JOBS[S.job]||JOBS.other);const ready=S.field.slots.filter(x=>x.stage===2).length;
@@ -2573,7 +2580,7 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>この人を別の端末へ<small>引き継ぎコードを出す → 別の端末の「読み込む」に貼る。街のデータは向こうで取り直す</small></div><span><button id="bExport">コードを出す</button> <button id="bImport">読み込む</button></span></div>
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v82 (2026-09-19)</div>';
+    h+='<div class="note">版: v83 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;setTimeout(()=>{try{paginatePanel();}catch(e){console.warn('pg',e);}try{fillAds(panel);}catch(e){}},0);$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
