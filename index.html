@@ -1310,7 +1310,7 @@ function goCity(city,t){const j=S.j;if(!city.home&&warnLevel(['rain','wind','sno
 async function arriveCity(city,t){const j=S.j;j.cityTarget=null;if(!city.resume)S.stats.visits++;
   if(city.home){addDiary({kind:'note',text:'家の街に帰ってきた('+fmtT(t)+')',t});S.trip=null;let town=null;try{town=JSON.parse(localStorage.getItem(TOWN_KEY)||'null');}catch(e){}if(!town&&typeof KICHI!=='undefined')town=KICHI;if(town)initTown(town);j.at=-1;j.pos=[HOME.la,HOME.lo];j.state='stay';j.until=t+5*60000;save();return;}
   if(!city.resume){S.cities[city.name]=(S.cities[city.name]||0)+1;if(!S.trip)S.trip={since:t,cities:[]};S.trip.city=city.name;S.trip.cities.push(city.name);
-  addDiary({kind:'note',text:city.name+'に着く('+fmtT(t)+')。まず駅のまわりを歩いてみる。',t,arr:city.name,jp:city.la>24&&city.la<46&&city.lo>122&&city.lo<146});if(S.cities[city.name]===1)bucketHit('newcity',1,t);bucketHit('far',1,t);setTimeout(()=>stampAt(city.la,city.lo,t),1500);}
+  addDiary({kind:'note',text:city.name+'に着く('+fmtT(t)+')。まず駅のまわりを歩いてみる。',t,arr:city.name,jp:!CITIES_WORLD.some(c=>c[0]===city.name)&&inJP(city.la,city.lo)});if(S.cities[city.name]===1)bucketHit('newcity',1,t);bucketHit('far',1,t);setTimeout(()=>stampAt(city.la,city.lo,t),1500);}
   j.state='stay';j.until=t+8*60000;j.loadingTown=city.name;
   try{let town=townCacheGet(city.name,city.la,city.lo);
     if(!town){town=await buildTown(city.la,city.lo,city.name,true,()=>{});townCachePut(town);}
@@ -1400,7 +1400,9 @@ function visitPR(e){const b=S.book[e.pk]||POIS.find(p=>PK(p)===e.pk)||{};const k
 /* Travelpayouts の提携先: [campaign_id, p]。trs はプロジェクト番号 */
 const TPP={klook:[137,4110],kkday:[633,9074],trip:[121,8980],airalo:[541,8310],kiwi:[1,647]};
 function tpWrap(k,u){const m=ADS.tp||S.keys.travelpayouts;const P=(ADS.tpp&&ADS.tpp[k])||TPP[k];if(!m||!P)return null;return 'https://tp.media/r?campaign_id='+P[0]+'&marker='+encodeURIComponent(m)+'&p='+P[1]+'&trs='+encodeURIComponent(ADS.tpTrs||'575854')+'&u='+encodeURIComponent(u);}
-function inJP(la,lo){return la>24&&la<46&&lo>122&&lo<146;}
+function inJP(la,lo){if(!(la>24&&la<45.6&&lo>122&&lo<146))return false;
+  if(la>34.8&&lo<131)return false;/* 朝鮮半島・中国東北 */if(la>33.3&&lo<129.1)return false;/* 釜山・済州(対馬は東) */if(la>32.5&&lo<127.5)return false;
+  if(la>42&&lo<139.3)return false;/* ウラジオストク */return true;}
 /* 日記の行ごとのPRリンク(成果の入る形にできる時だけ) */
 function diaryPR(e){const out=[];
   if(e.arr&&e.jp===false){out.push(prA(tpWrap('kkday','https://www.kkday.com/ja/product/productlist?keyword='+encodeURIComponent(e.arr)),e.arr+'の体験・チケット'));out.push(prA(tpWrap('klook','https://www.klook.com/ja/'),'Klook'));out.push(prA(tpWrap('airalo','https://www.airalo.com/ja'),'海外eSIM'));out.push(prA(tpWrap('kiwi','https://kiwitaxi.com/'),'空港送迎'));}
@@ -2580,7 +2582,7 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>この人を別の端末へ<small>引き継ぎコードを出す → 別の端末の「読み込む」に貼る。街のデータは向こうで取り直す</small></div><span><button id="bExport">コードを出す</button> <button id="bImport">読み込む</button></span></div>
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v83 (2026-09-19)</div>';
+    h+='<div class="note">版: v84 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;setTimeout(()=>{try{paginatePanel();}catch(e){console.warn('pg',e);}try{fillAds(panel);}catch(e){}},0);$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
