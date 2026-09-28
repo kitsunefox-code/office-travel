@@ -1,0 +1,750 @@
+{
+ "at": "2026-09-28",
+ "countries": {
+  "KR": {
+   "ja": "韓国",
+   "app": "カカオT",
+   "uber": true,
+   "fare": 0.7,
+   "mofa": {
+    "risk": 0,
+    "inf": 0,
+    "title": "",
+    "lead": "",
+    "url": "https://www.anzen.mofa.go.jp/od/ryojiMail.html?countryCd=003",
+    "at": "2026/09/28 14:40:58"
+   },
+   "wd": {
+    "plug": [
+     "C",
+     "F"
+    ],
+    "emer": [
+     "112",
+     "113",
+     "119"
+    ],
+    "drive": [
+     "右"
+    ],
+    "cur": [
+     "KRW"
+    ]
+   }
+  },
+  "TW": {
+   "ja": "台湾",
+   "app": "Uber",
+   "uber": true,
+   "fare": 0.6,
+   "mofa": {
+    "risk": 0,
+    "inf": 0,
+    "title": "",
+    "lead": "",
+    "url": "https://www.anzen.mofa.go.jp/od/ryojiMail.html?countryCd=008",
+    "at": "2026/09/28 14:41:19"
+   },
+   "wd": {
+    "plug": [
+     "A",
+     "B"
+    ],
+    "emer": [
+     "110",
+     "112",
+     "119"
+    ],
+    "drive": [
+     "右"
+    ],
+    "cur": [
+     "TWD"
+    ]
+   }
+  },
+  "HK": {
+   "ja": "香港",
+   "app": "Uber",
+   "uber": true,
+   "fare": 0.75,
+   "mofa": {
+    "risk": 1,
+    "inf": 0,
+    "title": "香港の危険情報【危険レベル継続】（内容の更新）",
+    "lead": "香港の危険情報を更新しました。（【危険レベル継続】（内容の更新）） ※本メールは危険情報についてのお知らせです。新型コロナウイルス感染症に関しては、別途発出されている感染症危険情報をご参照ください。 外務省海外安全ホームページ「各国・地域における新型コロナウイルスの感染状況」（https://www.anzen.mofa.go.jp/covid19/country_count.html ）",
+    "url": "https://www.anzen.mofa.go.jp/info/map/2021T079_1_Detail.html",
+    "at": "2026/09/28 14:41:20"
+   },
+   "wd": {
+    "plug": [
+     "G"
+    ],
+    "emer": [
+     "999"
+    ],
+    "drive": [
+     "左"
+    ],
+    "cur": [
+     "HKD"
+    ]
+   }
+  },
+  "CN": {
+   "ja": "中国",
+   "app": "DiDi",
+   "uber": false,
+   "fare": 0.45,
+   "mofa": {
+    "risk": 1,
+    "inf": 0,
+    "title": "中華人民共和国（中国）の危険情報【危険レベル継続】（内容の更新）",
+    "lead": "中華人民共和国（中国）の危険情報【危険レベル継続】の内容を更新しました。",
+    "url": "https://www.anzen.mofa.go.jp/info/map/2024T086_1_Detail.html",
+    "at": "2026/09/28 14:41:00"
+   },
+   "wd": {
+    "plug": [
+     "A",
+     "C",
+     "I"
+    ],
+    "emer": [
+     "110",
+     "119",
+     "120"
+    ],
+    "drive": [
+     "右"
+    ],
+    "cur": [
+     "CNY"
+    ]
+   }
+  },
+  "TH": {
+   "ja": "タイ",
+   "app": "Grab",
+   "uber": false,
+   "fare": 0.35,
+   "mofa": {
+    "risk": 3,
+    "inf": 0,
+    "title": "タイの危険情報【一部地域の危険レベル引下げ】",
+    "lead": "●タイ・カンボジア国境付近では重火器の撤去が進んでおらず、国境に近い地域（カンボジア国境から30km以内）では、今後も不測の事態が発生する可能性が否定できないことから、危険レベル３を継続します。どのような目的であってもこれら地域への渡航は止めてください。 ●一方、国境から30kmを越えて50km以内の地域については、緊張状態は継続しているものの、約６か月にわたり大規模な軍事衝突は発生しておらず、状況が一時期に比べて安定していることから危険レベルを２に引き下げます。",
+    "url": "https://www.anzen.mofa.go.jp/info/map/2026T076_1_Detail.html",
+    "at": "2026/09/28 14:40:56"
+   },
+   "wd": {
+    "plug": [
+     "A",
+     "B",
+     "C",
+     "F"
+    ],
+    "emer": [
+     "191",
+     "199"
+    ],
+    "drive": [
+     "左"
+    ],
+    "cur": [
+     "THB"
+    ]
+   }
+  },
+  "VN": {
+   "ja": "ベトナム",
+   "app": "Grab",
+   "uber": false,
+   "fare": 0.3,
+   "mofa": {
+    "risk": 0,
+    "inf": 0,
+    "title": "",
+    "lead": "",
+    "url": "https://www.anzen.mofa.go.jp/od/ryojiMail.html?countryCd=015",
+    "at": "2026/09/28 14:41:11"
+   },
+   "wd": {
+    "plug": [
+     "A",
+     "C",
+     "F",
+     "G"
+    ],
+    "emer": [
+     "113",
+     "114",
+     "115"
+    ],
+    "drive": [
+     "右"
+    ],
+    "cur": [
+     "VND"
+    ]
+   }
+  },
+  "SG": {
+   "ja": "シンガポール",
+   "app": "Grab",
+   "uber": false,
+   "fare": 0.8,
+   "mofa": {
+    "risk": 0,
+    "inf": 0,
+    "title": "",
+    "lead": "",
+    "url": "https://www.anzen.mofa.go.jp/od/ryojiMail.html?countryCd=005",
+    "at": "2026/09/28 14:40:54"
+   },
+   "wd": {
+    "plug": [
+     "G"
+    ],
+    "emer": [
+     "995",
+     "999"
+    ],
+    "drive": [
+     "左"
+    ],
+    "cur": [
+     "SGD"
+    ]
+   }
+  },
+  "MY": {
+   "ja": "マレーシア",
+   "app": "Grab",
+   "uber": false,
+   "fare": 0.4,
+   "mofa": {
+    "risk": 2,
+    "inf": 0,
+    "title": "マレーシアの危険情報【一部地域の危険レベル引き下げ】",
+    "lead": "●サバ州東側沿岸及びバンジ島・バラムバンガン島では、近年治安情勢が安定しており、暴力事件数も低いレベルを維持しているので、危険レベルをレベル1（十分注意してください）に引き下げます。 ●サバ州東側島嶼（バンジ島・バラムバンガン島等を除く）では、2014年頃多発していた身代金目的の誘拐事件が2020年1月以降発生しておらず、治安も回復しているので、危険レベルをレベル2（不要不急の渡航は止めてください）に引き下げます（注：危険情報地図上でレベル2発出箇所の海域に所在する島嶼が対象） 。",
+    "url": "https://www.anzen.mofa.go.jp/info/map/2026T065_1_Detail.html",
+    "at": "2026/09/28 14:26:15"
+   },
+   "wd": {
+    "plug": [
+     "G"
+    ],
+    "emer": [
+     "999"
+    ],
+    "drive": [
+     "左"
+    ],
+    "cur": [
+     "MYR"
+    ]
+   }
+  },
+  "PH": {
+   "ja": "フィリピン",
+   "app": "Grab",
+   "uber": false,
+   "fare": 0.35,
+   "mofa": {
+    "risk": 3,
+    "inf": 0,
+    "title": "フィリピンの危険情報【一部地域の危険レベル引き下げ】",
+    "lead": "フィリピンの危険情報を更新しました。",
+    "url": "https://www.anzen.mofa.go.jp/info/map/2024T098_1_Detail.html",
+    "at": "2026/09/28 14:41:07"
+   },
+   "wd": {
+    "plug": [
+     "A",
+     "B",
+     "C"
+    ],
+    "emer": [
+     "911"
+    ],
+    "drive": [
+     "右"
+    ],
+    "cur": [
+     "PHP"
+    ]
+   }
+  },
+  "GU": {
+   "ja": "グアム(米国)",
+   "app": "タクシー",
+   "uber": false,
+   "fare": 1.2,
+   "mofa": {
+    "risk": 0,
+    "inf": 0,
+    "title": "",
+    "lead": "",
+    "url": "https://www.anzen.mofa.go.jp/od/ryojiMail.html?countryCd=221",
+    "at": "2026/09/28 14:26:54"
+   },
+   "wd": {
+    "plug": [
+     "A",
+     "B"
+    ],
+    "emer": [
+     "911"
+    ],
+    "drive": [
+     "右"
+    ],
+    "cur": [
+     "USD"
+    ]
+   }
+  },
+  "US": {
+   "ja": "アメリカ",
+   "app": "Uber",
+   "uber": true,
+   "fare": 1.3,
+   "mofa": {
+    "risk": 0,
+    "inf": 0,
+    "title": "",
+    "lead": "",
+    "url": "https://www.anzen.mofa.go.jp/od/ryojiMail.html?countryCd=221",
+    "at": "2026/09/28 14:26:54"
+   },
+   "wd": {
+    "plug": [
+     "A",
+     "B"
+    ],
+    "emer": [
+     "911"
+    ],
+    "drive": [
+     "右"
+    ],
+    "cur": [
+     "USD"
+    ]
+   }
+  },
+  "AU": {
+   "ja": "オーストラリア",
+   "app": "Uber",
+   "uber": true,
+   "fare": 1.2,
+   "mofa": {
+    "risk": 0,
+    "inf": 0,
+    "title": "",
+    "lead": "",
+    "url": "https://www.anzen.mofa.go.jp/od/ryojiMail.html?countryCd=071",
+    "at": "2026/09/28 14:41:21"
+   },
+   "wd": {
+    "plug": [
+     "I"
+    ],
+    "emer": [
+     "000"
+    ],
+    "drive": [
+     "左"
+    ],
+    "cur": [
+     "AUD"
+    ]
+   }
+  },
+  "GB": {
+   "ja": "イギリス",
+   "app": "Uber",
+   "uber": true,
+   "fare": 1.4,
+   "mofa": {
+    "risk": 0,
+    "inf": 0,
+    "title": "",
+    "lead": "",
+    "url": "https://www.anzen.mofa.go.jp/od/ryojiMail.html?countryCd=154",
+    "at": "2026/09/28 14:42:43"
+   },
+   "wd": {
+    "plug": [
+     "G"
+    ],
+    "emer": [
+     "112",
+     "999"
+    ],
+    "drive": [
+     "左"
+    ],
+    "cur": [
+     "GBP"
+    ]
+   }
+  },
+  "FR": {
+   "ja": "フランス",
+   "app": "Uber",
+   "uber": true,
+   "fare": 1.2,
+   "mofa": {
+    "risk": 0,
+    "inf": 0,
+    "title": "",
+    "lead": "",
+    "url": "https://www.anzen.mofa.go.jp/od/ryojiMail.html?countryCd=170",
+    "at": "2026/09/28 14:43:14"
+   },
+   "wd": {
+    "plug": [
+     "C",
+     "E"
+    ],
+    "emer": [
+     "112",
+     "114",
+     "15",
+     "17",
+     "18"
+    ],
+    "drive": [
+     "右"
+    ],
+    "cur": [
+     "EUR",
+     "XPF"
+    ]
+   }
+  },
+  "IT": {
+   "ja": "イタリア",
+   "app": "タクシー(FreeNow など)",
+   "uber": false,
+   "fare": 1.2,
+   "mofa": {
+    "risk": 0,
+    "inf": 0,
+    "title": "",
+    "lead": "",
+    "url": "https://www.anzen.mofa.go.jp/od/ryojiMail.html?countryCd=153",
+    "at": "2026/09/28 14:42:39"
+   },
+   "wd": {
+    "plug": [
+     "C",
+     "F",
+     "L"
+    ],
+    "emer": [
+     "112",
+     "113",
+     "115",
+     "118"
+    ],
+    "drive": [
+     "右"
+    ],
+    "cur": [
+     "EUR"
+    ]
+   }
+  },
+  "ES": {
+   "ja": "スペイン",
+   "app": "Uber",
+   "uber": true,
+   "fare": 1.0,
+   "mofa": {
+    "risk": 0,
+    "inf": 0,
+    "title": "",
+    "lead": "",
+    "url": "https://www.anzen.mofa.go.jp/od/ryojiMail.html?countryCd=161",
+    "at": "2026/09/28 14:42:59"
+   },
+   "wd": {
+    "plug": [
+     "C",
+     "F"
+    ],
+    "emer": [
+     "112"
+    ],
+    "drive": [
+     "右"
+    ],
+    "cur": [
+     "EUR"
+    ]
+   }
+  },
+  "DE": {
+   "ja": "ドイツ",
+   "app": "Uber",
+   "uber": true,
+   "fare": 1.2,
+   "mofa": {
+    "risk": 0,
+    "inf": 0,
+    "title": "",
+    "lead": "",
+    "url": "https://www.anzen.mofa.go.jp/od/ryojiMail.html?countryCd=165",
+    "at": "2026/09/28 14:43:07"
+   },
+   "wd": {
+    "plug": [
+     "C",
+     "F"
+    ],
+    "emer": [
+     "110",
+     "112"
+    ],
+    "drive": [
+     "右"
+    ],
+    "cur": [
+     "EUR"
+    ]
+   }
+  },
+  "NL": {
+   "ja": "オランダ",
+   "app": "Uber",
+   "uber": true,
+   "fare": 1.3,
+   "mofa": {
+    "risk": 0,
+    "inf": 0,
+    "title": "",
+    "lead": "",
+    "url": "https://www.anzen.mofa.go.jp/od/ryojiMail.html?countryCd=157",
+    "at": "2026/09/28 14:42:46"
+   },
+   "wd": {
+    "plug": [
+     "C",
+     "F"
+    ],
+    "emer": [
+     "112"
+    ],
+    "drive": [
+     "右"
+    ],
+    "cur": [
+     "AWG",
+     "EUR",
+     "USD",
+     "XCG"
+    ]
+   }
+  },
+  "TR": {
+   "ja": "トルコ",
+   "app": "Uber",
+   "uber": true,
+   "fare": 0.4,
+   "mofa": {
+    "risk": 4,
+    "inf": 0,
+    "title": "トルコの危険情報【一部地域の危険レベル引き下げ】",
+    "lead": "トルコの危険情報を更新しました。",
+    "url": "https://www.anzen.mofa.go.jp/info/map/2024T042_1_Detail.html",
+    "at": "2026/09/28 14:43:53"
+   },
+   "wd": {
+    "plug": [
+     "C",
+     "F"
+    ],
+    "emer": [
+     "112"
+    ],
+    "drive": [
+     "右"
+    ],
+    "cur": [
+     "TRY"
+    ]
+   }
+  },
+  "AE": {
+   "ja": "アラブ首長国連邦",
+   "app": "Uber / Careem",
+   "uber": true,
+   "fare": 0.6,
+   "mofa": {
+    "risk": 2,
+    "inf": 0,
+    "title": "アラブ首長国連邦の危険情報【危険レベルの引下げ】",
+    "lead": "●６月18日（日本時間）の米国・イラン間の戦闘終結等に関する覚書署名及びその後の情勢を踏まえ、今般、アラブ首長国連邦の全土について、危険レベルを２（不要不急の渡航は止めてください）に引き下げます。 ●詳細については、危険情報本文をご確認ください。",
+    "url": "https://www.anzen.mofa.go.jp/info/map/2026T066_1_Detail.html",
+    "at": "2026/09/28 14:43:37"
+   },
+   "wd": {
+    "plug": [
+     "C",
+     "G"
+    ],
+    "emer": [
+     "112",
+     "997",
+     "998",
+     "999"
+    ],
+    "drive": [
+     "右"
+    ],
+    "cur": [
+     "AED"
+    ]
+   }
+  }
+ },
+ "cities": {
+  "ICN": {
+   "iso": "KR",
+   "wv": "Seoul",
+   "n": 439
+  },
+  "PUS": {
+   "iso": "KR",
+   "wv": "Busan",
+   "n": 355
+  },
+  "TPE": {
+   "iso": "TW",
+   "wv": "Taipei",
+   "n": 221
+  },
+  "HKG": {
+   "iso": "HK",
+   "wv": "Hong Kong",
+   "n": 263
+  },
+  "PVG": {
+   "iso": "CN",
+   "wv": "Shanghai",
+   "n": 165
+  },
+  "PEK": {
+   "iso": "CN",
+   "wv": "Beijing",
+   "n": 203
+  },
+  "BKK": {
+   "iso": "TH",
+   "wv": "Bangkok",
+   "n": 414
+  },
+  "HAN": {
+   "iso": "VN",
+   "wv": "Hanoi",
+   "n": 89
+  },
+  "SGN": {
+   "iso": "VN",
+   "wv": "Ho Chi Minh City",
+   "n": 79
+  },
+  "SIN": {
+   "iso": "SG",
+   "wv": "Singapore",
+   "n": 399
+  },
+  "KUL": {
+   "iso": "MY",
+   "wv": "Kuala Lumpur",
+   "n": 255
+  },
+  "MNL": {
+   "iso": "PH",
+   "wv": "Manila",
+   "n": 257
+  },
+  "GUM": {
+   "iso": "GU",
+   "wv": "Guam",
+   "n": 0
+  },
+  "HNL": {
+   "iso": "US",
+   "wv": "Honolulu",
+   "n": 142
+  },
+  "SYD": {
+   "iso": "AU",
+   "wv": "Sydney",
+   "n": 280
+  },
+  "LAX": {
+   "iso": "US",
+   "wv": "Los Angeles",
+   "n": 269
+  },
+  "SFO": {
+   "iso": "US",
+   "wv": "San Francisco",
+   "n": 462
+  },
+  "JFK": {
+   "iso": "US",
+   "wv": "New York City",
+   "n": 85
+  },
+  "LHR": {
+   "iso": "GB",
+   "wv": "London",
+   "n": 420
+  },
+  "CDG": {
+   "iso": "FR",
+   "wv": "Paris",
+   "n": 327
+  },
+  "FCO": {
+   "iso": "IT",
+   "wv": "Rome",
+   "n": 407
+  },
+  "BCN": {
+   "iso": "ES",
+   "wv": "Barcelona",
+   "n": 318
+  },
+  "BER": {
+   "iso": "DE",
+   "wv": "Berlin",
+   "n": 431
+  },
+  "AMS": {
+   "iso": "NL",
+   "wv": "Amsterdam",
+   "n": 338
+  },
+  "IST": {
+   "iso": "TR",
+   "wv": "Istanbul",
+   "n": 306
+  },
+  "DXB": {
+   "iso": "AE",
+   "wv": "Dubai",
+   "n": 188
+  }
+ },
+ "src": {
+  "mofa": "外務省海外安全ホームページ",
+  "wikidata": "Wikidata (CC0)",
+  "wv": "Wikivoyage (CC BY-SA 4.0)"
+ }
+}
