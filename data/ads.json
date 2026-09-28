@@ -1,24 +1,47 @@
 {
-  "_説明": "広告の設定。値を入れた所だけ有効になる。空のままなら広告もPRリンクも出ない。",
-  "adsense": {
-    "client": "ca-pub-6423402285554400",
-    "slotDiary": "",
-    "slotStory": "",
-    "on": false
-  },
-  "h5": false,
-  "rakuten": "57d20c55.ae1bb649.57d20c56.6d3dda29",
-  "vc": {
-    "sid": "",
-    "pid": ""
-  },
-  "tp": "779684",
-  "places": {
-    "_説明": "Google Places API (New) のブラウザ用キー。Google Cloud で HTTP リファラーを kusayakyu-navi.com/* に制限して作る。空なら口コミは Googleマップで開く",
-    "key": ""
-  },
-  "hotpepper": {
-    "_説明": "ホットペッパーグルメ Webサービスは規約上(保存・収益化の制限)とブラウザから直接呼べないため、いまは使っていない。お店のページへはアフィリエイトのリンクで案内する",
-    "key": ""
+ "_説明": "広告の設定。値を入れた所だけ有効になる。空のままなら広告もPRリンクも出ない。",
+ "adsense": {
+  "client": "ca-pub-6423402285554400",
+  "slotDiary": "",
+  "slotStory": "",
+  "on": false
+ },
+ "h5": false,
+ "rakuten": "57d20c55.ae1bb649.57d20c56.6d3dda29",
+ "vc": {
+  "sid": "",
+  "pid": ""
+ },
+ "tp": "779684",
+ "places": {
+  "_説明": "Google Places API (New) のブラウザ用キー。Google Cloud で HTTP リファラーを kusayakyu-navi.com/* に制限して作る。空なら口コミは Googleマップで開く",
+  "key": ""
+ },
+ "hotpepper": {
+  "_説明": "ホットペッパーグルメ Webサービスは規約上(保存・収益化の制限)とブラウザから直接呼べないため、いまは使っていない。お店のページへはアフィリエイトのリンクで案内する",
+  "key": ""
+ },
+ "shop": {
+  "on": false,
+  "_note": "応援パック(見た目の課金)。Lemon Squeezy でストアと商品を作り、store(ストアID)・各パックの url(購入ページ)・variants(バリアントID)・law(特定商取引法の表記ページ)を入れて on を true に。",
+  "store": 0,
+  "law": "",
+  "packs": {
+   "wear": {
+    "price": "¥480",
+    "url": "",
+    "variants": []
+   },
+   "room": {
+    "price": "¥480",
+    "url": "",
+    "variants": []
+   },
+   "all": {
+    "price": "¥800",
+    "url": "",
+    "variants": []
+   }
   }
+ }
 }
