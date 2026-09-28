@@ -66,9 +66,9 @@
 .dprow{display:flex;gap:8px}.dprow .dp{flex:1;min-width:0}
 .dhome{flex:none;width:74px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;border-radius:18px;background:#fff;color:var(--ink);box-shadow:0 2px 8px rgba(40,30,10,.12);cursor:pointer;border:1px solid var(--line)}.dhome span{display:inline-flex;color:var(--acc)}.dhome svg{width:24px;height:24px}.dhome b{font:700 11px/1.1 var(--fd)}.dhome:active{transform:scale(.95)}
 .dts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:9px}
-.dt{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:76px;padding:8px 4px;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:0 2px 6px rgba(40,30,10,.06);cursor:pointer;transition:transform .12s}
-.dt:active{transform:scale(.95)}.dt .di{color:var(--acc);display:inline-flex}.dt .di svg{width:24px;height:24px}.dt .dlb{font:600 10.5px/1.2 var(--fb);color:var(--dim);white-space:nowrap}.dt b{font:700 13px/1.2 var(--fd);color:var(--ink);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dt em{position:absolute;top:6px;right:8px;min-width:18px;height:18px;border-radius:9px;background:var(--acc);color:#fff;font:700 11px/18px var(--fb);font-style:normal;padding:0 5px;box-sizing:border-box}
+.dts .dt{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:76px;padding:8px 4px;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:0 2px 6px rgba(40,30,10,.06);cursor:pointer;transition:transform .12s}
+.dts .dt:active{transform:scale(.95)}.dts .dt .di{color:var(--acc);display:inline-flex}.dts .dt .di svg{width:24px;height:24px}.dts .dt .dlb{font:600 10.5px/1.2 var(--fb);color:var(--dim);white-space:nowrap}.dts .dt b{font:700 13px/1.2 var(--fd);color:var(--ink);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dts .dt em{position:absolute;top:6px;right:8px;min-width:18px;height:18px;border-radius:9px;background:var(--acc);color:#fff;font:700 11px/18px var(--fb);font-style:normal;padding:0 5px;box-sizing:border-box}
   #home.hidden{display:none}
   #room{position:absolute;inset:0}
   #fieldHome{display:none;position:absolute;left:8px;width:calc(100% - 16px);bottom:8px;height:132px;border-radius:14px;box-shadow:var(--shadow);border:2px solid rgba(255,255,255,.7);cursor:pointer;touch-action:manipulation}
@@ -154,6 +154,21 @@
   #mapLoad{position:absolute;left:10px;right:10px;top:50%;transform:translateY(-50%);margin:0 auto;max-width:360px;background:rgba(250,246,238,.97);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);z-index:5;text-align:center}
 #mapLoad.hidden{display:none}
 #panel{z-index:40}
+/* 日記 */
+.dl{grid-template-columns:40px 24px 1fr auto!important;padding:6px 0!important;border-bottom:0!important}
+.dl .dt{display:block;background:#fff;border:1px solid var(--line);border-radius:4px 14px 14px 14px;padding:8px 12px;font:500 13.5px/1.65 var(--fb);color:var(--ink);text-align:left;box-shadow:0 1px 2px rgba(40,30,10,.05);min-width:0;word-break:break-word}
+.dl.v .dt{border-left:3px solid var(--acc)}
+.dl.t-think .dt{background:#fdf6e4!important;border-color:#f0e2b8}.dl.t-you .dt{background:#fdf0f3!important;border-color:#f3d3dc}.dl.t-sleep .dt{background:#f1f2f8;border-color:#dfe2ee}.dl.t-ride .dt{background:#f2f6fc;border-color:#dbe5f3}
+.dl time{padding-top:9px!important;font-weight:600}.dl .ic,.dl .em{margin-top:7px!important}
+.dHead{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:-2px 0 8px}.dHead button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px;border-radius:14px;background:#fff;font:700 11.5px/1.2 var(--fd);color:var(--ink2)}.dHead button i{font-style:normal;font-size:18px}
+.dchips{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;margin:0 -14px 6px!important;padding:0 14px}.dchips::-webkit-scrollbar{display:none}.dchips button{flex:none;padding:6px 12px!important;font-size:12.5px!important}
+.dday{border-bottom:0!important;background:#fff;border-radius:14px;padding:10px 12px!important;margin:8px 0 6px!important;box-shadow:0 1px 3px rgba(40,30,10,.06)}
+.pstrip{margin-bottom:6px}
+/* パネル全体 */
+#panel .note{background:none!important;padding:0 2px!important;margin-top:4px!important;font-size:12px!important;line-height:1.55!important;color:var(--dim)}
+#panel .row{border-radius:14px!important;padding:12px 14px!important;box-shadow:0 1px 3px rgba(40,30,10,.05)!important}
+#panel h3{font-size:20px!important;letter-spacing:.02em}
+#field{height:150px!important;border-radius:16px!important}
 #dlg{position:fixed!important;z-index:130!important;top:calc(env(safe-area-inset-top) + 84px);bottom:auto!important;box-shadow:0 12px 40px rgba(20,16,10,.35)!important;border-radius:18px!important;padding:16px!important}#dlg input{font-size:16px!important;padding:12px!important}#dlg .opts{flex-wrap:wrap}#dlg .opts button{padding:10px 14px;border-radius:12px}
 .rvSites{margin-top:14px;padding-top:10px;border-top:1px solid var(--line)}.rvSh{font:700 12px var(--fd);color:var(--dim);margin-bottom:6px}.rvSites a{display:inline-block;margin:0 6px 6px 0;padding:7px 12px;border-radius:999px;background:#fff;border:1px solid var(--line);font:600 12.5px var(--fb);color:var(--ink);text-decoration:none}
 .hpBox{margin-top:12px;padding:12px;border-radius:14px;background:#fff7f0;border:1px solid #f3d3bd}.hpH{display:flex;gap:8px;align-items:baseline}.hpH b{font:700 13px var(--fd);color:#c8503c}.hpH small{color:var(--dim)}.hpCatch{font:700 14px/1.5 var(--fd);margin:6px 0 4px}.hpBox p{margin:4px 0;font-size:13px}.hpMeta{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.hpMeta span{font-size:11.5px;background:#fff;border-radius:999px;padding:3px 8px;border:1px solid var(--line)}
@@ -1403,7 +1418,7 @@ function hpKey(){return (ADS.hotpepper&&ADS.hotpepper.key)||S.keys.hotpepper||''
 function hotpepper(name,la,lo){return new Promise((res,rej)=>{const cb='__hp'+Date.now()+Math.floor(Math.random()*1e4);const sc=document.createElement('script');const tm=setTimeout(()=>{cleanup();rej(new Error('timeout'));},10000);
   function cleanup(){clearTimeout(tm);try{delete window[cb];}catch(e){window[cb]=undefined;}sc.remove();}
   window[cb]=j=>{cleanup();const L=(j&&j.results&&j.results.shop)||[];const n=exNorm(name);res(L.find(x=>exNorm(x.name).includes(n)||n.includes(exNorm(x.name)))||L[0]||null);};
-  sc.src='https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?key='+encodeURIComponent(hpKey())+'&keyword='+encodeURIComponent(name)+'&lat='+la+'&lng='+lo+'&range=2&count=5&format=jsonp&callback='+cb;sc.onerror=()=>{cleanup();rej(new Error('load'));};document.head.appendChild(sc);});}
+  sc.src='https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?key='+encodeURIComponent(hpKey())+'&keyword='+encodeURIComponent(name)+'&lat='+la+'&lng='+lo+'&range=2&count=5&format=json&callback='+cb;sc.onerror=()=>{cleanup();rej(new Error('load'));};document.head.appendChild(sc);});}
 function otherSites(name,town){const q=encodeURIComponent(name+' '+(town||''));const g=site=>'https://www.google.com/search?q='+encodeURIComponent('site:'+site+' '+name+' '+(town||''));
   const hp=vcWrap('https://www.hotpepper.jp/CSP/psh010/doBasic?FWT='+encodeURIComponent(name));
   const L=[['食べログ',g('tabelog.com')],['Retty',g('retty.me')],['ぐるなび',g('gnavi.co.jp')],['ホットペッパー',hp||g('hotpepper.jp'),!!hp],['Instagram','https://www.instagram.com/explore/tags/'+encodeURIComponent(String(name).replace(/[\s・　]/g,''))+'/'],['X(旧Twitter)','https://x.com/search?q='+q+'&f=live']];
@@ -2454,7 +2469,7 @@ function friendAvatar(f){let hsh=0;for(const ch of String(f.name||''))hsh=(hsh*3
   const hc=hairs[hsh%hairs.length],sk=skins[(hsh>>3)%skins.length],tp=tops[(hsh>>6)%tops.length];const glasses=((hsh>>9)%4)===0;const long=((hsh>>11)%3)===0;
   return `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="${tp}" opacity=".18"/><rect x="12" y="30" width="24" height="18" rx="8" fill="${tp}"/>${long?`<rect x="10" y="14" width="28" height="22" rx="8" fill="${hc}"/>`:''}<circle cx="24" cy="19" r="10" fill="${sk}"/><path d="M14 19 A10 10 0 0 1 34 19 L34 17 Q24 10 14 17 Z" fill="${hc}"/><circle cx="20.5" cy="20" r="1.2" fill="#2a2f3a"/><circle cx="27.5" cy="20" r="1.2" fill="#2a2f3a"/><path d="M21 24 q3 2 6 0" fill="none" stroke="#2a2f3a" stroke-width="1.2" stroke-linecap="round"/>${glasses?`<circle cx="20.5" cy="20" r="3" fill="none" stroke="#2a2f3a" stroke-width="1"/><circle cx="27.5" cy="20" r="3" fill="none" stroke="#2a2f3a" stroke-width="1"/>`:''}</svg>`;}
 function renderPanel(){if(!tab)return;let h='';
-  if(tab==='diary'){h+=`<h3>${S.name}の日記</h3><div style="margin:-4px 0 6px"><button id="bStory">🌙 今日の話</button> <button id="bMem">🗺 思い出マップ</button> <button id="bCopyDay">今日の日記をコピー</button> <button id="bCopyWeek">7日分をコピー</button></div>`;
+  if(tab==='diary'){h+=`<h3>${S.name}の日記</h3><div class="dHead"><button id="bStory"><i>🌙</i>今日の話</button><button id="bMem"><i>🗺</i>思い出</button><button id="bCopyDay"><i>📋</i>今日をコピー</button><button id="bCopyWeek"><i>🗓</i>7日分</button></div>`;
     const days={};S.diary.slice().reverse().filter(e=>e.kind!=='harvest').forEach(e=>{(days[todayKey(e.t)]=days[todayKey(e.t)]||[]).push(e);});
     const keys=Object.keys(days).slice(0,7);if(!keys.length)h+='<div class="note">まだ何も。勤務時間になると家を出ます。</div>';
     {const cnt={};S.diary.forEach(e=>{const tg=diaryTag(e);cnt[tg]=(cnt[tg]||0)+1;});const chips=[['all','すべて'],['visit','寄った店'],['ride','移動'],['money','お金'],['think','考えた'],['you','あなた'],['stay','宿']].filter(([k])=>k==='all'||cnt[k]);
@@ -2473,7 +2488,7 @@ function renderPanel(){if(!tab)return;let h='';
         const ic=e.kind==='visit'?`<span class="em" style="background:${e.color||'#ddd'}">${e.emoji||''}</span>`:`<span class="ic t-${tg}" title="${TAG_JA[tg]||''}">${ICON[tg]||ICON.note}</span>`;
         return `<div class="dl t-${tg}${e.kind==='visit'?' v':''}"><time>${fmtT(e.t)}</time>${ic}<div class="dt">${tx}${e.url?' <a href="'+esc(e.url)+'" target="_blank" rel="noopener" style="color:var(--info)">'+esc(e.urlLabel||'この便を見る')+'</a>':''}${acts}</div>${e.cost?`<span class="cost">¥${fmt(e.cost)}</span>`:'<span></span>'}</div>`;}).join('')+'</div>';if(k===keys[0])h+=adUnit(ADS.adsense.slotDiary,'inDiary');}}
   if(tab==='farm'){const J=(JOBS[S.job]||JOBS.other);const ready=S.field.slots.filter(x=>x.stage===2).length;
-    h+=`<h3>お小遣いの畑</h3><div class="note" style="margin:0 0 8px">あなたが働いているあいだ、${fieldSkin()==='job'?'仕事('+J.n+')の'+J.item+J.e:SEEDS[fieldSkin()].n}が育つ。実ったらタップして収穫。それが${S.name}のお小遣いになる。放っておくと勝手に片づいて半分(日記には書かない)。</div>
+    h+=`<h3>お小遣いの畑</h3><div class="note" style="margin:0 0 8px">働いている間に${fieldSkin()==='job'?J.item+J.e:SEEDS[fieldSkin()].n}が実る。タップで収穫してお小遣いに。</div>
       ${rewardReady()?`<button id="bReward" class="rwd"><span>📺</span><b>広告を見て水やり</b><small>最後まで見ると畑が全部すぐ実る(1日1回)</small></button>`:''}<canvas id="field"></canvas>
       <div class="row"><div>いま収穫できる<small>${ready}個 / 育つのに約5分、約1分半に1個生える</small></div><b style="color:var(--gold)">¥${fmt(ready*YIELD[2])}</b></div>
       <div class="sec">種屋 · 実りの見た目</div><div class="note" style="margin:0 0 6px">いまは「${SEEDS[fieldSkin()].n}」。買った種は${S.name}のお小遣い(財布 ¥${fmt(S.wallet)})から払う。実際のお金での購入(課金)はまだつないでいない。</div>
@@ -2552,7 +2567,7 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>この人を別の端末へ<small>引き継ぎコードを出す → 別の端末の「読み込む」に貼る。街のデータは向こうで取り直す</small></div><span><button id="bExport">コードを出す</button> <button id="bImport">読み込む</button></span></div>
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v79 (2026-09-19)</div>';
+    h+='<div class="note">版: v81 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;setTimeout(()=>{try{paginatePanel();}catch(e){console.warn('pg',e);}try{fillAds(panel);}catch(e){}},0);$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
