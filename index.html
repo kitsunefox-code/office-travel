@@ -154,6 +154,7 @@
   #mapLoad{position:absolute;left:10px;right:10px;top:50%;transform:translateY(-50%);margin:0 auto;max-width:360px;background:rgba(250,246,238,.97);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);z-index:5;text-align:center}
 #mapLoad.hidden{display:none}
 #panel{z-index:40}
+.dl .dt small.wx{display:block;margin-top:5px;padding-top:5px;border-top:1px dashed var(--line);font-size:12px;line-height:1.55;color:var(--ink2)}.dl .dt small.wx i{font-style:normal;color:var(--dim);font-size:11px}
 .wvBox{margin:8px 0 2px;padding:9px 11px;border-radius:12px;background:#f3f6f9;font-size:12.5px;line-height:1.55;color:var(--ink2)}.wvBox p{margin:0 0 4px;color:var(--ink)}.wvBox b{font-weight:700;margin-right:4px}.wvBox small{display:block;margin-top:4px;color:var(--dim)}
 /* きせかえ・もようがえ */
 .rmShop{position:absolute;right:12px;bottom:16px;z-index:7;display:flex;align-items:center;gap:6px;padding:8px 13px 8px 10px;border-radius:999px;border:0;background:rgba(255,253,247,.94);box-shadow:0 4px 14px rgba(40,30,10,.18);font:700 13px/1 var(--fd);color:var(--ink)}.rmShop span{font-size:17px}
@@ -1795,7 +1796,7 @@ function arrive(t,r){const j=S.j;if(!j.arrivedBy&&j.straight===null&&j.pathLen>8
   {const to=takeoutMaybe(p,t);if(to){extraCost+=to.price;text+=to.text;}}
   text+=friendText;j.arrivedBy=null;
   if(p.wv&&pay)text+=localNote(pay);if(p.wv)text+='ガイド(Wikivoyage)にも載っている所。';let exUrl=null,exs0T='';{const exs=exNow(p,t);if(exs.length){const x=exs[0];const left=exDaysLeft(x,t);exs0T=x.t;text+=(x.t.includes('展')?'':'いまは')+exTitle(x)+'を見る('+exMD(x.e)+'まで'+(left<=7?'、もうすぐ終わる':'')+')。';exUrl=x.u;}}
-  addDiary({kind:'visit',pk,pn:p.n,pla:p.la,plo:p.lo,town:M.name,text,cost:pay+extraCost,emoji:inf.e,color:COLORS[p.k]||'#ccc',t,url:exUrl||wvUrl(p)||undefined,urlLabel:exUrl?'展示の公式ページ':(p.wv?'Wikivoyageの紹介(英語)':undefined),exT:exUrl?exs0T:undefined});
+  addDiary({kind:'visit',pk,pn:p.n,pla:p.la,plo:p.lo,town:M.name,text,cost:pay+extraCost,emoji:inf.e,color:COLORS[p.k]||'#ccc',t,url:exUrl||wvUrl(p)||undefined,urlLabel:exUrl?'展示の公式ページ':(p.wv?'Wikivoyageの紹介(英語)':undefined),exT:exUrl?exs0T:undefined});if(WIKI_K.has(p.k)&&inJP(p.la,p.lo))setTimeout(()=>wikiToDiary(p,pk,t),300);
   if(typeof fetch==='function')setTimeout(()=>fetchPhoto(pk),50);
   if(S.went[pk])addDiary({kind:'note',text:'あなたも行った'+p.n+'。今日は私の番',t});
   bucketOnVisit(p,v,t);if(friendText&&friendText.includes('仲良くなった'))bucketHit('friend',1,t);
@@ -2229,6 +2230,18 @@ function seasonDecor(d,n){const m=d.getMonth()+1;const ss=seasonNow(d.getTime())
   return g;}
 
 
+
+/* ================= v88 観光地の説明(Wikipedia) ================= */
+const WIKI_K=new Set(['shrine','temple','museum','park','attraction','castle','garden','zoo','aquarium','tower','view','monument','lighthouse','library','theatre','stadium','campus','beach','peak','onsen','artwork','market','michinoeki','hall','cinema']);
+const wikiBusy=new Map();
+function wikiNorm(x){return String(x||'').replace(/[（(].*?[)）]/g,'').replace(/[\s・･·\-ー－]/g,'').toLowerCase();}
+async function fetchWiki(p){const k=PK(p);S.wiki=S.wiki||{};if(k in S.wiki)return S.wiki[k];if(!WIKI_K.has(p.k)||!inJP(p.la,p.lo)||typeof fetch!=='function')return null;if(wikiBusy.has(k))return wikiBusy.get(k);
+  const job=(async()=>{try{const r=await fetch('https://ja.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord='+p.la+'%7C'+p.lo+'&gsradius=250&gslimit=8&format=json&origin=*');if(!r.ok)return null;const J=await r.json();const n=wikiNorm(p.n);
+    const hit=((J.query&&J.query.geosearch)||[]).find(g=>{const tt=wikiNorm(g.title);return tt===n||(n.length>=3&&tt.length>=3&&(tt.includes(n)||n.includes(tt)));});
+    let v=null;if(hit){const r2=await fetch('https://ja.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(hit.title));if(r2.ok){const d=await r2.json();let x=String(d.extract||'').replace(/\s+/g,' ');const cut=x.indexOf('。');if(cut>0&&cut<170)x=x.slice(0,cut+1);else if(x.length>170)x=x.slice(0,168)+'…';if(x)v={t:hit.title,x,u:(d.content_urls&&d.content_urls.mobile&&d.content_urls.mobile.page)||('https://ja.wikipedia.org/wiki/'+encodeURIComponent(hit.title))};}}
+    S.wiki[k]=v;const ks=Object.keys(S.wiki);if(ks.length>400)delete S.wiki[ks[0]];save();return v;}catch(e){return null;}finally{wikiBusy.delete(k);}})();
+  wikiBusy.set(k,job);return job;}
+async function wikiToDiary(p,pk,t){const w=await fetchWiki(p);if(!w)return;const e=S.diary.find(x=>x.kind==='visit'&&x.pk===pk&&x.t===t);if(!e)return;e.wx=w.x;if(!e.url){e.url=w.u;e.urlLabel='Wikipediaで読む';}save();if(tab==='diary')renderPanel();}
 /* ================= v86 海外の実用情報 ================= */
 let WORLD=null;
 async function loadWorld(){try{const r=await fetch('data/world.json',{cache:'no-cache'});if(r.ok)WORLD=await r.json();}catch(e){}}
@@ -2779,7 +2792,7 @@ function renderPanel(){if(!tab)return;let h='';
         tx=tx.replace(/。(?!$)/g,'。<br>').replace(/(\d{1,2}:\d{2})/g,'<span class="tm">$1</span>');
         const acts=e.kind==='visit'?` <span class="acts"><button data-wish="${e.pk}" class="${S.wish.includes(e.pk)?'on':''}">${S.wish.includes(e.pk)?'♥':'♡'}</button>${e.lodging?hotelLinks(e.pn,e.town,e.pla,e.plo):`<a href="${gmapsLL({n:e.pn,la:e.pla,lo:e.plo})}" target="_blank" rel="noopener">地図</a>`+revBtn(e.pn,e.pla,e.plo)+visitPR(e)}</span>`:'';
         const ic=e.kind==='visit'?`<span class="em" style="background:${e.color||'#ddd'}">${e.emoji||''}</span>`:`<span class="ic t-${tg}" title="${TAG_JA[tg]||''}">${ICON[tg]||ICON.note}</span>`;
-        return `<div class="dl t-${tg}${e.kind==='visit'?' v':''}"><time>${fmtT(e.t)}</time>${ic}<div class="dt">${tx}${e.url?' <a href="'+esc(e.url)+'" target="_blank" rel="noopener" style="color:var(--info)">'+esc(e.urlLabel||'この便を見る')+'</a>':''}${acts}${diaryPR(e)}</div>${e.cost?`<span class="cost">¥${fmt(e.cost)}</span>`:'<span></span>'}</div>`;}).join('')+'</div>';if(k===keys[0])h+=adUnit(ADS.adsense.slotDiary,'inDiary');}}
+        return `<div class="dl t-${tg}${e.kind==='visit'?' v':''}"><time>${fmtT(e.t)}</time>${ic}<div class="dt">${tx}${e.url?' <a href="'+esc(e.url)+'" target="_blank" rel="noopener" style="color:var(--info)">'+esc(e.urlLabel||'この便を見る')+'</a>':''}${e.wx?'<small class="wx">'+esc(e.wx)+' <i>(Wikipedia, CC BY-SA)</i></small>':''}${acts}${diaryPR(e)}</div>${e.cost?`<span class="cost">¥${fmt(e.cost)}</span>`:'<span></span>'}</div>`;}).join('')+'</div>';if(k===keys[0])h+=adUnit(ADS.adsense.slotDiary,'inDiary');}}
   if(tab==='farm'){const J=(JOBS[S.job]||JOBS.other);const ready=S.field.slots.filter(x=>x.stage===2).length;
     h+=`<h3>お小遣いの畑</h3><div class="note" style="margin:0 0 8px">働いている間に${fieldSkin()==='job'?J.item+J.e:SEEDS[fieldSkin()].n}が実る。タップで収穫してお小遣いに。</div>
       ${rewardReady()?`<button id="bReward" class="rwd"><span>📺</span><b>広告を見て水やり</b><small>最後まで見ると畑が全部すぐ実る(1日1回)</small></button>`:''}<canvas id="field"></canvas>
@@ -2860,8 +2873,8 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>この人を別の端末へ<small>引き継ぎコードを出す → 別の端末の「読み込む」に貼る。街のデータは向こうで取り直す</small></div><span><button id="bExport">コードを出す</button> <button id="bImport">読み込む</button></span></div>
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="sec">データの出典</div><div class="note">地図・店: © OpenStreetMap contributors / 乗換: Transitous / 海外の見どころ: <a href="https://en.wikivoyage.org/" target="_blank" rel="noopener">Wikivoyage</a>(CC BY-SA 4.0) / 国の情報: Wikidata / 安全情報: 外務省海外安全ホームページ / 為替: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a> / 写真: Wikimedia Commons</div>';
-    h+='<div class="note">版: v87 (2026-09-19)</div>';
+    h+='<div class="sec">データの出典</div><div class="note">地図・店: © OpenStreetMap contributors / 乗換: Transitous / 海外の見どころ: <a href="https://en.wikivoyage.org/" target="_blank" rel="noopener">Wikivoyage</a>(CC BY-SA 4.0) / 国の情報: Wikidata / 安全情報: 外務省海外安全ホームページ / 為替: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a> / 写真: Wikimedia Commons / 観光地の説明: Wikipedia 日本語版(CC BY-SA 4.0)</div>';
+    h+='<div class="note">版: v88 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;setTimeout(()=>{try{paginatePanel();}catch(e){console.warn('pg',e);}try{fillAds(panel);}catch(e){}},0);$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
@@ -3050,9 +3063,9 @@ function frameBody(t){if(!M){last=t;return;}const dt=Math.min(0.1,(t-last)/1000)
 function onMapClick(cx,cy){ // 店をタップで行きたい
   let best=-1,bd=18;const e={clientX:cx,clientY:cy};for(let i=0;i<POIS.length;i++){const [x,y]=px(POIS[i].la,POIS[i].lo);const d=Math.hypot(x-e.clientX,y-e.clientY);if(d<bd){bd=d;best=i;}}
   if(best>=0)showPoiCard(best);else $('poiCard').classList.add('hidden');}
-function showPoiCard(i){const p=POIS[i];const k=remember(p);const price=priceOf(p);const el=$('poiCard');const v=S.visited[k];const op=isOpen(p.h,new Date());
+function showPoiCard(i){const p=POIS[i];const k=remember(p);const price=priceOf(p);const el=$('poiCard');if(el)el.dataset.pi=String(i);const v=S.visited[k];const op=isOpen(p.h,new Date());
   el.innerHTML=`<div class="q"><span class="em" style="background:${COLORS[p.k]||'#ddd'}">${info(p).e}</span><span>${esc(p.n)}</span></div><div style="color:var(--ink2);font-size:12px">${info(p).label}${CUIS[p.c]?'・'+menuName(p):''}${price?' / ¥'+fmt(price)+'くらい':''}${p.h?' / '+(op===false?'<span style="color:var(--ng)">いま閉店中</span>':'営業時間 '+p.h):''}${v?' / '+S.name+'は'+v.n+'回':''}</div>${(()=>{const ev=exVenue(p);if(!ev)return '';const now=exNow(p),soon=exSoon(p).slice(0,2);const row=(x,lab)=>`<div class="exRow"><b>${lab}</b><span>${esc(exTitle(x))}</span><small>${exMD(x.s)}〜${exMD(x.e)}</small></div>`;return `<div class="exBox">${now.map(x=>row(x,'いま')).join('')}${soon.map(x=>row(x,'これから')).join('')}${!now.length&&!soon.length?'<div class="exRow"><small>展示の情報はまだありません</small></div>':''}<div class="exLinks"><a href="${esc(ev.url)}" target="_blank" rel="noopener">公式サイト</a>${ev.sns?' / '+snsLinks(ev):''}</div></div>`;})()}
-    ${p.wv?`<div class="wvBox">${p.wv.d?`<p lang="en">${esc(p.wv.d)}</p>`:''}${p.wv.pr?`<div><b>値段</b> ${esc(p.wv.pr)}</div>`:''}${p.wv.h?`<div><b>時間</b> ${esc(p.wv.h)}</div>`:''}<small>出典: <a href="${esc(wvUrl(p))}" target="_blank" rel="noopener">Wikivoyage</a>(CC BY-SA 4.0)${p.wv.u?` / <a href="${esc(p.wv.u)}" target="_blank" rel="noopener">公式</a>`:''}</small></div>`:''}<div class="opts"><button data-w="1">${S.wish.includes(k)?'♥ 行きたいから外す':'♡ 行きたい'}</button><button data-go="1" class="buy">今すぐ寄って</button><a href="${gmapsLL(p)}" target="_blank" rel="noopener" style="align-self:center;margin-left:4px">Googleマップ</a><button data-x="1" style="margin-left:auto">閉じる</button></div>`;
+    ${(()=>{const w=S.wiki&&S.wiki[k];if(w)return `<div class="wvBox"><p>${esc(w.x)}</p><small>出典: <a href="${esc(w.u)}" target="_blank" rel="noopener">Wikipedia「${esc(w.t)}」</a>(CC BY-SA 4.0)</small></div>`;if(S.wiki&&(k in S.wiki))return '';if(WIKI_K.has(p.k)&&inJP(p.la,p.lo))setTimeout(()=>fetchWiki(p).then(v=>{if(v&&$('poiCard')&&$('poiCard').dataset.pi==String(i))showPoiCard(i);}),50);return '';})()}${p.wv?`<div class="wvBox">${p.wv.d?`<p lang="en">${esc(p.wv.d)}</p>`:''}${p.wv.pr?`<div><b>値段</b> ${esc(p.wv.pr)}</div>`:''}${p.wv.h?`<div><b>時間</b> ${esc(p.wv.h)}</div>`:''}<small>出典: <a href="${esc(wvUrl(p))}" target="_blank" rel="noopener">Wikivoyage</a>(CC BY-SA 4.0)${p.wv.u?` / <a href="${esc(p.wv.u)}" target="_blank" rel="noopener">公式</a>`:''}</small></div>`:''}<div class="opts"><button data-w="1">${S.wish.includes(k)?'♥ 行きたいから外す':'♡ 行きたい'}</button><button data-go="1" class="buy">今すぐ寄って</button><a href="${gmapsLL(p)}" target="_blank" rel="noopener" style="align-self:center;margin-left:4px">Googleマップ</a><button data-x="1" style="margin-left:auto">閉じる</button></div>`;
   el.querySelector('[data-w]').onclick=()=>{if(S.wish.includes(k))S.wish=S.wish.filter(x=>x!==k);else S.wish.push(k);save();showPoiCard(i);if(tab==='wish')renderPanel();};
   el.querySelector('[data-go]').onclick=()=>{const now=Date.now();if(!inWork(now)){toast(actMode()==='work'?'勤務時間外は動きません。行きたいには入れておきます':'いまは眠っている時間。行きたいには入れておきます','var(--ng)');if(!S.wish.includes(k))S.wish.push(k);save();return;}if(S.j.transit||S.j.cityTarget){toast('いま乗り物で移動中なので、着いてから','var(--ng)');if(!S.wish.includes(k))S.wish.push(k);save();return;}
     if(op===false){toast('いま閉まっています。行きたいに入れました');if(!S.wish.includes(k))S.wish.push(k);save();return;}
