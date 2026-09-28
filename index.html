@@ -1310,7 +1310,7 @@ function goCity(city,t){const j=S.j;if(!city.home&&warnLevel(['rain','wind','sno
 async function arriveCity(city,t){const j=S.j;j.cityTarget=null;if(!city.resume)S.stats.visits++;
   if(city.home){addDiary({kind:'note',text:'家の街に帰ってきた('+fmtT(t)+')',t});S.trip=null;let town=null;try{town=JSON.parse(localStorage.getItem(TOWN_KEY)||'null');}catch(e){}if(!town&&typeof KICHI!=='undefined')town=KICHI;if(town)initTown(town);j.at=-1;j.pos=[HOME.la,HOME.lo];j.state='stay';j.until=t+5*60000;save();return;}
   if(!city.resume){S.cities[city.name]=(S.cities[city.name]||0)+1;if(!S.trip)S.trip={since:t,cities:[]};S.trip.city=city.name;S.trip.cities.push(city.name);
-  addDiary({kind:'note',text:city.name+'に着く('+fmtT(t)+')。まず駅のまわりを歩いてみる。',t});if(S.cities[city.name]===1)bucketHit('newcity',1,t);bucketHit('far',1,t);setTimeout(()=>stampAt(city.la,city.lo,t),1500);}
+  addDiary({kind:'note',text:city.name+'に着く('+fmtT(t)+')。まず駅のまわりを歩いてみる。',t,arr:city.name,jp:city.la>24&&city.la<46&&city.lo>122&&city.lo<146});if(S.cities[city.name]===1)bucketHit('newcity',1,t);bucketHit('far',1,t);setTimeout(()=>stampAt(city.la,city.lo,t),1500);}
   j.state='stay';j.until=t+8*60000;j.loadingTown=city.name;
   try{let town=townCacheGet(city.name,city.la,city.lo);
     if(!town){town=await buildTown(city.la,city.lo,city.name,true,()=>{});townCachePut(town);}
@@ -1397,6 +1397,12 @@ const FOOD_K=new Set(['restaurant','cafe','fast_food','pub','bar','sweets','bake
 function visitPR(e){const b=S.book[e.pk]||POIS.find(p=>PK(p)===e.pk)||{};const k=b.k||'';
   if(FOOD_K.has(k))return prA(vcWrap('https://www.hotpepper.jp/CSP/psh010/doBasic?FWT='+encodeURIComponent(e.pn)),'予約・クーポン');
   if(k==='clothes'||k==='shop')return prA(rakutenWrap('https://search.rakuten.co.jp/search/mall/'+encodeURIComponent(e.pn)+'/'),'通販で見る');return '';}
+/* 日記の行ごとの楽天リンク(成果の入る形にできる時だけ) */
+function diaryPR(e){if(!affRakutenId())return '';const out=[];
+  if(e.mode==='COACH')out.push(prA(rakutenWrap('https://travel.rakuten.co.jp/bus/'),'高速バスを探す'));
+  if(e.arr&&e.jp){out.push(prA(rakutenWrap('https://experiences.travel.rakuten.co.jp/'),'観光・体験'));out.push(prA(rakutenWrap('https://travel.rakuten.co.jp/cars/'),'レンタカー'));}
+  if(e.exT){const q=e.exT.replace(/[「」『』《》【】]/g,' ').replace(/\s+/g,' ').trim().slice(0,40);if(q)out.push(prA(rakutenWrap('https://search.rakuten.co.jp/search/mall/'+encodeURIComponent(q+' 図録')+'/'),'図録・関連の本'));}
+  return out.length?' <span class="acts">'+out.join('')+'</span>':'';}
 function souvenirPR(x){return prA(rakutenWrap('https://search.rakuten.co.jp/search/mall/'+encodeURIComponent((x.town||'')+' お土産')+'/'),'取り寄せる');}
 /* ディスプレイ広告の枠(設定が無ければ空) */
 function adUnit(slot,cls){if(!(ADS.adsense&&ADS.adsense.on&&ADS.adsense.client&&slot))return '';return `<div class="adbox ${cls||''}"><small>スポンサー</small><ins class="adsbygoogle" style="display:block" data-ad-client="${esc(ADS.adsense.client)}" data-ad-slot="${esc(slot)}" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;}
@@ -1740,8 +1746,8 @@ function arrive(t,r){const j=S.j;if(!j.arrivedBy&&j.straight===null&&j.pathLen>8
   let extraCost=0;if(p.k==='clothes'){const it=buyClothes(p,t);if(it){extraCost=it.price;text=lead+via+p.n+'で'+it.color.n+'の'+it.name+'を買う。¥'+fmt(it.price)+'。';}else{text=lead+via+p.n+'をのぞく。'+(S.wallet<3000?'欲しいものはあったが、財布と相談してやめる。':'今日は見るだけ。');}}
   {const to=takeoutMaybe(p,t);if(to){extraCost+=to.price;text+=to.text;}}
   text+=friendText;j.arrivedBy=null;
-  let exUrl=null;{const exs=exNow(p,t);if(exs.length){const x=exs[0];const left=exDaysLeft(x,t);text+=(x.t.includes('展')?'':'いまは')+exTitle(x)+'を見る('+exMD(x.e)+'まで'+(left<=7?'、もうすぐ終わる':'')+')。';exUrl=x.u;}}
-  addDiary({kind:'visit',pk,pn:p.n,pla:p.la,plo:p.lo,town:M.name,text,cost:pay+extraCost,emoji:inf.e,color:COLORS[p.k]||'#ccc',t,url:exUrl||undefined,urlLabel:exUrl?'展示の公式ページ':undefined});
+  let exUrl=null,exs0T='';{const exs=exNow(p,t);if(exs.length){const x=exs[0];const left=exDaysLeft(x,t);exs0T=x.t;text+=(x.t.includes('展')?'':'いまは')+exTitle(x)+'を見る('+exMD(x.e)+'まで'+(left<=7?'、もうすぐ終わる':'')+')。';exUrl=x.u;}}
+  addDiary({kind:'visit',pk,pn:p.n,pla:p.la,plo:p.lo,town:M.name,text,cost:pay+extraCost,emoji:inf.e,color:COLORS[p.k]||'#ccc',t,url:exUrl||undefined,urlLabel:exUrl?'展示の公式ページ':undefined,exT:exUrl?exs0T:undefined});
   if(typeof fetch==='function')setTimeout(()=>fetchPhoto(pk),50);
   if(S.went[pk])addDiary({kind:'note',text:'あなたも行った'+p.n+'。今日は私の番',t});
   bucketOnVisit(p,v,t);if(friendText&&friendText.includes('仲良くなった'))bucketHit('friend',1,t);
@@ -1812,7 +1818,7 @@ function simTo(now,r){const j=S.j;if(!j.t)j.t=now;if(!j.pos)j.pos=[HOME.la,HOME.
       if(now>=last.t1){j.t=last.t1;j.pos=[last.to.la,last.to.lo];const city=T.city;j.transit=null;if(T.legs.some(l=>l.mode!=='WALK'))bucketHit('far',1,j.t);if(city){arriveCity(city,j.t);continue;}{const rl=T.legs.filter(l=>l.mode!=='WALK'&&l.mode!=='CHECKIN'&&l.mode!=='BAGGAGE').pop();j.arrivedBy=rl?(rl.mode==='TAXI'?(rl.line||'タクシー'):(rl.mode==='LUUP'||rl.mode==='CYCLE')?rl.line:'電車やバス'):'電車やバス';}j.lastArrivedBy=true;arrive(j.t,r);continue;}
       const L=T.legs.find(l=>now<l.t1)||last;
       j.pos=posOnLeg(L,now);
-      for(const l of T.legs){if(!l.logged&&now>=l.t0&&l.mode!=='WALK'){l.logged=true;if((l.mode==='TAXI'||l.mode==='CYCLE'||l.mode==='LUUP')&&l.fare){const pay=Math.min(l.fare,S.wallet);S.wallet-=pay;S.stats.spent+=pay;ledger('transit',pay,l.t0);}const txt=l.mode==='TAXI'?(l.app?'アプリで配車を呼ぶ。':'')+l.from.n+'から'+(l.line||'タクシー')+'で'+l.to.n+'へ(¥'+fmt(l.fare||0)+'、概算)。':(l.mode==='CYCLE'||l.mode==='LUUP')?l.from.n+'で'+l.line+(l.mode==='LUUP'?'(電動キックボード)':'')+'を借りる('+fmtT(l.t0)+')。'+l.to.n+'まで'+Math.max(1,Math.round((l.t1-l.t0)/60000))+'分走って返す(¥'+fmt(l.fare||0)+')。':l.mode==='CHECKIN'?l.from.n+'で搭乗手続きと保安検査を済ませ、出発ロビーで待つ。':l.mode==='BAGGAGE'?l.from.n+'に着陸('+fmtT(l.t0)+')。荷物を受け取って空港を出る。':l.from.n+'から'+rideName(l)+'に乗る('+fmtT(l.t0)+'発)。'+l.to.n+'に'+fmtT(l.t1)+'着。';addDiary({kind:'note',text:txt,t:l.t0,url:l.url||undefined});}}
+      for(const l of T.legs){if(!l.logged&&now>=l.t0&&l.mode!=='WALK'){l.logged=true;if((l.mode==='TAXI'||l.mode==='CYCLE'||l.mode==='LUUP')&&l.fare){const pay=Math.min(l.fare,S.wallet);S.wallet-=pay;S.stats.spent+=pay;ledger('transit',pay,l.t0);}const txt=l.mode==='TAXI'?(l.app?'アプリで配車を呼ぶ。':'')+l.from.n+'から'+(l.line||'タクシー')+'で'+l.to.n+'へ(¥'+fmt(l.fare||0)+'、概算)。':(l.mode==='CYCLE'||l.mode==='LUUP')?l.from.n+'で'+l.line+(l.mode==='LUUP'?'(電動キックボード)':'')+'を借りる('+fmtT(l.t0)+')。'+l.to.n+'まで'+Math.max(1,Math.round((l.t1-l.t0)/60000))+'分走って返す(¥'+fmt(l.fare||0)+')。':l.mode==='CHECKIN'?l.from.n+'で搭乗手続きと保安検査を済ませ、出発ロビーで待つ。':l.mode==='BAGGAGE'?l.from.n+'に着陸('+fmtT(l.t0)+')。荷物を受け取って空港を出る。':l.from.n+'から'+rideName(l)+'に乗る('+fmtT(l.t0)+'発)。'+l.to.n+'に'+fmtT(l.t1)+'着。';addDiary({kind:'note',text:txt,t:l.t0,url:l.url||undefined,mode:l.mode});}}
       j.t=now;break;}
     if(j.state==='walk'&&j.straight){const L=j.straight;const total=L.prep+L.move+L.park;const endT=L.t0+total*1000;const el=(Math.min(now,endT)-L.t0)/1000;
       if(now>=endT){j.t=L.t0+total*1000;j.pos=L.to.slice();j.straight=null;arrive(j.t,r);continue;}
@@ -2486,7 +2492,7 @@ function renderPanel(){if(!tab)return;let h='';
         tx=tx.replace(/。(?!$)/g,'。<br>').replace(/(\d{1,2}:\d{2})/g,'<span class="tm">$1</span>');
         const acts=e.kind==='visit'?` <span class="acts"><button data-wish="${e.pk}" class="${S.wish.includes(e.pk)?'on':''}">${S.wish.includes(e.pk)?'♥':'♡'}</button>${e.lodging?hotelLinks(e.pn,e.town):`<a href="${gmapsLL({n:e.pn,la:e.pla,lo:e.plo})}" target="_blank" rel="noopener">地図</a>`+revBtn(e.pn,e.pla,e.plo)+visitPR(e)}</span>`:'';
         const ic=e.kind==='visit'?`<span class="em" style="background:${e.color||'#ddd'}">${e.emoji||''}</span>`:`<span class="ic t-${tg}" title="${TAG_JA[tg]||''}">${ICON[tg]||ICON.note}</span>`;
-        return `<div class="dl t-${tg}${e.kind==='visit'?' v':''}"><time>${fmtT(e.t)}</time>${ic}<div class="dt">${tx}${e.url?' <a href="'+esc(e.url)+'" target="_blank" rel="noopener" style="color:var(--info)">'+esc(e.urlLabel||'この便を見る')+'</a>':''}${acts}</div>${e.cost?`<span class="cost">¥${fmt(e.cost)}</span>`:'<span></span>'}</div>`;}).join('')+'</div>';if(k===keys[0])h+=adUnit(ADS.adsense.slotDiary,'inDiary');}}
+        return `<div class="dl t-${tg}${e.kind==='visit'?' v':''}"><time>${fmtT(e.t)}</time>${ic}<div class="dt">${tx}${e.url?' <a href="'+esc(e.url)+'" target="_blank" rel="noopener" style="color:var(--info)">'+esc(e.urlLabel||'この便を見る')+'</a>':''}${acts}${diaryPR(e)}</div>${e.cost?`<span class="cost">¥${fmt(e.cost)}</span>`:'<span></span>'}</div>`;}).join('')+'</div>';if(k===keys[0])h+=adUnit(ADS.adsense.slotDiary,'inDiary');}}
   if(tab==='farm'){const J=(JOBS[S.job]||JOBS.other);const ready=S.field.slots.filter(x=>x.stage===2).length;
     h+=`<h3>お小遣いの畑</h3><div class="note" style="margin:0 0 8px">働いている間に${fieldSkin()==='job'?J.item+J.e:SEEDS[fieldSkin()].n}が実る。タップで収穫してお小遣いに。</div>
       ${rewardReady()?`<button id="bReward" class="rwd"><span>📺</span><b>広告を見て水やり</b><small>最後まで見ると畑が全部すぐ実る(1日1回)</small></button>`:''}<canvas id="field"></canvas>
@@ -2567,7 +2573,7 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>この人を別の端末へ<small>引き継ぎコードを出す → 別の端末の「読み込む」に貼る。街のデータは向こうで取り直す</small></div><span><button id="bExport">コードを出す</button> <button id="bImport">読み込む</button></span></div>
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
-    h+='<div class="note">版: v81 (2026-09-19)</div>';
+    h+='<div class="note">版: v82 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;setTimeout(()=>{try{paginatePanel();}catch(e){console.warn('pg',e);}try{fillAds(panel);}catch(e){}},0);$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
