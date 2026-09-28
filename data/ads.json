@@ -24,7 +24,7 @@
  "shop": {
   "on": false,
   "_note": "応援パック(見た目の課金)。Lemon Squeezy でストアと商品を作り、store(ストアID)・各パックの url(購入ページ)・variants(バリアントID)・law(特定商取引法の表記ページ)を入れて on を true に。",
-  "store": 0,
+  "store": 442003,
   "law": "tokushoho.html",
   "packs": {
    "wear": {
