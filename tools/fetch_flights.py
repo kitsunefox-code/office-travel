@@ -16,6 +16,9 @@ for d in WORLD:
     pairs += [("HND", d), ("NRT", d), (d, "HND")]
 for d in DOMESTIC:
     pairs += [("HND", d), (d, "HND")]
+# 成田発の国内線(格安航空が多い)
+for d in ["CTS", "FUK", "OKA", "KIX", "KMJ", "KOJ", "NGS", "MYJ", "TAK", "OIT", "KMI", "ISG", "HKD", "SDJ", "HIJ"]:
+    pairs += [("NRT", d)]
 
 JST = datetime.timezone(datetime.timedelta(hours=9))
 today = datetime.datetime.now(JST).date()
