@@ -3382,7 +3382,7 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
     h+='<div class="sec">データの出典</div><div class="note">地図・店: © OpenStreetMap contributors / 乗換: Transitous / 海外の見どころ: <a href="https://en.wikivoyage.org/" target="_blank" rel="noopener">Wikivoyage</a>(CC BY-SA 4.0) / 国の情報: Wikidata / 安全情報: 外務省海外安全ホームページ / 地震: 気象庁 / 祝日: holidays-jp / 市区町村: 国土地理院 / 為替: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a> / 写真: Wikimedia Commons / 観光地の説明: Wikipedia 日本語版(CC BY-SA 4.0) / 郷土料理: 農林水産省「うちの郷土料理」 / 宿: <a href="https://webservice.rakuten.co.jp/" target="_blank" rel="noopener">Supported by Rakuten Developers</a></div>';
-    h+='<div class="note">版: v101 (2026-09-19)</div>';
+    h+='<div class="note">版: v102 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;setTimeout(()=>{try{paginatePanel();}catch(e){console.warn('pg',e);}try{fillAds(panel);}catch(e){}},0);$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
@@ -3621,6 +3621,7 @@ async function shareApp(){track('share',{what:'app'});const data={title:'オフ�
   try{if(navigator.share){await navigator.share(data);return;}}catch(e){if(e&&e.name==='AbortError')return;}
   try{await navigator.clipboard.writeText(data.text+' '+data.url);toast('リンクをコピーした。LINEやXに貼ってね','var(--acc)');}catch(e){showText('このリンクを送ってください',data.url);}}
 (function boot(){try{loadAds();}catch(e){}
+  setTimeout(()=>{try{const o=new URLSearchParams(location.search).get('open');if(o&&S.setup){if(o==='diary')openTab('diary');else if(o==='dest')openDest();else if(o==='zukan')openTab('zukan');}}catch(e){}},2500);
   try{if(S.friends&&S.friends.some(f=>!f.acq)){const KEEP={'常連':'常連さん','散歩中の人':'散歩の人','写真を撮っていた人':'散歩の人'};S.friends=S.friends.filter(f=>f.acq||KEEP[f.role]).map(f=>f.acq?f:Object.assign({},f,{acq:1,role:KEEP[f.role]}));for(const v of Object.values(S.visited||{}))if(v&&v.friend)delete v.friend;}}catch(e){}
   try{loadHolidays();}catch(e){}setTimeout(()=>{try{quakeTick();skyTick();}catch(e){}},6000);setInterval(()=>{try{quakeTick();}catch(e){}},3*60000);setInterval(()=>{try{skyTick();msCheck(Date.now());ajiTick();petDaily(Date.now());}catch(e){}},60000);
   setTimeout(()=>{try{gStreak();gCheck();}catch(e){console.warn('game',e);}},3000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')try{gStreak();}catch(e){}});

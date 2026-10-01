@@ -1,7 +1,7 @@
 {
   "name": "オフィストラベル",
   "short_name": "オフィストラベル",
-  "description": "あなたが働いている間、もう1人のあなたが本物の街を歩く。",
+  "description": "あなたが働いている間、もう1人のあなたが本物の街を歩く。実際の地図・時刻表・お店で、旅日記が毎日届く。",
   "lang": "ja",
   "start_url": "./",
   "scope": "./",
@@ -10,8 +10,81 @@
   "background_color": "#f6efe2",
   "theme_color": "#f6efe2",
   "icons": [
-    { "src": "icon-192.png?v=2", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png?v=2", "sizes": "512x512", "type": "image/png" },
-    { "src": "icon-512-maskable.png?v=2", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png?v=2",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png?v=2",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512-maskable.png?v=2",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "id": "/office-travel/",
+  "categories": [
+    "travel",
+    "lifestyle",
+    "entertainment"
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/s1.png",
+      "sizes": "720x1440",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "家の部屋"
+    },
+    {
+      "src": "screenshots/s2.png",
+      "sizes": "720x1440",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "本物の地図を歩く"
+    },
+    {
+      "src": "screenshots/s3.png",
+      "sizes": "720x1440",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "時刻つきの旅日記"
+    },
+    {
+      "src": "screenshots/s4.png",
+      "sizes": "720x1440",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "図鑑と称号"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "日記",
+      "short_name": "日記",
+      "url": "./?open=diary",
+      "icons": [
+        {
+          "src": "icon-192.png?v=2",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "行き先を指示",
+      "short_name": "行き先",
+      "url": "./?open=dest",
+      "icons": [
+        {
+          "src": "icon-192.png?v=2",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }
