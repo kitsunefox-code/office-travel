@@ -477,7 +477,7 @@ a.shop{color:var(--ink);font-weight:700;text-decoration:underline dotted;text-de
   <button id="bMore"><i data-ic="more"></i><span>設定</span></button>
   <button id="bTeach" class="sub">教える</button>
   <button id="bWish" class="sub">行きたい</button>
-  <button id="bFriends" class="sub">友達</button>
+  <button id="bFriends" class="sub">なじみ</button>
 </div>
 <div id="panel" class="hidden"></div>
 <div id="modal" class="hidden"><div class="box" id="mbox"></div></div>
@@ -1722,7 +1722,7 @@ const MISSIONS=[
  {id:'green',n:'公園か神社・お寺に寄る',e:'🌳',pt:60,ok:t=>todayVisits(t).some(e=>{const p=poiByPk(e.pk);return p&&['park','garden','shrine','temple'].includes(p.k);}),prog:t=>[todayVisits(t).filter(e=>{const p=poiByPk(e.pk);return p&&['park','garden','shrine','temple'].includes(p.k);}).length,1,'か所'],bonus:(p)=>['park','garden','shrine','temple'].includes(p.k)?2:0,need:t=>outdoorOK(t)},
  {id:'ride',n:'電車かバスに乗る',e:'🚃',pt:60,ok:(t,P)=>Object.keys(P.day.modes).some(m=>/RAIL|SUBWAY|METRO|TRAM|BUS|MONORAIL/.test(m)),prog:(t,P)=>[Object.keys(P.day.modes).some(m=>/RAIL|SUBWAY|METRO|TRAM|BUS|MONORAIL/.test(m))?1:0,1,'回']},
  {id:'museum',n:'美術館・博物館に入る',e:'🖼️',pt:120,ok:t=>todayVisits(t).some(e=>{const p=poiByPk(e.pk);return p&&['museum','gallery'].includes(p.k);}),prog:t=>[todayVisits(t).filter(e=>{const p=poiByPk(e.pk);return p&&['museum','gallery'].includes(p.k);}).length,1,'館'],bonus:p=>['museum','gallery'].includes(p.k)?2:0,need:()=>POIS.some(p=>p.k==='museum')},
- {id:'friend',n:'友達の店に顔を出す',e:'👥',pt:100,ok:t=>todayVisits(t).some(e=>S.friends.some(f=>f.pk===e.pk)),prog:t=>[todayVisits(t).filter(e=>S.friends.some(f=>f.pk===e.pk)).length,1,'回'],bonus:(p)=>S.friends.some(f=>f.pk===PK(p))?3:0,need:()=>S.friends.length>0},
+ {id:'friend',n:'なじみの店に顔を出す',e:'🏮',pt:100,ok:t=>todayVisits(t).some(e=>(S.visited[e.pk]||{}).n>=4),prog:t=>[todayVisits(t).filter(e=>(S.visited[e.pk]||{}).n>=4).length,1,'回'],bonus:(p)=>((S.visited[PK(p)]||{}).n>=3)?2.5:0,need:()=>nijimi().length>0},
  {id:'meal3',n:'3食ちゃんと食べる',e:'🍚',pt:80,late:20,ok:t=>{const es=S.diary.filter(e=>todayKey(e.t)===todayKey(t)).map(e=>e.text||'').join(' ');return /朝ごはん/.test(es)&&/昼ごはん/.test(es)&&/(夕ごはん|晩ごはん|夜ごはん|届いた|家で食べる)/.test(es);},prog:t=>{const es=S.diary.filter(e=>todayKey(e.t)===todayKey(t)).map(e=>e.text||'').join(' ');return [[/朝ごはん/,/昼ごはん/,/(夕ごはん|晩ごはん|夜ごはん|届いた|家で食べる)/].filter(r=>r.test(es)).length,3,'食'];}},
  {id:'dog2',n:'犬と朝夕の散歩',e:'🐕',pt:100,late:19,ok:()=>{const W=S.pet&&S.pet.walks&&S.pet.walks[todayKey()]||{};return !!(W.am&&W.pm);},prog:()=>{const W=S.pet&&S.pet.walks&&S.pet.walks[todayKey()]||{};return [(W.am?1:0)+(W.pm?1:0),2,'回'];},need:()=>!!(S.pet&&S.pet.kind==='dog')},
  {id:'cheap',n:'¥1,500以内で過ごす',e:'🪙',pt:120,late:21,ok:t=>todayVisits(t).reduce((a,e)=>a+(e.cost||0),0)<=1500,prog:t=>[todayVisits(t).reduce((a,e)=>a+(e.cost||0),0),1500,'円'],need:()=>!S.trip}];
@@ -1840,7 +1840,7 @@ const ACH=[
  ['coach','🚌',['夜行バスの人','バス旅好き','高速バスの達人'],[1,3,10],s=>s.m.COACH||0,'回'],
  ['walk','👟',['よく歩く','歩く人','地球を歩く'],[10,100,1000],s=>Math.floor(s.km),'km'],
  ['night','🛏️',['はじめての外泊','旅慣れた人','宿のプロ'],[1,10,30],s=>s.night,'泊'],
- ['friend','👥',['はじめての友達','顔なじみ','街のみんなの友達'],[1,5,20],s=>s.friends,'人'],
+ ['friend','🏮',['なじみの店ができた','なじみの多い人','街の常連'],[1,5,20],s=>s.friends,'軒'],
  ['souvenir','🎁',['お土産デビュー','お土産名人','銘菓コレクター'],[1,10,30],s=>s.souv,'個'],
  ['exhibit','🎨',['展示を見た','展示めぐり','展覧会の常連'],[1,5,20],s=>s.ex,'回'],
  ['aji','🍲',['ご当地の味デビュー','郷土料理好き','郷土料理博士'],[1,10,30],s=>s.aji,'品'],
@@ -1853,7 +1853,7 @@ function gStats(){const g=gState();const s={k:{},c:{},m:g.cnt,shops:0};
   for(const [pk,v] of Object.entries(S.visited||{})){if(!v||!v.n)continue;const b=S.book[pk]||{};if(LODGING.has(b.k))continue;s.shops++;s.k[b.k]=(s.k[b.k]||0)+v.n;if(b.c)s.c[b.c]=(s.c[b.c]||0)+v.n;}
   for(const k of Object.keys(S.trail||{})){const v=trailKm(k);if(!(g.kmDays[k]>=v))g.kmDays[k]=+v.toFixed(2);}
   s.km=Object.values(g.kmDays).reduce((a,b)=>a+b,0);s.pref=Object.keys(S.stamps||{}).length;const cs=Object.keys(S.cities||{});s.countries=new Set(cs.map(cityISO).filter(Boolean)).size;
-  s.train=['RAIL','REGIONAL_RAIL','SUBWAY','METRO','TRAM','MONORAIL','HIGHSPEED_RAIL'].reduce((a,k)=>a+(g.cnt[k]||0),0);s.night=g.cnt.night||0;s.friends=(S.friends||[]).length;s.souv=(S.souvenirs||[]).length;s.ex=g.cnt.ex||0;s.aji=ajiCount().ate;s.cards=cardS().length;s.streak=(g.streak&&g.streak.n)||0;return s;}
+  s.train=['RAIL','REGIONAL_RAIL','SUBWAY','METRO','TRAM','MONORAIL','HIGHSPEED_RAIL'].reduce((a,k)=>a+(g.cnt[k]||0),0);s.night=g.cnt.night||0;s.friends=nijimi().length;s.souv=(S.souvenirs||[]).length;s.ex=g.cnt.ex||0;s.aji=ajiCount().ate;s.cards=cardS().length;s.streak=(g.streak&&g.streak.n)||0;return s;}
 function gTier(a,v){let t=-1;a[3].forEach((th,i)=>{if(v>=th)t=i;});return t;}
 function gCheck(){if(!S.setup)return;const g=gState();const st=gStats();const now=Date.now();let got=[];
   for(const a of ACH){const v=a[4](st);const t=gTier(a,v);for(let i=0;i<=t;i++){const id=a[0]+i;if(g.done[id])continue;g.done[id]=now;got.push([a,i]);}}
@@ -1981,7 +1981,7 @@ function addRec(p,reason,town){const pk=remember(p);if(S.recs.some(r=>r.pk===pk)
 /* 今週のやりたいこと(3つ)。達成すると日記に残り、元気が戻る */
 function weekKey(t){const d=new Date(t||Date.now());const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);d.setHours(0,0,0,0);return d.toDateString();}
 const BUCKET_TPL=[['onsen','温泉か銭湯に入る',1,p=>p.k==='onsen'],['ramen','ラーメンを3杯',3,p=>p.c==='ramen'||p.c==='noodle'],['books','本屋で1冊',1,p=>p.k==='books'],['shrine','神社かお寺で2回お参り',2,p=>p.k==='shrine'||p.k==='temple'],
- ['park','公園に3回',3,p=>p.k==='park'],['sweets','甘いものを2回',2,p=>p.k==='sweets'||p.k==='bakery'],['cafe','喫茶店を4軒',4,p=>p.k==='cafe'],['newshop','初めての店に6軒',6,(p,v)=>v&&v.n===1],['newcity','初めての街へ',1,null],['far','電車かバスでどこかへ',1,null],['friend','友達を1人つくる',1,null]];
+ ['park','公園に3回',3,p=>p.k==='park'],['sweets','甘いものを2回',2,p=>p.k==='sweets'||p.k==='bakery'],['cafe','喫茶店を4軒',4,p=>p.k==='cafe'],['newshop','初めての店に6軒',6,(p,v)=>v&&v.n===1],['newcity','初めての街へ',1,null],['far','電車かバスでどこかへ',1,null],['friend','なじみの店を1軒ふやす',1,null]];
 function ensureBucket(t){const wk=weekKey(t);if(S.bucket&&S.bucket.week===wk)return;const pool=BUCKET_TPL.filter(x=>!(x[0]==='onsen'&&!POIS.some(p=>p.k==='onsen')&&!S.prefs.includes('onsen'))).sort(()=>Math.random()-0.5);
   const items=pool.slice(0,3).map(x=>({id:x[0],text:x[1],target:x[2],progress:0,done:false}));S.bucket={week:wk,items};addDiary({kind:'note',text:'今週やりたいこと: '+items.map(i=>i.text).join(' / '),t});}
 function bucketHit(id,n,t){if(!S.bucket)return;const it=S.bucket.items.find(i=>i.id===id&&!i.done);if(!it)return;it.progress=Math.min(it.target,it.progress+(n||1));if(it.progress>=it.target){it.done=true;S.energy=Math.min(100,S.energy+12);addDiary({kind:'note',emoji:'🎯',text:'今週やりたかった「'+it.text+'」ができた!',t:t||Date.now()});toast('🎯 '+it.text+' 達成','var(--acc)');}}
@@ -2019,10 +2019,13 @@ onAsk('trip',(key,c)=>{if(key==='go'){const n=Date.now();if(c.stayP&&!S.trip)S.j
 // 待つか歩くか
 onAsk('wait',(key,c)=>{if(key==='walk'){const j=S.j;j.transit=null;j.state='stay';j.until=Date.now();addDiary({kind:'note',text:'待つのはやめて、歩いて別の所へ行くことにした',t:Date.now()});}});
 // 友達の誘い
-onAsk('invite',(key,c)=>{const i=idxOf(c.pk);if(key==='go'&&i>=0){addDiary({kind:'note',text:c.name+'さんに誘われて、'+POIS[i].n+'へ',t:Date.now()});go(i,Date.now());}else addDiary({kind:'note',text:c.name+'さんの誘いは、今日は断った',t:Date.now()});});
+onAsk('invite',(key,c)=>{const i=idxOf(c.pk);if(key==='go'&&i>=0){addDiary({kind:'note',tag:'you',text:(c.name?c.name+'さんに会えるかもと思って、':'あなたに「いいよ」と言われたので、久しぶりに')+POIS[i].n+'へ',t:Date.now()});go(i,Date.now());}else addDiary({kind:'note',tag:'you',text:(i>=0?POIS[i].n:'そこ')+'へは、今日はやめておく',t:Date.now()});});
+const ACQ_ROLE={park:'散歩の人',garden:'散歩の人',library:'本好きの人',books:'本好きの人',onsen:'湯仲間',shrine:'お参りの人',temple:'お参りの人',cafe:'常連さん'};
+function nijimi(){return Object.entries(S.visited||{}).filter(([pk,v])=>v&&v.n>=3).map(([pk,v])=>({pk,v,b:S.book[pk]||{}})).sort((a,b)=>b.v.n-a.v.n);}
 function maybeInvite(t){const j=S.j;if(S.planMode==='mine')return false;if(j.inviteDay===todayKey(t))return false;j.inviteDay=todayKey(t);if(Math.random()>0.25)return false;
-  const fs=S.friends.filter(f=>idxOf(f.pk)>=0);if(!fs.length)return false;const f=fs[Math.floor(Math.random()*fs.length)];const i=idxOf(f.pk);
-  ask('invite',f.name+'さん('+POIS[i].n+'の'+f.role+')から「今日来ない?」って。行く?',[{label:'行っておいで',key:'go',def:true},{label:'今日はやめよう',key:'no'}],15,{pk:f.pk,name:f.name});return true;}
+  const acq=S.friends.filter(f=>f.acq&&idxOf(f.pk)>=0);if(acq.length&&Math.random()<0.3){const f=acq[Math.floor(Math.random()*acq.length)];const i=idxOf(f.pk);ask('invite',POIS[i].n+'に行けば、'+f.name+'さん('+f.role+')に会えるかもしれない。行ってみていい?',[{label:'行っておいで',key:'go',def:true},{label:'今日はやめよう',key:'no'}],15,{pk:f.pk,name:f.name});return true;}
+  const L=nijimi().filter(x=>idxOf(x.pk)>=0&&t-(x.v.last||0)>5*864e5&&!LODGING.has(x.b.k));if(!L.length)return false;const x=L[Math.floor(Math.random()*Math.min(5,L.length))];const i=idxOf(x.pk);
+  ask('invite','久しぶりに'+POIS[i].n+'へ行きたい(これまで'+x.v.n+'回)。行っていい?',[{label:'行っておいで',key:'go',def:true},{label:'今日はやめよう',key:'no'}],15,{pk:x.pk});return true;}
 /* 今日はどうする? 家にいる朝に選べる */
 const PLAN_LABEL={auto:'おまかせ',near:'近所をぶらぶら',rest:'家でのんびり',wish:'行きたい店へ',trip:'遠出する'};
 function todayPlan(t){return S.plan&&S.plan.k===todayKey(t)?S.plan.mode:'auto';}
@@ -2195,8 +2198,13 @@ function arrive(t,r){const j=S.j;if(!j.arrivedBy&&j.straight===null&&j.pathLen>8
   if(!j.lastArrivedBy&&!j.straight&&Math.random()<0.03){const amt=[10,50,100][Math.floor(Math.random()*3)];const why='自販機の下に小銭が落ちていた';S.wallet+=amt;S.stats.harvest+=amt;addDiary({kind:'note',text:why+'(+¥'+amt+')。',t:t-60000});}
   const v=S.visited[pk]||(S.visited[pk]={n:0,last:0});v.n++;v.last=t;S.stats.visits++;S.energy=Math.max(0,S.energy-(p.k==='park'||p.k==='cafe'||p.k==='onsen'?3:7)-(hot()?4:0)-(cold()?2:0));if(j.lastArrivedBy)S.energy=Math.max(0,S.energy-10);
   let friendText='';
-  if(!v.friend&&!S.friends.some(f=>todayKey(f.t)===todayKey(t))&&Math.random()<(v.n>=4?0.3:v.n>=2?0.12:0.03)*(trait('social')>0?1.6:trait('social')<0?0.5:1)){const nm=(Math.random()<0.5?NAMES_F:NAMES_M)[Math.floor(Math.random()*8)];const role=ROLES[p.k]||'常連';v.friend={name:nm,role};S.friends.push({name:nm,role,pk,pn:p.n,t,level:1});friendText=role+'の'+nm+'さんと話が合い、仲良くなる。';}
-  else if(v.friend){const f=S.friends.find(f=>f.pk===pk);if(f){f.level++;friendText=f.name+'さんが顔を覚えていてくれた。';}}
+  {const n=v.n;const chain=!!p.b;const outdoor=['park','garden','shrine','temple','station','attraction','artwork','view','monument'].includes(p.k);
+   if(n===3)friendText=p.n+'は、なじみの'+(outdoor?'場所':'店')+'になった(3回目)。';
+   else if(n===6&&!chain&&!outdoor)friendText='店の人に顔を覚えてもらえた気がする。';
+   else if([10,20,40,80].includes(n))friendText=p.n+'は'+n+'回目。すっかりなじみ。';
+   const hang=ACQ_ROLE[p.k];
+   if(!friendText&&hang&&n>=4&&!S.friends.some(f=>t-f.t<7*864e5)&&Math.random()<0.08*(trait('social')>0?1.6:trait('social')<0?0.5:1)){const nm=(Math.random()<0.5?NAMES_F:NAMES_M)[Math.floor(Math.random()*8)];S.friends.push({name:nm,role:hang,pk,pn:p.n,t,level:1,acq:1});friendText=p.n+'でよく見かける'+hang+'の'+nm+'さんと、話すようになった。';}
+   else if(!friendText){const f=S.friends.find(f=>f.pk===pk&&f.acq);if(f&&Math.random()<0.4){f.level=(f.level||1)+1;f.last=t;friendText=f.name+'さんも来ていた。少し話した。';}}}
   const hh=hour(t);const lbl=(p.k==='restaurant'||p.k==='fast_food')?(hh<4.5||hh>=21.5?'夜食':hh<10.5?'朝ごはん':hh<14.5?'昼ごはん':hh>=17?'夕ごはん':'軽く食べる'):inf.label;const vprev=S.visited[pk]||{n:1};const firstTime=vprev.n<=1;
   const lead=mood?mood+'、':'';const via=j.arrivedBy?j.arrivedBy+'で来て、':'';const item=(pay>0&&p.c&&CUIS[p.c])?menuName(p):'';const isFood=(p.k==='restaurant'||p.k==='fast_food'||p.k==='cafe'||p.k==='sweets'||p.k==='bakery');
   let text;if(isFood){text=lead+via+p.n+'で'+(p.k==='cafe'?'ひと休み':lbl)+'。'+(firstTime?'初めての店。':vprev.n>=4?'いつもの店。':'')+(item?item+(pay?' ¥'+fmt(pay):'')+'。':(pay?'¥'+fmt(pay)+'。':''));}
@@ -2208,8 +2216,8 @@ function arrive(t,r){const j=S.j;if(!j.arrivedBy&&j.straight===null&&j.pathLen>8
   addDiary({kind:'visit',pk,pn:p.n,pla:p.la,plo:p.lo,town:M.name,text,cost:pay+extraCost,emoji:inf.e,color:COLORS[p.k]||'#ccc',t,url:exUrl||wvUrl(p)||undefined,urlLabel:exUrl?'展示の公式ページ':(p.wv?'Wikivoyageの紹介(英語)':undefined),exT:exUrl?exs0T:undefined});if(WIKI_K.has(p.k)&&inJP(p.la,p.lo))setTimeout(()=>wikiToDiary(p,pk,t),300);try{const v_=S.visited[pk];if(v_&&v_.n===1&&(['castle','temple','shrine','museum','tower','view','garden','aquarium','zoo','lighthouse','beach','peak','attraction'].includes(p.k))&&((p.s||0)>=4||p.wv))setTimeout(()=>sendCard(p.n,pk,t),1200);}catch(e){}
   if(typeof fetch==='function')setTimeout(()=>fetchPhoto(pk),50);
   if(S.went[pk])addDiary({kind:'note',text:'あなたも行った'+p.n+'。今日は私の番',t});
-  bucketOnVisit(p,v,t);if(friendText&&friendText.includes('仲良くなった'))bucketHit('friend',1,t);
-  if(!p.b&&(p.s>=3||v.n>=2||friendText)){addRec(p,v.n>=2?'2回行っても良かった':friendText?'店の人と仲良くなった。あなたも会ってみて':(p.h?'地元の店で、営業時間もきちんと出ている':'ここは当たりだった'),M.name);}
+  bucketOnVisit(p,v,t);if(v.n===3)bucketHit('friend',1,t);
+  if(!p.b&&(p.s>=3||v.n>=2||friendText)){addRec(p,v.n>=2?'2回行っても良かった':friendText&&v.n>=3?'なじみになった。あなたも行ってみて':(p.h?'地元の店で、営業時間もきちんと出ている':'ここは当たりだった'),M.name);}
   if(r)r.visits.push(idx);
   {const B=bodyNow(t);if(p.k==='restaurant'||p.k==='fast_food'||p.k==='food_court'){B.full=95;B.meals++;}else if(p.k==='sweets'||p.k==='bakery'||p.k==='ice_cream'){B.full=Math.min(100,B.full+25);B.sweets++;}else if(p.k==='cafe'){B.coffee++;B.coffeeT=t;B.full=Math.min(100,B.full+8);}else if(p.k==='pub'||p.k==='bar'){B.full=Math.min(100,B.full+40);}B.last=t;}
   let stayMin=inf.stay*(1.15+Math.random()*0.45);if(S.taught.habits.sea&&/海|浜|ビーチ|岬|港|埠頭|マリーナ|湾|渚/.test(p.n)&&(p.k==='park'||p.k==='attraction'||p.k==='artwork')){stayMin*=2.2;addDiary({kind:'note',text:'海が見えたので、つい長居した',t:t+inf.stay*60000});}
@@ -2595,7 +2603,7 @@ function storyData(k){const es=S.diary.filter(e=>todayKey(e.t)===k);const vis=es
   if(far&&far.d>20000)lines.push(Math.round(far.d/1000)+'km先の'+far.e.pn+'まで。足より電車ががんばった');
   if(km>=5)lines.push(km.toFixed(1)+'km移動。靴底が少し減った気がする');
   if(rainy())lines.push('雨の中を'+vis.length+'軒。傘がよく働いた');
-  if(fr)lines.push(fr.pn+'で'+fr.name+'さんと仲良くなった。明日も行くかもしれない');
+  if(fr)lines.push(fr.pn+'で'+fr.name+'さんと話すようになった。また会えるかな');
   if(warnLevel(MOVE_KINDS)>=30)lines.push('警報の日。無理しないのも仕事のうち');
   return {k,es,vis,pics,spent,km,towns,rides,line:seededPick(lines.length?lines:['今日も一日おつかれさま'],k+S.name)};}
 function storyHTML(d){const dt=new Date(d.k);const wd='日月火水木金土'[dt.getDay()];
@@ -3296,18 +3304,21 @@ function renderPanel(){if(!tab)return;let h='';
     for(const k of S.wish){const p=poiOf(k);if(!p)continue;const v=S.visited[k];h+=`<div class="row"><div>${info(p).e} <b>${p.n}</b><small>${p.town?p.town+' / ':''}${p.c?p.c+' / ':''}${info(p).label}${v?' / '+S.name+'は'+v.n+'回':''}${S.went[k]?' / <span style="color:var(--ok)">あなたも行った('+fmtD(S.went[k])+')</span>':''}</small><small><a href="${gmapsLL(p)}" target="_blank" rel="noopener">Googleマップで開く(人気メニュー・経路はこちら)</a></small></div>
       <div>${LODGING.has(p.k)?'<div><small>'+hotelLinks(p.n,p.town)+'</small></div>':''}${S.went[k]?'':`<button data-went="${k}">行ってきた</button>`}<button data-unwish="${k}">✕</button></div></div>`;}
     const mem=Object.keys(S.went).length;h+=`<div class="note">ふたりで行った店: ${mem}軒</div>`;}
-  if(tab==='friends'){const stamps=Object.entries(S.stamps);h+=`<h3>友達とコレクション</h3>`;
+  if(tab==='friends'){const stamps=Object.entries(S.stamps);h+=`<h3>なじみとコレクション</h3>`;
     /* 友達帳 */
-    h+=`<div class="sec">友達帳(${S.friends.length}人)</div>`;
-    if(!S.friends.length)h+='<div class="note">まだいません。同じ店に何度か通うと、店の人や常連さんと仲良くなります。</div>';
-    else h+='<div class="frs">'+S.friends.slice().reverse().map(f=>{const idx=idxOf(f.pk);const v=S.visited[f.pk]||{};const lv=Math.min(5,f.level||1);return `<div class="fr"><div class="av">${friendAvatar(f)}</div><div class="fb"><div class="fn">${esc(f.name)}<small>さん</small><span class="lv">${'♥'.repeat(lv)}<i>${'♥'.repeat(5-lv)}</i></span></div><div class="fm">${esc(f.pn||'')}の${esc(f.role||'')}</div><div class="fm dim">${fmtD(f.t)}に出会う${v.last?' · 最後に会ったのは '+fmtD(v.last):''}${v.n?' · 通った回数 '+v.n:''}</div></div>${idx>=0?`<button data-meet="${f.pk}" title="行きたいに入れる">会いに</button>`:''}</div>`;}).join('')+'</div>';
+    {const NJ=nijimi();h+=`<div class="sec">なじみの店・場所(${NJ.length})</div>`;
+     if(!NJ.length)h+='<div class="note">同じ店や場所に3回通うと「なじみ」になります。</div>';
+     else h+='<div class="frs">'+NJ.slice(0,30).map(x=>{const lv=Math.min(5,x.v.n>=40?5:x.v.n>=20?4:x.v.n>=10?3:x.v.n>=6?2:1);const idx=idxOf(x.pk);return `<div class="fr"><div class="av" style="background:${COLORS[x.b.k]||'#eee'};display:flex;align-items:center;justify-content:center;font-size:22px">${(KIND[x.b.k]||{}).e||'📍'}</div><div class="fb"><div class="fn">${esc(x.b.n||x.pk.split('@')[0])}<span class="lv">${'♥'.repeat(lv)}<i>${'♥'.repeat(5-lv)}</i></span></div><div class="fm">${x.v.n}回${x.b.town?' · '+esc(x.b.town):''}</div><div class="fm dim">${x.v.last?'最後は '+fmtD(x.v.last):''}</div></div>${idx>=0?`<button data-meet="${x.pk}" title="行きたいに入れる">行きたい</button>`:''}</div>`;}).join('')+'</div>';}
+    h+=`<div class="sec">顔なじみ(${S.friends.length}人)</div>`;
+    if(!S.friends.length)h+='<div class="note">公園・図書館・銭湯・喫茶店などに何度も通うと、よく見かける人と話すようになることがあります。</div>';
+    else h+='<div class="frs">'+S.friends.slice().reverse().map(f=>{const idx=idxOf(f.pk);const v=S.visited[f.pk]||{};const lv=Math.min(5,f.level||1);return `<div class="fr"><div class="av">${friendAvatar(f)}</div><div class="fb"><div class="fn">${esc(f.name)}<small>さん</small><span class="lv">${'♥'.repeat(lv)}<i>${'♥'.repeat(5-lv)}</i></span></div><div class="fm">${esc(f.pn||'')}でよく見かける${esc(f.role||'')}</div><div class="fm dim">${fmtD(f.t)}に話すようになった${f.last?' · 最後は '+fmtD(f.last):''}</div></div>${idx>=0?`<button data-meet="${f.pk}" title="行きたいに入れる">会いに</button>`:''}</div>`;}).join('')+'</div><div class="note">顔なじみは、もう1人の自分の世界の人です(実在の人ではありません)。</div>';
     h+=closetHTML();
     /* スタンプ帳 */
     h+=`<div class="sec">スタンプ帳(都道府県 ${stamps.length}/47)</div><div class="stamps">${stamps.length?stamps.map(([k,v])=>`<span class="stp" style="transform:rotate(${(k.length*7)%9-4}deg)"><b>${k.replace(/(都|府|県)$/,'')}</b><small>${v}回</small></span>`).join(''):'<span class="note" style="flex:1">まだありません。ほかの街に着くと押されます</span>'}</div>`;
     /* お土産 */
     if(S.souvenirs.length)h+=`<div class="sec">お土産(${S.souvenirs.length})</div><div class="gifts">`+S.souvenirs.slice().reverse().slice(0,12).map(x=>`<div class="gift2"><div class="rib"></div><b>${esc(x.town)}</b><small>${esc(x.shop)}</small><em>¥${fmt(x.price)} · ${fmtD(x.t)}</em>${souvenirPR(x)?'<span class="gpr">'+souvenirPR(x)+'</span>':''}</div>`).join('')+'</div>';
   }
-  if(tab==='more'){h+=`<h3>設定</h3><div class="grid3"><button data-tab2="teach"><i>✎</i>教える</button><button data-tab2="wish"><i>♡</i>行きたい</button><button data-tab2="friends"><i>👥</i>友達と<br>コレクション</button></div><div class="sec">プロフィール</div><div class="row"><div>家<small>${S.homeAddr||'サンプルの街(吉祥寺)'}${S.trip?' / いまは '+S.trip.city+' に滞在':''} / この街の店・場所 ${POIS.length}件</small></div></div>`;
+  if(tab==='more'){h+=`<h3>設定</h3><div class="grid3"><button data-tab2="teach"><i>✎</i>教える</button><button data-tab2="wish"><i>♡</i>行きたい</button><button data-tab2="friends"><i>🏮</i>なじみと<br>コレクション</button></div><div class="sec">プロフィール</div><div class="row"><div>家<small>${S.homeAddr||'サンプルの街(吉祥寺)'}${S.trip?' / いまは '+S.trip.city+' に滞在':''} / この街の店・場所 ${POIS.length}件</small></div></div>`;
     h+=`<div class="row"><div>好きなこと・性格<small>${S.persona&&S.persona.text?esc(S.persona.text.slice(0,60))+(S.persona.text.length>60?'…':'')+' → '+esc(personaSummary(S.persona)):'未記入(設定の「変える」から書けます)'}</small></div></div><div class="row"><div>設定<small>${S.name} / ${(JOBS[S.job]||JOBS.other).n} / ${V().e}${V().n} / 勤務 ${fmtHM(S.work.start)}〜${fmtHM(S.work.end)} / 好み: ${S.prefs.map(k=>PREF_LIST.find(x=>x[0]===k)[1]).join('・')}</small></div><button id="bSetup">変える</button></div>`;
     h+=`<div class="sec">動く時間</div><div class="row"><div>${S.name}が動く時間<small>${actMode()==='always'?'24時間。疲れたら・深夜は家か宿で朝まで眠る':actMode()==='awake'?'起きている間('+fmtHM(S.active.wake??420)+'〜'+fmtHM((S.active.sleep??1440)%1440)+')':'あなたの勤務時間だけ('+fmtHM(S.work.start)+'〜'+fmtHM(S.work.end)+')'}</small></div></div><div class="actm">${[['always','24時間'],['awake','起きている間'],['work','勤務時間だけ']].map(([k,l])=>`<button data-actm="${k}" class="${actMode()===k?'on':''}">${l}</button>`).join('')}</div>${actMode()==='awake'?`<div class="mgrid"><label>起きる<input id="actWake" type="time" value="${fmtHM(S.active.wake??420)}"></label><label>寝る<input id="actSleep" type="time" value="${fmtHM((S.active.sleep??1440)%1440)}"></label></div>`:''}<div class="sec">Googleマップ</div><div class="row"><div>「行ってみたい」を取り込む<small>Google データエクスポート(takeout.google.com)で「保存済み」か「マップ(マイプレイス)」を書き出し、出てきた CSV(例: 行ってみたい.csv)か Saved Places.json を選んでください。この街にある店は行きたいリストへ。ほかの街の店は、そこへ行った時に探します。${(S.gwish||[]).length?'<br>読み込み済み '+S.gwish.length+'件 / 見つかった '+S.gwish.filter(w=>w.done).length+'件':''}</small></div><button id="bGmaps">ファイルを選ぶ</button></div><div class="row"><div>ホットペッパーグルメ<small>${hpKey()?'使えています。口コミ画面にお店の一言・予算・クーポンが出ます。':'無料の鍵(webservice.recruit.co.jp で登録)を貼ると、口コミ画面にお店の一言・予算・営業時間・クーポンが出ます。'}</small></div><button id="bHp">${S.keys.hotpepper?'鍵を変える':'鍵を貼る'}</button></div><div class="row"><div>口コミ<small>${placesKey()?(ADS.places&&ADS.places.key?'運営者の設定で使えています。':'この端末に貼った鍵で使えています。')+'店の「口コミ」ボタンで、Google の最新の評価・営業状況・口コミが出ます。':'Google Places API (New) の鍵を貼ると、アプリの中で口コミが見られます。Google Cloud で「Places API (New)」を有効にし、ブラウザ用の鍵に HTTP リファラー制限(kusayakyu-navi.com/*)を付けてください。見るたびに Google の料金がかかります。'}</small></div><span><button id="bPlaces">${S.keys.places?'鍵を変える':'鍵を貼る'}</button>${placesKey()?' <button id="bPlacesTest">試す</button>':''}</span></div><div class="sec">祝日</div><div class="row"><div>祝日は仕事が休み<small>${holidayOf(Date.now()+0)?"今日は"+esc(holidayOf(Date.now()))+"。":""}休みの日は${esc(S.name)}も遠出しやすくなります</small></div><button id="bHoliOff">${S.holiOff===false?"祝日も仕事":"休みにする"}</button></div><div class="sec">きせかえ・もようがえ</div><div class="row"><div>見た目と部屋<small>帽子・メガネ・羽織り・壁紙・家具・ねこ。無料・お小遣い・応援パック</small></div><button id="bOpenShop">ひらく</button></div><div class="sec">友だちに教える</div><div class="row"><div>オフィストラベルを教える<small>共有シートでLINE・X・メールなどへ。リンクだけが送られます(あなたの記録や家の場所は送りません)。</small></div><button id="bShareApp">教える</button></div><div class="sec">保存</div><div class="row"><div>この端末の記録 <b class="autoOn">自動保存中</b><small id="svInfo">確認中…</small></div><button id="bSaveNow">いま保存</button></div><div class="row"><div>最初からやり直す<small>日記・行きたい・お小遣い・畑をぜんぶ消して、初期設定からやり直します。残したい時は先に「この人を別の端末へ」で引き継ぎコードを。</small></div><button id="bReset" class="ng">やり直す</button></div><div class="sec">データ</div><div class="row"><div>飛行機(国内 ODPT)<small>公共交通オープンデータセンター(ODPT)のアクセストークンを貼ると、JAL・ANA国内線の実ダイヤで飛ぶ。${S.keys.odpt?(FLIGHTS?'便データ '+FLIGHTS.length+'件 読み込み済み':'鍵あり(次の遠出で読み込み)'):'未設定(それまでは鉄道だけ)'}</small></div><button id="bOdpt">${S.keys.odpt?'変更':'鍵を貼る'}</button></div>
       <div class="row"><div>国際線の時刻表<small>どれか1つで飛べる。AirLabs(airlabs.co、無料枠 月1,000回)か AeroDataBox(RapidAPI、無料枠あり)。${S.keys.airlabs?'AirLabs 鍵あり':S.keys.aerodatabox?'AeroDataBox 鍵あり':'未設定'}</small></div><span><button id="bAirlabs">${S.keys.airlabs?'AirLabs 変更':'AirLabs'}</button> <button id="bAdb">${S.keys.aerodatabox?'AeroDataBox 変更':'AeroDataBox'}</button></span></div>
@@ -3315,16 +3326,16 @@ function renderPanel(){if(!tab)return;let h='';
     h+=`<div class="sec">収益化</div><div class="row"><div>広告について<small>このアプリは広告とアフィリエイト(「PR」と付いたリンク)の収益で運営しています。${S.name}の行き先は広告で変わりません。<a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a></small></div></div><div class="row"><div>アフィリエイト(自分用)<small>運営者の設定(data/ads.json)が優先されます。自分で試す場合だけ: 楽天アフィリエイトID、じゃらん(バリューコマース)のsid/pid。${S.keys.rakutenAff?'楽天: 設定済 ':''}${S.keys.vcSid?'じゃらん: 設定済':''}</small></div><button id="bAff">設定</button></div>`;
     h+=`<div class="row"><div>写真<small>近くで撮られた本物の写真をWikimedia Commonsから。Mapillaryの無料トークンを入れると街角の写真も(任意)</small></div><button id="bMly">${S.mlyToken?'設定済':'トークン'}</button></div>`;
     h+=`<div class="sec">お金のリズム</div><div class="row"><div>給料日・家賃・スマホ代<small>給料日が土日なら前の金曜。家賃は月末、スマホ代は1日に引かれる</small></div></div><div class="mgrid"><label>給料日<select id="mPay">${Array.from({length:31},(_,i)=>i+1).map(d=>`<option value="${d}" ${S.money.payday===d?'selected':''}>${d===31?'月末':d+'日'}</option>`).join('')}</select></label><label>お給料<input id="mSal" type="number" step="500" value="${S.money.salary}"></label><label>家賃の分担<input id="mRent" type="number" step="500" value="${S.money.rent}"></label><label>スマホ代<input id="mPhone" type="number" step="100" value="${S.money.phone}"></label></div><div class="sec">その他</div><div class="row"><div>地図の描き方<small>${S.mapMode==='canvas'?'画像タイル(軽い・WebGL不要)':'自動(ベクトル地図。届かなければ画像タイル)'}${rasterStyle?' / いまは画像タイルで表示中':''}</small></div><button id="bMapMode">${S.mapMode==='canvas'?'自動に戻す':'画像タイルにする'}</button></div><div class="row"><div>お小遣いを渡す<small>手持ち ¥${fmt(S.wallet)}。収穫のほかに、直接渡すこともできる(試作用)</small></div><button id="bGive">+¥1,000</button></div>`;
-    h+=`<div class="row"><div>統計<small>収穫 ¥${fmt(S.stats.harvest)} / 使った ¥${fmt(S.stats.spent)} / 寄った ${S.stats.visits}軒 / 友達 ${S.friends.length}人</small></div></div>`;
+    h+=`<div class="row"><div>統計<small>収穫 ¥${fmt(S.stats.harvest)} / 使った ¥${fmt(S.stats.spent)} / 寄った ${S.stats.visits}軒 / なじみの店 ${nijimi().length}</small></div></div>`;
     h+=`<div class="row"><div>小窓で開く<small>横長の別ウィンドウ</small></div><button id="bPop">開く</button></div>`;
-    h+=`<div class="row"><div>詰まったとき<small>旅を中断して家に戻す。日記・友達・行きたいは残る</small></div><button id="bHomeNow">家に戻す</button></div>`;
+    h+=`<div class="row"><div>詰まったとき<small>旅を中断して家に戻す。日記・なじみ・行きたいは残る</small></div><button id="bHomeNow">家に戻す</button></div>`;
     h+=`<div class="sec">別の端末・通知</div>
       <div class="row"><div>通知<small>${S.notify&&typeof Notification!=='undefined'&&Notification.permission==='granted'?'オン。画面を閉じている間の到着・宿・雨を知らせる':'オフ。ホーム画面に追加してから許可すると確実'}</small></div><button id="bNotify">${S.notify?'オフにする':'オンにする'}</button></div>
       <div class="row"><div>この人を別の端末へ<small>引き継ぎコードを出す → 別の端末の「読み込む」に貼る。街のデータは向こうで取り直す</small></div><span><button id="bExport">コードを出す</button> <button id="bImport">読み込む</button></span></div>
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
     h+='<div class="sec">データの出典</div><div class="note">地図・店: © OpenStreetMap contributors / 乗換: Transitous / 海外の見どころ: <a href="https://en.wikivoyage.org/" target="_blank" rel="noopener">Wikivoyage</a>(CC BY-SA 4.0) / 国の情報: Wikidata / 安全情報: 外務省海外安全ホームページ / 地震: 気象庁 / 祝日: holidays-jp / 市区町村: 国土地理院 / 為替: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a> / 写真: Wikimedia Commons / 観光地の説明: Wikipedia 日本語版(CC BY-SA 4.0) / 郷土料理: 農林水産省「うちの郷土料理」 / 宿: <a href="https://webservice.rakuten.co.jp/" target="_blank" rel="noopener">Supported by Rakuten Developers</a></div>';
-    h+='<div class="note">版: v99 (2026-09-19)</div>';
+    h+='<div class="note">版: v100 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;setTimeout(()=>{try{paginatePanel();}catch(e){console.warn('pg',e);}try{fillAds(panel);}catch(e){}},0);$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
@@ -3362,7 +3373,7 @@ function renderPanel(){if(!tab)return;let h='';
     IDB.get('state').then(v=>{if(v)saveState.idbAt=saveState.idbAt||v.lastTick||Date.now();f();});}}
   {const bs=$('bStory');if(bs)bs.onclick=()=>showStory(todayKey());const bm=$('bMem');if(bm)bm.onclick=()=>openMemory(7);}
   {const pd=$('mPay');if(pd){const sv=()=>{S.money.payday=+$('mPay').value||25;S.money.salary=Math.max(0,+$('mSal').value||0);S.money.rent=Math.max(0,+$('mRent').value||0);S.money.phone=Math.max(0,+$('mPhone').value||0);save();toast('お金のリズムを変えた','var(--acc)');};['mPay','mSal','mRent','mPhone'].forEach(id=>{const x=$(id);if(x)x.onchange=sv;});}}
-  panel.querySelectorAll('[data-meet]').forEach(b=>b.onclick=()=>{const pk=b.dataset.meet;if(!S.wish.includes(pk))S.wish.push(pk);const f=S.friends.find(x=>x.pk===pk);toast((f?f.name+'さんの':'')+'いる店を「行きたい」に入れた','var(--acc)');save();renderPanel();});
+  panel.querySelectorAll('[data-meet]').forEach(b=>b.onclick=()=>{const pk=b.dataset.meet;if(!S.wish.includes(pk))S.wish.push(pk);const f=S.friends.find(x=>x.pk===pk);toast((f?f.name+'さんに会えるかもしれない所':'なじみの店')+'を「行きたい」に入れた','var(--acc)');save();renderPanel();});
   panel.querySelectorAll('[data-seed]').forEach(b=>b.onclick=()=>buySkin(b.dataset.seed));
   panel.querySelectorAll('[data-farby]').forEach(b=>b.onclick=()=>{const cn=b.dataset.city||(S.j.transit&&S.j.transit.city&&S.j.transit.city.name);if(!cn)return;const v=b.dataset.farby;if(v)S.taught.farBy[cn]=v;else delete S.taught.farBy[cn];const FB={rail:'新幹線・電車',air:'飛行機',coach:'高速バス'};addDiary({kind:'note',tag:'you',text:v?'あなたに教わった: '+cn+'は'+FB[v]+'で行く。次からそうする。':cn+'への手段は比べて決めることにした。',t:Date.now()});toast(cn+': '+(v?'次から'+FB[v]+'で':'比べて決める'),'var(--acc)');renderPanel();save();});
   panel.querySelectorAll('[data-plan2]').forEach(b=>b.onclick=()=>{S.plan={k:todayKey(),mode:b.dataset.plan2};toast('今日は「'+PLAN_LABEL[b.dataset.plan2]+'」','var(--acc)');renderPanel();save();});
@@ -3563,6 +3574,7 @@ async function shareApp(){track('share',{what:'app'});const data={title:'オフ�
   try{if(navigator.share){await navigator.share(data);return;}}catch(e){if(e&&e.name==='AbortError')return;}
   try{await navigator.clipboard.writeText(data.text+' '+data.url);toast('リンクをコピーした。LINEやXに貼ってね','var(--acc)');}catch(e){showText('このリンクを送ってください',data.url);}}
 (function boot(){try{loadAds();}catch(e){}
+  try{if(S.friends&&S.friends.some(f=>!f.acq)){const KEEP={'常連':'常連さん','散歩中の人':'散歩の人','写真を撮っていた人':'散歩の人'};S.friends=S.friends.filter(f=>f.acq||KEEP[f.role]).map(f=>f.acq?f:Object.assign({},f,{acq:1,role:KEEP[f.role]}));for(const v of Object.values(S.visited||{}))if(v&&v.friend)delete v.friend;}}catch(e){}
   try{loadHolidays();}catch(e){}setTimeout(()=>{try{quakeTick();skyTick();}catch(e){}},6000);setInterval(()=>{try{quakeTick();}catch(e){}},3*60000);setInterval(()=>{try{skyTick();msCheck(Date.now());ajiTick();petDaily(Date.now());}catch(e){}},60000);
   setTimeout(()=>{try{gStreak();gCheck();}catch(e){console.warn('game',e);}},3000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')try{gStreak();}catch(e){}});
   {const bs=$('bShop');if(bs)bs.onclick=e=>{e.stopPropagation();openShop();};}S.wear=Object.assign({},WEAR_DEF,S.wear||{});S.room=Object.assign({},ROOM_DEF,S.room||{});ownState();try{loadExhibits();}catch(e){}try{loadWorld().then(()=>{try{if(M&&worldCity(M.name))ensureWV(M);}catch(e){}});}catch(e){}try{loadFx();}catch(e){}
