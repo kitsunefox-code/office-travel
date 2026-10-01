@@ -1437,7 +1437,7 @@ function pickLodging(t){const here=S.j.pos||[HOME.la,HOME.lo];const hb=S.taught.
   afford.sort((a,b)=>b.sc-a.sc);return {pick:afford[0]};}
 /* 広告の設定(サイト運営者が data/ads.json に書く。利用者は触らない) */
 let ADS={adsense:{client:'',slotDiary:'',slotStory:'',on:false},h5:false,rakuten:'',vc:{sid:'',pid:''},tp:''};
-async function loadAds(){try{const r=await fetch('data/ads.json',{cache:'no-cache'});if(!r.ok)return;const J=await r.json();ADS=Object.assign(ADS,J||{});ADS.adsense=Object.assign({client:'',slotDiary:'',slotStory:'',on:false},J.adsense||{});ADS.vc=Object.assign({sid:'',pid:''},J.vc||{});if(ADS.adsense.on&&ADS.adsense.client)loadAdScript();}catch(e){}}
+async function loadAds(){try{const r=await fetch('data/ads.json',{cache:'no-cache'});if(!r.ok)return;const J=await r.json();ADS=Object.assign(ADS,J||{});ADS.adsense=Object.assign({client:'',slotDiary:'',slotStory:'',on:false},J.adsense||{});ADS.vc=Object.assign({sid:'',pid:''},J.vc||{});try{loadAnalytics();}catch(e){}if(ADS.adsense.on&&ADS.adsense.client)loadAdScript();}catch(e){}}
 let adScript=false;
 function loadAdScript(){if(adScript||location.protocol==='file:')return;adScript=true;const sc=document.createElement('script');sc.async=true;sc.crossOrigin='anonymous';sc.src='https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='+encodeURIComponent(ADS.adsense.client);
   if(ADS.h5){sc.setAttribute('data-ad-frequency-hint','120s');}document.head.appendChild(sc);window.adsbygoogle=window.adsbygoogle||[];if(ADS.h5){window.adBreak=window.adConfig=function(o){window.adsbygoogle.push(o);};try{adConfig({preloadAdBreaks:'on',sound:'off'});}catch(e){}}}
@@ -1546,6 +1546,14 @@ function snsLinks(v){if(!v||!v.sns)return '';const L=[];const h=(u,base)=>/^http
 
 
 
+
+/* ================= v96 アクセス解析(Umami)・シェア ================= */
+function shareURL(src){return 'https://kusayakyu-navi.com/office-travel/?utm_source=share&utm_medium='+encodeURIComponent(src||'app');}
+let umamiOn=false;
+function loadAnalytics(){try{const u=ADS.umami||{};if(!u.id||umamiOn||location.protocol==='file:'||/localhost|127\.0\.0\.1/.test(location.hostname))return;umamiOn=true;const sc=document.createElement('script');sc.defer=true;sc.src=u.src||'https://cloud.umami.is/script.js';sc.setAttribute('data-website-id',u.id);sc.setAttribute('data-do-not-track','true');document.head.appendChild(sc);}catch(e){}}
+function track(name,data){try{if(window.umami&&umami.track)umami.track(name,data);}catch(e){}}
+/* PR リンクを押した数(どこの提携先か)を数える */
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[rel~="sponsored"]');if(!a)return;let to='';try{const u=new URL(a.href);to=u.hostname.replace(/^www\./,'');if(/afl\.rakuten|hb\.afl/.test(to))to='rakuten';else if(/tp\.media/.test(to))to='tp:'+(u.searchParams.get('campaign_id')||'');else if(/aviasales/.test(to))to='aviasales';else if(/valuecommerce/.test(to))to='vc';}catch(x){}track('pr',{to});},true);
 /* ================= v95 旅ポイント・旅人ランク・今日のお題 ================= */
 const PT_RATE={walk:10,bike:6,CYCLE:6,LUUP:6,WALK:10,BUS:3,FERRY:3,RAIL:2,REGIONAL_RAIL:2,SUBWAY:2,METRO:2,TRAM:2,MONORAIL:2,HIGHSPEED_RAIL:1.5,COACH:1.5,AIRPLANE:1,TAXI:1,car:1};
 const RANKS=[[0,'ご近所さん','🏠'],[10,'散歩好き','👟'],[50,'街歩きの人','🚶'],[150,'となり町まで','🚃'],[400,'小旅行家','🎒'],[1000,'旅人','🧭'],[3000,'大旅行家','🗾'],[10000,'世界の旅人','✈️'],[40075,'地球一周','🌏']];
@@ -1577,7 +1585,7 @@ function msCheck(t){if(!S.setup)return;if(t&&todayKey(t)!==todayKey())return;t=D
   if(!M_.all&&M_.list.every(x=>x.done)){M_.all=t;P.bal+=100;P.total+=100;addDiary({kind:'note',tag:'you',emoji:'🎉',text:'今日のお題を3つとも達成した(+100pt)。',t,noLedger:true});}
   if(any){dockSig='';save();}}
 function msBonus(p,t){if(!S.ms||S.ms.day!==todayKey(t))return 0;let b=0;const v=S.visited[PK(p)];for(const x of S.ms.list){if(x.done)continue;const m=MISSIONS.find(y=>y.id===x.id);if(m&&m.bonus)b+=m.bonus(p,v);}return b;}
-function ptExchange(n){const P=ptS();n=Math.floor(Math.min(n,P.bal)/100)*100;if(n<100){toast('100ptからお小遣いにできます','var(--ng)');return;}P.bal-=n;S.wallet+=n;try{ledger('harvest',n,Date.now());}catch(e){}addDiary({kind:'note',tag:'money',emoji:'⭐',text:'旅ポイント'+n.toLocaleString()+'ptを、お小遣い¥'+fmt(n)+'に替えた。',t:Date.now(),noLedger:true});dockSig='';save();toast('⭐ '+n+'pt → ¥'+fmt(n),'var(--acc)');}
+function ptExchange(n){track('pt_exchange');const P=ptS();n=Math.floor(Math.min(n,P.bal)/100)*100;if(n<100){toast('100ptからお小遣いにできます','var(--ng)');return;}P.bal-=n;S.wallet+=n;try{ledger('harvest',n,Date.now());}catch(e){}addDiary({kind:'note',tag:'money',emoji:'⭐',text:'旅ポイント'+n.toLocaleString()+'ptを、お小遣い¥'+fmt(n)+'に替えた。',t:Date.now(),noLedger:true});dockSig='';save();toast('⭐ '+n+'pt → ¥'+fmt(n),'var(--acc)');}
 function ptCardHTML(){if(!S.setup)return '';const P=ptS();const t=Date.now();const M_=msToday(t);const ri=rankOf(P.km);const R=RANKS[ri],Nx=RANKS[Math.min(RANKS.length-1,ri+1)];const pct=ri>=RANKS.length-1?100:Math.min(100,Math.round((P.km-R[0])/(Nx[0]-R[0])*100));
   const chips=M_.list.map(x=>{const m=MISSIONS.find(y=>y.id===x.id);if(!m)return '';const pr=m.prog?m.prog(t,P):null;return `<span class="msc${x.done?' ok':''}"><i>${x.done?'✓':m.e}</i>${esc(m.n)}${!x.done&&pr?`<small>${pr[0]}/${pr[1]}${pr[2]}</small>`:''}</span>`;}).join('');
   return `<button class="ptCard" data-dock="zukan"><div class="ptTop"><span class="rk"><i>${R[2]}</i><b>${esc(R[1])}</b></span><span class="pb"><i style="width:${pct}%"></i></span><span class="km">${P.km<100?P.km.toFixed(1):Math.round(P.km).toLocaleString()}<small>/${Nx[0].toLocaleString()}km</small></span><span class="pt">⭐${P.bal.toLocaleString()}</span></div><div class="msRow"><em>今日のお題</em>${chips}</div></button>`;}
@@ -1789,7 +1797,7 @@ function renderDest(){const el=$('destSheet');if(!el)return;const res=destSearch
   el.querySelectorAll('[data-dsdel]').forEach(b=>b.onclick=()=>{S.plans=(S.plans||[]).filter(p=>String(p.id)!==b.dataset.dsdel);save();toast('予定を取り消した','var(--dim)');renderDest();dockSig='';});
   const go=$('dsGo');if(go)go.onclick=()=>destCommit();
   el.onclick=e=>{if(e.target===el||e.target.closest('[data-dsx]'))el.classList.remove('on');};}
-function destCommit(){const sel=destSel;if(!sel)return;const now=Date.now();
+function destCommit(){const sel=destSel;if(!sel)return;track('dest',{kind:sel.kind,range:destRange||'',when:destWhen});const now=Date.now();
   if(sel.kind==='place'){/* 近くの住所: いちばん近い店へ */let bi=-1,bd=400;POIS.forEach((p,i)=>{if(p.nv)return;const d=dist([p.la,p.lo],[sel.la,sel.lo]);if(d<bd){bd=d;bi=i;}});if(bi<0){toast('近くに寄れる所がありません','var(--ng)');return;}Object.assign(sel,{kind:'poi',i:bi,pk:PK(POIS[bi]),name:POIS[bi].n});}
   if(sel.kind==='poi'){if(destWhen==='now'){if(S.j.transit||S.j.cityTarget){toast('いま移動中なので、今日のうちに行く予定にしました','var(--acc)');destWhen='today';}else{const i=sel.i;addDiary({kind:'note',tag:'you',text:'あなたに「'+sel.name+'に行って」と言われたので、そこへ向かう。',t:now});S.j.straight=null;S.homeHold=0;go(i,now);toast(S.name+'が'+sel.name+'へ向かいます','var(--acc)');closeDest();save();return;}}
     {const date=destWhen==='tomorrow'?ymdLocal(now+864e5):ymdLocal(now);const same=(S.plans||[]).filter(p=>!p.done&&p.kind==='poi'&&p.date===date);const ord=same.reduce((m,p)=>Math.max(m,(p.ord||0)+1),0);
@@ -2439,7 +2447,7 @@ function storyHTML(d){const dt=new Date(d.k);const wd='日月火水木金土'[dt
     <div class="stStats"><span><b>${d.vis.length}</b>軒</span><span><b>${d.km.toFixed(1)}</b>km</span><span><b>¥${fmt(d.spent)}</b>使った</span>${d.towns.length?`<span>${esc(d.towns.slice(0,2).join('・'))}</span>`:''}</div>
     ${d.rides.length?`<div class="stRides">${esc(d.rides.slice(0,4).join(' → '))}</div>`:''}
     <div class="stBtns"><button id="stSave" class="buy">画像で保存・共有</button><button id="stMap">思い出マップ</button><button id="stInvite">友だちに教える</button><button id="stClose">閉じる</button></div>${adUnit(ADS.adsense.slotStory,'inStory')}</div>`;}
-function showStory(k,auto){k=k||todayKey();const d=storyData(k);let el=$('story');if(!el){el=document.createElement('div');el.id='story';document.body.appendChild(el);}
+function showStory(k,auto){track('story',{auto:!!auto});k=k||todayKey();const d=storyData(k);let el=$('story');if(!el){el=document.createElement('div');el.id='story';document.body.appendChild(el);}
   el.innerHTML=storyHTML(d);el.classList.remove('hidden');{const iv=el.querySelector('#stInvite');if(iv)iv.onclick=()=>shareApp();}setTimeout(()=>fillAds(el),50);if(auto){S.storyDay=k;save();}
   $('stClose').onclick=()=>el.classList.add('hidden');el.onclick=e=>{if(e.target===el)el.classList.add('hidden');};
   $('stMap').onclick=()=>{el.classList.add('hidden');openMemory(1);};
@@ -2448,22 +2456,37 @@ function loadImg(src){return new Promise(res=>{const im=new Image();im.crossOrig
 function wrapText(ctx,t,maxW){const out=[];let line='';for(const ch of t){if(ctx.measureText(line+ch).width>maxW&&line){out.push(line);line=ch;}else line+=ch;}if(line)out.push(line);return out;}
 async function saveStoryImage(d){const W0=1080,H0=1350;const cv=document.createElement('canvas');cv.width=W0;cv.height=H0;const c=cv.getContext('2d');
   const g=c.createLinearGradient(0,0,0,H0);g.addColorStop(0,'#fbf6ec');g.addColorStop(1,'#efe4cf');c.fillStyle=g;c.fillRect(0,0,W0,H0);
-  const FD='"Zen Maru Gothic","Noto Sans JP",sans-serif';const dt=new Date(d.k);
-  c.fillStyle='#8a9099';c.font='600 34px '+FD;c.fillText(`${dt.getFullYear()}.${dt.getMonth()+1}.${dt.getDate()} ${'日月火水木金土'[dt.getDay()]}曜日`,72,110);
-  c.fillStyle='#2a2f3a';c.font='700 64px '+FD;c.fillText(S.name+'の今日の話',72,190);
-  const pics=d.pics.length?d.pics:[{emoji:'🏠',pn:'家',color:'#e8dcc4'}];const n=pics.length;const pw=n===1?560:n===2?430:300,ph=pw*1.2;const gap=36;const total=n*pw+(n-1)*gap;let x0=(W0-total)/2;
-  for(let i=0;i<n;i++){const e=pics[i];const x=x0+i*(pw+gap),y=260+(i%2?26:0);c.save();c.translate(x+pw/2,y+ph/2);c.rotate((i%2?1:-1)*0.035);c.translate(-pw/2,-ph/2);
-    c.shadowColor='rgba(40,30,10,.25)';c.shadowBlur=24;c.shadowOffsetY=10;c.fillStyle='#fff';c.fillRect(0,0,pw,ph);c.shadowColor='transparent';
-    const ix=18,iy=18,iw=pw-36,ih=pw-36;const phs=e.pk&&S.photos[e.pk];const im=phs&&phs.src?await loadImg(phs.src):null;
-    if(im){const r=Math.max(iw/im.width,ih/im.height);const sw=iw/r,sh=ih/r;c.drawImage(im,(im.width-sw)/2,(im.height-sh)/2,sw,sh,ix,iy,iw,ih);}else{c.fillStyle=e.color||'#eee';c.fillRect(ix,iy,iw,ih);c.font=Math.round(iw*0.42)+'px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(e.emoji||'📍',ix+iw/2,iy+ih/2);c.textAlign='left';c.textBaseline='alphabetic';}
-    c.fillStyle='#3a3530';c.font='700 '+Math.round(pw*0.085)+'px '+FD;const cap=(e.pn||'').slice(0,12);c.fillText(cap,ix,iy+ih+Math.round(pw*0.14));c.restore();}
-  let y=260+ph+140;c.fillStyle='#2a2f3a';c.font='700 50px '+FD;for(const ln of wrapText(c,'「'+d.line+'」',W0-144)){c.fillText(ln,72,y);y+=72;}
-  y+=24;c.font='600 38px '+FD;c.fillStyle='#5b6270';const st=[d.vis.length+'軒',d.km.toFixed(1)+'km','¥'+fmt(d.spent)+'使った'].concat(d.towns.slice(0,2));c.fillText(st.join('  ·  '),72,y);
-  if(d.rides.length){y+=60;c.fillText(d.rides.slice(0,4).join(' → '),72,y);}
-  c.fillStyle='#d97f5a';c.fillRect(72,H0-120,60,6);c.fillStyle='#8a9099';c.font='600 30px '+FD;c.fillText('オフィストラベル · もう1人のわたしの一日',72,H0-72);
+  const FD='"Zen Maru Gothic","Noto Sans JP",sans-serif';const EM='"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';const dt=new Date(d.k);
+  const rr=(x,y,w,h,r)=>{c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();};
+  c.fillStyle='#8a9099';c.font='600 32px '+FD;c.fillText(`${dt.getFullYear()}.${dt.getMonth()+1}.${dt.getDate()} ${'日月火水木金土'[dt.getDay()]}曜日`+(d.towns.length?'  ·  '+d.towns.slice(0,2).join('・'):''),72,100);
+  c.fillStyle='#2a2f3a';c.font='800 62px '+FD;c.fillText(S.name+'の今日の話',72,178);
+  /* 写真 */
+  const pics=d.pics.length?d.pics:[{emoji:'🏠',pn:'家',color:'#e8dcc4'}];const n=pics.length;const pw=n===1?380:n===2?340:276,ph=pw*1.2;const gap=30;const total=n*pw+(n-1)*gap;let x0=(W0-total)/2;
+  for(let i=0;i<n;i++){const e=pics[i];const x=x0+i*(pw+gap),y=226+(i%2?22:0);c.save();c.translate(x+pw/2,y+ph/2);c.rotate((i%2?1:-1)*0.035);c.translate(-pw/2,-ph/2);
+    c.shadowColor='rgba(40,30,10,.25)';c.shadowBlur=22;c.shadowOffsetY=9;c.fillStyle='#fff';c.fillRect(0,0,pw,ph);c.shadowColor='transparent';
+    const ix=16,iy=16,iw=pw-32,ih=pw-32;const phs=e.pk&&S.photos[e.pk];const im=phs&&phs.src?await loadImg(phs.src):null;
+    if(im){const r=Math.max(iw/im.width,ih/im.height);const sw=iw/r,sh=ih/r;c.drawImage(im,(im.width-sw)/2,(im.height-sh)/2,sw,sh,ix,iy,iw,ih);}else{c.fillStyle=e.color||'#eee';c.fillRect(ix,iy,iw,ih);c.font=Math.round(iw*0.42)+'px '+EM;c.textAlign='center';c.textBaseline='middle';c.fillText(e.emoji||'📍',ix+iw/2,iy+ih/2);c.textAlign='left';c.textBaseline='alphabetic';}
+    c.fillStyle='#3a3530';c.font='700 '+Math.round(pw*0.085)+'px '+FD;c.fillText((e.pn||'').slice(0,11),ix,iy+ih+Math.round(pw*0.135));c.restore();}
+  /* もう1人の自分 + その日の道のり */
+  const rowY=226+ph+70,rowH=300;
+  try{const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="165 330 150 245" width="300" height="490">'+charSVG(240,561,{still:true})+'</svg>';const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));const im=await loadImg(url);if(im)c.drawImage(im,60,rowY-30,200,327);URL.revokeObjectURL(url);}catch(e){}
+  {const mx=290,my=rowY,mw=W0-mx-72,mh=rowH;c.save();rr(mx,my,mw,mh,28);c.fillStyle='#fffdf7';c.fill();c.clip();c.strokeStyle='rgba(0,0,0,.04)';c.lineWidth=2;for(let gx=mx;gx<mx+mw;gx+=40){c.beginPath();c.moveTo(gx,my);c.lineTo(gx,my+mh);c.stroke();}for(let gy=my;gy<my+mh;gy+=40){c.beginPath();c.moveTo(mx,gy);c.lineTo(mx+mw,gy);c.stroke();}
+    const tr=(S.trail[d.k]||[]).map(p=>[p[0],p[1]]);d.vis=d.vis.slice().sort((x,y)=>x.t-y.t);const vs=d.vis.filter(e=>e.pla!=null).map(e=>[e.pla,e.plo]);const pts=tr.concat(vs);if(!d.vis.length||!pts.length)pts.push([HOME.la,HOME.lo]);
+    let la0=1e9,la1=-1e9,lo0=1e9,lo1=-1e9;for(const p of pts){la0=Math.min(la0,p[0]);la1=Math.max(la1,p[0]);lo0=Math.min(lo0,p[1]);lo1=Math.max(lo1,p[1]);}
+    const cosl=Math.cos((la0+la1)/2*Math.PI/180);let sx=(lo1-lo0)*cosl||0.002,sy=(la1-la0)||0.002;const pad=40;const sc=Math.min((mw-pad*2)/sx,(mh-pad*2)/sy);const ox=mx+mw/2-((lo0+lo1)/2)*cosl*sc,oy=my+mh/2+((la0+la1)/2)*sc;const P=p=>[ox+p[1]*cosl*sc,oy-p[0]*sc];
+    if(tr.length>1){c.lineJoin='round';c.lineCap='round';for(const [w,col] of [[14,'#fff'],[7,'#d97f5a']]){c.strokeStyle=col;c.lineWidth=w;c.beginPath();tr.forEach((p,i)=>{const q=P(p);if(i)c.lineTo(q[0],q[1]);else c.moveTo(q[0],q[1]);});c.stroke();}}
+    {const seq=d.vis.filter(e=>e.pla!=null).sort((x,y)=>x.t-y.t).map(e=>[e.pla,e.plo]);if(seq.length>1){c.setLineDash([12,12]);c.lineCap='round';c.strokeStyle='rgba(217,127,90,.55)';c.lineWidth=4;c.beginPath();seq.forEach((p,i)=>{const q=P(p);if(i)c.lineTo(q[0],q[1]);else c.moveTo(q[0],q[1]);});c.stroke();c.setLineDash([]);}}
+    d.vis.filter(e=>e.pla!=null).forEach((e,i)=>{const q=P([e.pla,e.plo]);c.fillStyle='#fff';c.beginPath();c.arc(q[0],q[1],17,0,7);c.fill();c.fillStyle=e.color||'#d97f5a';c.beginPath();c.arc(q[0],q[1],13,0,7);c.fill();c.fillStyle='#fff';c.font='800 15px '+FD;c.textAlign='center';c.textBaseline='middle';c.fillText(String(i+1),q[0],q[1]+1);c.textAlign='left';c.textBaseline='alphabetic';});
+    c.restore();c.fillStyle='rgba(42,47,58,.75)';rr(mx+16,my+mh-52,250,38,19);c.fill();c.fillStyle='#fff';c.font='700 22px '+FD;c.fillText('🗺 '+d.km.toFixed(1)+'km の道のり',mx+32,my+mh-25);}
+  /* 一言・数字・ゲーム */
+  let y=rowY+rowH+86;c.fillStyle='#2a2f3a';c.font='800 46px '+FD;const L=wrapText(c,'「'+d.line+'」',W0-144).slice(0,2);for(const ln of L){c.fillText(ln,72,y);y+=64;}
+  y+=10;c.font='700 34px '+FD;c.fillStyle='#5b6270';const st=[d.vis.length+'軒',d.km.toFixed(1)+'km','¥'+fmt(d.spent)];if(d.rides.length)st.push(d.rides.slice(0,3).join('→'));c.fillText(st.join('  ·  '),72,y);
+  try{const Pt=ptS();const R=RANKS[rankOf(Pt.km)];const M_=S.ms&&S.ms.day===d.k?S.ms:null;y+=58;c.font='700 30px '+FD;c.fillStyle='#a8651a';c.fillText(R[2]+' '+R[1]+'  ·  ⭐'+Pt.bal.toLocaleString()+'pt'+(M_?'  ·  今日のお題 '+M_.list.filter(x=>x.done).length+'/3':''),72,y);}catch(e){}
+  c.fillStyle='#d97f5a';c.fillRect(72,H0-104,60,6);c.fillStyle='#5b6270';c.font='700 28px '+FD;c.fillText('オフィストラベル  kusayakyu-navi.com/office-travel',72,H0-58);c.fillStyle='#8a9099';c.font='600 24px '+FD;c.textAlign='right';c.fillText('#もう1人の自分',W0-72,H0-58);c.textAlign='left';
   const blob=await new Promise(r=>cv.toBlob(r,'image/png'));if(!blob)throw new Error('toBlob');const file=new File([blob],'kyou-no-hanashi-'+d.k.replace(/\s/g,'-')+'.png',{type:'image/png'});
-  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:S.name+'の今日の話',text:d.line});return;}catch(e){if(e&&e.name==='AbortError')return;}}
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file.name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);toast('画像を保存した','var(--acc)');}
+  const text=S.name+'の今日の話「'+d.line+'」 #もう1人の自分 #オフィストラベル '+shareURL('story');track('share',{what:'story'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:S.name+'の今日の話',text});return;}catch(e){if(e&&e.name==='AbortError')return;}}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file.name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);try{await navigator.clipboard.writeText(text);toast('画像を保存して、投稿の文をコピーした','var(--acc)');}catch(e){toast('画像を保存した','var(--acc)');}}
 function maybeStory(now){if(!S.setup||document.visibilityState!=='visible')return;const k=todayKey(now);if(S.storyDay===k)return;const w=jobWindow(now);const endT=w?w.en:new Date(now).setHours(21,0,0,0);if(now<endT)return;if(!$('modal').classList.contains('hidden'))return;if(S.diary.filter(e=>todayKey(e.t)===k).length<2)return;showStory(k,true);}
 function seasonDecor(d,n){const m=d.getMonth()+1;const ss=seasonNow(d.getTime());
   if(ss.sakura)return seasonDecorBase(new Date(d.getFullYear(),3,5),n);
@@ -2672,7 +2695,7 @@ function rugSVG(R){const k=R.k.rug,c=R.rug.c;
 function roomPreviewSVG(room,wear){ROOM_PV={room,wear};let g='';try{g=drawScene()||'';}catch(e){console.warn('pv',e);}ROOM_PV=null;return g.replace(/id="([^"]+)"/g,'id="pv_$1"').replace(/url\(#([^)]+)\)/g,'url(#pv_$1)');}
 /* ================= ショップ(きせかえ・もようがえ) ================= */
 let shop={tab:'wear',slot:'hat',tryW:{},tryR:{},arm:null};
-function openShop(tab,slot){let el=$('shopSheet');if(!el){el=document.createElement('div');el.id='shopSheet';document.body.appendChild(el);el.onclick=e=>{if(e.target===el)closeShop();};}
+function openShop(tab,slot){track('shop',{tab:tab||'wear'});let el=$('shopSheet');if(!el){el=document.createElement('div');el.id='shopSheet';document.body.appendChild(el);el.onclick=e=>{if(e.target===el)closeShop();};}
   shop.tab=tab||shop.tab||'wear';shop.slot=slot||(shop.tab==='room'?'wall':shop.tab==='wear'?'hat':shop.slot);shop.tryW={};shop.tryR={};shop.arm=null;el.classList.add('on');renderShop();}
 function closeShop(){const el=$('shopSheet');if(el)el.classList.remove('on');shop.tryW={};shop.tryR={};shop.arm=null;homeSig='';try{drawScene();}catch(e){}}
 function shopPriceTag(cat,slot,key){const it=itemOf(cat,slot,key);if(isOwned(cat,slot,key))return it.t==='free'?'<i class="tg f">無料</i>':'<i class="tg o">持っている</i>';if(it.t==='coin')return `<i class="tg c">¥${fmt(it.p)}</i>`;return '<i class="tg p">パック</i>';}
@@ -2728,7 +2751,7 @@ function renderShop(){const el=$('shopSheet');if(!el)return;const cat=shop.tab==
     save();homeSig='';try{drawScene();}catch(e){}toast(it.n+'を買いました','var(--acc)');renderShop();};}
   {const ok=$('shKeyOk');if(ok)ok.onclick=()=>redeemKey(($('shKey').value||'').trim());}}
 /* 応援パック: Lemon Squeezy のライセンスキーを確かめる(公開の確認口。キーだけを送る) */
-async function redeemKey(key){if(!key||key.length<16){toast('キーが短いようです','var(--ng)');return;}const cfg=ADS.shop||{};if(!cfg.on){toast('応援パックはまだ準備中です','var(--ng)');return;}
+async function redeemKey(key){track('pack_key');if(!key||key.length<16){toast('キーが短いようです','var(--ng)');return;}const cfg=ADS.shop||{};if(!cfg.on){toast('応援パックはまだ準備中です','var(--ng)');return;}
   try{const r=await fetch('https://api.lemonsqueezy.com/v1/licenses/validate',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/x-www-form-urlencoded'},body:'license_key='+encodeURIComponent(key)});const J=await r.json();
     if(!J||!J.valid){toast('このキーは使えませんでした','var(--ng)');return;}const m=J.meta||{};if(cfg.store&&+m.store_id!==+cfg.store){toast('このアプリのキーではないようです','var(--ng)');return;}
     const got=Object.entries(cfg.packs||{}).filter(([k,p])=>(p.variants||[]).map(Number).includes(+m.variant_id)||(p.products||[]).map(Number).includes(+m.product_id)).map(([k])=>k);
@@ -3138,7 +3161,7 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
     h+='<div class="sec">データの出典</div><div class="note">地図・店: © OpenStreetMap contributors / 乗換: Transitous / 海外の見どころ: <a href="https://en.wikivoyage.org/" target="_blank" rel="noopener">Wikivoyage</a>(CC BY-SA 4.0) / 国の情報: Wikidata / 安全情報: 外務省海外安全ホームページ / 地震: 気象庁 / 祝日: holidays-jp / 市区町村: 国土地理院 / 為替: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a> / 写真: Wikimedia Commons / 観光地の説明: Wikipedia 日本語版(CC BY-SA 4.0) / 宿: <a href="https://webservice.rakuten.co.jp/" target="_blank" rel="noopener">Supported by Rakuten Developers</a></div>';
-    h+='<div class="note">版: v95 (2026-09-19)</div>';
+    h+='<div class="note">版: v96 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;setTimeout(()=>{try{paginatePanel();}catch(e){console.warn('pg',e);}try{fillAds(panel);}catch(e){}},0);$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
@@ -3371,7 +3394,7 @@ function showWelcome(){let el=$('welcome');if(!el){el=document.createElement('di
   $('wcStart').onclick=()=>{el.classList.remove('on');showSetup();};
   const tr=$('wcTry');if(tr)tr.onclick=()=>{el.classList.remove('on');showSetup();setTimeout(()=>{try{const sm=$('sSample');if(sm)sm.click();const ok=$('sOk');if(ok)ok.click();}catch(e){console.warn('try',e);}},60);};}
 /* 友だちに教える */
-async function shareApp(){const data={title:'オフィストラベル',text:'働いている間、もう1人の自分が本物の街を歩くアプリ。'+(S.setup&&S.diary.length?S.name+'は今日も出かけてる。':''),url:'https://kusayakyu-navi.com/office-travel/'};
+async function shareApp(){track('share',{what:'app'});const data={title:'オフィストラベル',text:'働いている間、もう1人の自分が本物の街を歩くアプリ。'+(S.setup&&S.diary.length?S.name+'は今日も出かけてる。':''),url:shareURL('invite')};
   try{if(navigator.share){await navigator.share(data);return;}}catch(e){if(e&&e.name==='AbortError')return;}
   try{await navigator.clipboard.writeText(data.text+' '+data.url);toast('リンクをコピーした。LINEやXに貼ってね','var(--acc)');}catch(e){showText('このリンクを送ってください',data.url);}}
 (function boot(){try{loadAds();}catch(e){}

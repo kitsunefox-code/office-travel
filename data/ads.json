@@ -48,5 +48,9 @@
   "_note": "楽天ウェブサービスのアプリID と アクセスキー。『楽天APIキーを入れる.bat』で入れる。許可するWebサイトに kusayakyu-navi.com を登録したアプリのもの",
   "appId": "",
   "accessKey": ""
+ },
+ "umami": {
+  "_note": "Umami Cloud(無料・Cookieなし)の Website ID。入れるとアクセス解析が動く。秘密の値ではない",
+  "id": ""
  }
 }
