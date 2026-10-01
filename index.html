@@ -154,6 +154,7 @@
   #mapLoad{position:absolute;left:10px;right:10px;top:50%;transform:translateY(-50%);margin:0 auto;max-width:360px;background:rgba(250,246,238,.97);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);z-index:5;text-align:center}
 #mapLoad.hidden{display:none}
 #panel{z-index:40}
+#replay{position:fixed;inset:0;z-index:120;display:none;background:#f8f1e3}#replay.on{display:block}#rpCv{display:block}.rpUi{position:absolute;left:0;right:0;bottom:130px;display:flex;justify-content:center;gap:10px;pointer-events:none}.rpUi button{pointer-events:auto;padding:12px 22px;border-radius:999px;border:0;background:var(--acc);color:#fff;font:800 16px var(--fd);box-shadow:0 6px 16px rgba(0,0,0,.2)}#rpX{position:fixed;right:14px;top:140px;width:40px;height:40px;padding:0!important;background:rgba(42,47,58,.7)!important}.rpHint{position:absolute;left:0;right:0;bottom:190px;text-align:center;font:700 12px var(--fd);color:#5b6270}
 .ov.mailbox{display:flex;align-items:center;gap:3px;padding:5px 9px;border-radius:12px;background:#c8503c;color:#fff;font:800 13px/1 var(--fd);box-shadow:0 3px 8px rgba(0,0,0,.2)}.ov.mailbox span{font-size:18px}.ov.mailbox em{font-style:normal;background:#fff;color:#c8503c;border-radius:999px;padding:2px 6px;font-size:12px}.ov.mailbox small{font-size:11px;opacity:.85}.ov.mailbox.new{animation:mbx 1.6s ease-in-out infinite}@keyframes mbx{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 #cardSheet{position:fixed;inset:0;z-index:96;background:rgba(20,16,10,.45);display:none;align-items:flex-end;justify-content:center}#cardSheet.on{display:flex}
 .pcard{display:grid;grid-template-columns:44% 1fr;gap:0;background:#fffdf7;border-radius:6px;margin:10px 2px 14px;box-shadow:0 6px 18px rgba(40,30,10,.18);overflow:hidden;transform:rotate(-.6deg)}.pcard:nth-child(odd){transform:rotate(.6deg)}
@@ -1559,6 +1560,51 @@ function snsLinks(v){if(!v||!v.sns)return '';const L=[];const h=(u,base)=>/^http
 
 
 
+
+/* ================= v101 1日を再生 ================= */
+let RP=null;
+function openReplay(k){k=k||todayKey();const es=S.diary.filter(e=>todayKey(e.t)===k).sort((a,b)=>a.t-b.t);const tr=(S.trail[k]||[]).map(p=>({la:p[0],lo:p[1],t:p[2]*60000}));
+  const vis=es.filter(e=>e.kind==='visit'&&e.pla!=null&&!e.lodging);if(tr.length<2&&vis.length<1){toast('この日は再生できる動きがありません','var(--ng)');return;}
+  /* 道のりが少ない時は、家→寄った順でつなぐ */
+  let path=tr.slice();const covers=tr.length>=6&&vis.every(e=>e.t>=tr[0].t-20*60000&&e.t<=tr[tr.length-1].t+20*60000);if(!covers&&vis.length){const back=es.filter(e=>/家に帰る/.test(e.text||'')).map(e=>e.t);path=[{la:HOME.la,lo:HOME.lo,t:vis[0].t-30*60000}];for(const e of vis){const hb=back.find(x=>x<e.t&&x>path[path.length-1].t);if(hb)path.push({la:HOME.la,lo:HOME.lo,t:hb});path.push({la:e.pla,lo:e.plo,t:e.t});}const last=back.filter(x=>x>vis[vis.length-1].t)[0];if(last)path.push({la:HOME.la,lo:HOME.lo,t:last});}
+  const caps=es.filter(e=>!/^(自分のベッド|今日はここまで|少し疲れた。ベッド)/.test(e.text||'')&&(e.kind==='visit'||['think','you','wx','ride','money'].includes(diaryTag(e))||e.emoji)).map(e=>({t:e.t,text:String(e.text||'').replace(/<[^>]+>/g,''),em:e.emoji||(KIND[(S.book[e.pk]||{}).k]||{}).e||''}));
+  let la0=1e9,la1=-1e9,lo0=1e9,lo1=-1e9;for(const p of path){la0=Math.min(la0,p.la);la1=Math.max(la1,p.la);lo0=Math.min(lo0,p.lo);lo1=Math.max(lo1,p.lo);}
+  const spent=es.reduce((a,e)=>a+(e.cost||0),0);const km=trailKm(k);
+  let el=$('replay');if(!el){el=document.createElement('div');el.id='replay';document.body.appendChild(el);}
+  el.innerHTML='<canvas id="rpCv"></canvas><div class="rpUi"><button id="rpPlay">▶ 再生</button><button id="rpX">✕</button></div><div class="rpHint">画面収録すると、そのまま縦長の動画になります</div>';el.classList.add('on');
+  RP={k,path,vis,caps,box:[la0,la1,lo0,lo1],t0:path[0].t,t1:path[path.length-1].t,spent,km,start:0,shown:new Set(),dur:18000};track('replay');
+  $('rpX').onclick=closeReplay;$('rpPlay').onclick=()=>{RP.start=performance.now();RP.shown=new Set();$('rpPlay').style.display='none';el.querySelector('.rpHint').style.display='none';};drawReplay();}
+function closeReplay(){const el=$('replay');if(el)el.classList.remove('on');RP=null;}
+function drawReplay(){if(!RP)return;const cv=$('rpCv');if(!cv)return;const dpr=Math.min(2,window.devicePixelRatio||1);const W=innerWidth,H=innerHeight;if(cv.width!==Math.round(W*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.width=W+'px';cv.style.height=H+'px';}
+  const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);const FD='"Zen Maru Gothic","Noto Sans JP",sans-serif';
+  const el_=RP.start?performance.now()-RP.start:0;const prog=Math.min(1,el_/RP.dur);const tNow=RP.t0+(RP.t1-RP.t0)*prog;const ending=el_>RP.dur+300;
+  /* 背景 */
+  const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#f8f1e3');g.addColorStop(1,'#efe4cf');c.fillStyle=g;c.fillRect(0,0,W,H);
+  const [la0,la1,lo0,lo1]=RP.box;const top=190,bot=H-170;const cosl=Math.cos((la0+la1)/2*Math.PI/180);const spanX=Math.max((lo1-lo0)*cosl,0.004),spanY=Math.max(la1-la0,0.004);const sc=Math.min((W-110)/spanX,(bot-top)/spanY)*0.9;
+  const cx=W/2,cy=(top+bot)/2,mlo=(lo0+lo1)/2,mla=(la0+la1)/2;const P=(la,lo)=>[cx+(lo-mlo)*cosl*sc,cy-(la-mla)*sc];
+  /* 本物の道(街のデータがあれば) */
+  if(M&&M.nodes&&M.edges&&dist([mla,mlo],[M.center[0],M.center[1]])<20000){c.lineCap='round';for(const pass of [0,1]){for(const e of M.edges){const a=M.nodes[e[0]],b=M.nodes[e[1]];if(!a||!b)continue;const [x1,y1]=P(a[0],a[1]),[x2,y2]=P(b[0],b[1]);if((x1<-20&&x2<-20)||(x1>W+20&&x2>W+20)||(y1<-20&&y2<-20)||(y1>H+20&&y2>H+20))continue;const wd=e[3]||1;c.strokeStyle=pass?'#fffdf7':'#e2d6bf';c.lineWidth=(pass?1:3)+wd*(pass?1.6:2);c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();}}}
+  /* 家 */
+  {const [hx,hy]=P(HOME.la,HOME.lo);if(hx>0&&hx<W&&hy>0&&hy<H){c.font='22px "Segoe UI Emoji","Apple Color Emoji",sans-serif';c.textAlign='center';c.fillText('🏠',hx,hy+8);}}
+  /* ここまでの道のり */
+  const pts=RP.path.filter(p=>p.t<=tNow);let cur=pts.length?pts[pts.length-1]:RP.path[0];{const nx=RP.path.find(p=>p.t>tNow);if(nx&&pts.length){const a=pts[pts.length-1];const f=(tNow-a.t)/Math.max(1,nx.t-a.t);cur={la:a.la+(nx.la-a.la)*f,lo:a.lo+(nx.lo-a.lo)*f};}}
+  if(pts.length){c.lineJoin='round';c.lineCap='round';for(const [w,col] of [[11,'#fff'],[6,'#d97f5a']]){c.strokeStyle=col;c.lineWidth=w;c.beginPath();pts.concat([cur]).forEach((p,i)=>{const [x,y]=P(p.la,p.lo);if(i)c.lineTo(x,y);else c.moveTo(x,y);});c.stroke();}}
+  /* 寄った店(着いたらポン) */
+  RP.vis.forEach((e,i)=>{if(e.t>tNow)return;const [x,y]=P(e.pla,e.plo);const age=RP.start?Math.min(1,(tNow-e.t)/((RP.t1-RP.t0)*0.04+1)):1;const s_=age<1?0.4+age*0.9:1;c.save();c.translate(x,y);c.scale(s_,s_);c.fillStyle='#fff';c.beginPath();c.arc(0,0,17,0,7);c.fill();c.fillStyle=e.color||'#d97f5a';c.beginPath();c.arc(0,0,14,0,7);c.fill();c.font='16px "Segoe UI Emoji","Apple Color Emoji",sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(e.emoji||'📍',0,1);c.restore();
+    c.font='700 11px '+FD;c.textAlign='center';const nm=(e.pn||'').slice(0,10);const tw=c.measureText(nm).width+10;c.fillStyle='rgba(255,255,255,.92)';c.beginPath();c.roundRect(x-tw/2,y+19,tw,17,8);c.fill();c.fillStyle='#3a3530';c.fillText(nm,x,y+31);});
+  /* ちびキャラ */
+  {const [x,y]=P(cur.la,cur.lo);const walking=RP.start&&prog<1;const fr=walking?1+(Math.floor(performance.now()/170)%2):0;const sp=chibiSprite(fr);c.fillStyle='rgba(0,0,0,.2)';c.beginPath();c.ellipse(x,y+2,11,4,0,0,7);c.fill();if(sp){const h_=70,w_=h_*84/100;c.drawImage(sp,x-w_/2,y-h_+2,w_,h_);}}
+  /* 上: 日記のことば */
+  const cap=RP.caps.filter(x=>x.t<=tNow).slice(-1)[0];c.textAlign='left';c.textBaseline='alphabetic';
+  c.fillStyle='rgba(255,253,247,.96)';c.beginPath();c.roundRect(16,28,W-32,104,20);c.fill();c.fillStyle='#8a9099';c.font='700 13px '+FD;const dt=new Date(RP.k);c.fillText(`${dt.getMonth()+1}月${dt.getDate()}日  ${S.name}の一日`,32,52);
+  if(cap){c.fillStyle='#2a2f3a';c.font='700 16px '+FD;const L=wrapText(c,(cap.em?cap.em+' ':'')+cap.text,W-64).slice(0,3);L.forEach((ln,i)=>c.fillText(ln,32,78+i*22));}
+  /* 下: 時刻・距離・お金 */
+  {const kmNow=RP.km*prog;const spentNow=RP.caps.length?S.diary.filter(e=>todayKey(e.t)===RP.k&&e.t<=tNow).reduce((a,e)=>a+(e.cost||0),0):0;c.fillStyle='rgba(42,47,58,.9)';c.beginPath();c.roundRect(16,H-112,W-32,72,20);c.fill();c.fillStyle='#fff';c.font='800 30px '+FD;c.fillText(fmtT(tNow),34,H-64);c.font='700 15px '+FD;c.fillStyle='#e9c46a';c.textAlign='right';c.fillText(kmNow.toFixed(1)+'km  ·  ¥'+fmt(spentNow),W-34,H-66);c.textAlign='left';c.fillStyle='rgba(255,255,255,.6)';c.font='600 11px '+FD;c.fillText('オフィストラベル · #もう1人の自分',34,H-50+2);}
+  /* 最後: まとめ */
+  if(ending){const a=Math.min(1,(el_-RP.dur-300)/600);c.fillStyle='rgba(248,241,227,'+(0.92*a)+')';c.fillRect(0,0,W,H);c.globalAlpha=a;c.textAlign='center';c.fillStyle='#2a2f3a';c.font='800 26px '+FD;c.fillText(S.name+'の今日',W/2,H*0.36);c.font='700 18px '+FD;c.fillStyle='#5b6270';c.fillText(RP.vis.length+'軒  ·  '+RP.km.toFixed(1)+'km  ·  ¥'+fmt(RP.spent),W/2,H*0.36+40);
+    const sp=chibiSprite(0);if(sp)c.drawImage(sp,W/2-42,H*0.42,84,100);c.fillStyle='#d97f5a';c.font='800 17px '+FD;c.fillText('働いている間に、もう1人の自分が旅をする',W/2,H*0.66);c.fillStyle='#5b6270';c.font='700 14px '+FD;c.fillText('オフィストラベル  kusayakyu-navi.com/office-travel',W/2,H*0.66+30);c.fillText('#もう1人の自分',W/2,H*0.66+54);c.globalAlpha=1;c.textAlign='left';
+    if(el_>RP.dur+4500&&$('rpPlay')){$('rpPlay').style.display='';$('rpPlay').textContent='↺ もう一度';}}
+  requestAnimationFrame(drawReplay);}
 /* ================= v99 ペットと暮らす ================= */
 const PET_KIND={cat:{n:'猫',hogo:'保護猫',init:50000,day:170,hotel:3000,cols:[['茶トラ','#e0a060'],['黒','#3a3a42'],['白','#f4f1ea'],['三毛','#f4efe6']],names:['こむぎ','きなこ','もち','ソラ','ミケ','ムギ','ルナ','タマ']},
  dog:{n:'犬',hogo:'保護犬',init:80000,day:270,hotel:4500,cols:[['茶','#d9a066'],['白','#f4efe6'],['黒','#3a3a42']],names:['ハル','ココ','レオ','マロン','チョコ','コタロウ','モカ','ポチ']}};
@@ -2613,11 +2659,12 @@ function storyHTML(d){const dt=new Date(d.k);const wd='日月火水木金土'[dt
     <div class="stLine">「${esc(d.line)}」</div>
     <div class="stStats"><span><b>${d.vis.length}</b>軒</span><span><b>${d.km.toFixed(1)}</b>km</span><span><b>¥${fmt(d.spent)}</b>使った</span>${d.towns.length?`<span>${esc(d.towns.slice(0,2).join('・'))}</span>`:''}</div>
     ${d.rides.length?`<div class="stRides">${esc(d.rides.slice(0,4).join(' → '))}</div>`:''}
-    <div class="stBtns"><button id="stSave" class="buy">画像で保存・共有</button><button id="stMap">思い出マップ</button><button id="stInvite">友だちに教える</button><button id="stClose">閉じる</button></div>${adUnit(ADS.adsense.slotStory,'inStory')}</div>`;}
+    <div class="stBtns"><button id="stSave" class="buy">画像で保存・共有</button><button id="stReplay">🎬 1日を再生</button><button id="stMap">思い出マップ</button><button id="stInvite">友だちに教える</button><button id="stClose">閉じる</button></div>${adUnit(ADS.adsense.slotStory,'inStory')}</div>`;}
 function showStory(k,auto){track('story',{auto:!!auto});k=k||todayKey();const d=storyData(k);let el=$('story');if(!el){el=document.createElement('div');el.id='story';document.body.appendChild(el);}
   el.innerHTML=storyHTML(d);el.classList.remove('hidden');{const iv=el.querySelector('#stInvite');if(iv)iv.onclick=()=>shareApp();}setTimeout(()=>fillAds(el),50);if(auto){S.storyDay=k;save();}
   $('stClose').onclick=()=>el.classList.add('hidden');el.onclick=e=>{if(e.target===el)el.classList.add('hidden');};
   $('stMap').onclick=()=>{el.classList.add('hidden');openMemory(1);};
+  $('stReplay').onclick=()=>{el.classList.add('hidden');openReplay(k);};
   $('stSave').onclick=async()=>{const b=$('stSave');b.disabled=true;b.textContent='画像を作っています…';try{await saveStoryImage(d);}catch(e){console.warn(e);toast('画像を作れなかった','var(--ng)');}b.disabled=false;b.textContent='画像で保存・共有';};}
 function loadImg(src){return new Promise(res=>{const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=()=>res(null);im.src=src;setTimeout(()=>res(null),6000);});}
 function wrapText(ctx,t,maxW){const out=[];let line='';for(const ch of t){if(ctx.measureText(line+ch).width>maxW&&line){out.push(line);line=ch;}else line+=ch;}if(line)out.push(line);return out;}
@@ -3335,7 +3382,7 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
     h+='<div class="sec">データの出典</div><div class="note">地図・店: © OpenStreetMap contributors / 乗換: Transitous / 海外の見どころ: <a href="https://en.wikivoyage.org/" target="_blank" rel="noopener">Wikivoyage</a>(CC BY-SA 4.0) / 国の情報: Wikidata / 安全情報: 外務省海外安全ホームページ / 地震: 気象庁 / 祝日: holidays-jp / 市区町村: 国土地理院 / 為替: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a> / 写真: Wikimedia Commons / 観光地の説明: Wikipedia 日本語版(CC BY-SA 4.0) / 郷土料理: 農林水産省「うちの郷土料理」 / 宿: <a href="https://webservice.rakuten.co.jp/" target="_blank" rel="noopener">Supported by Rakuten Developers</a></div>';
-    h+='<div class="note">版: v100 (2026-09-19)</div>';
+    h+='<div class="note">版: v101 (2026-09-19)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;setTimeout(()=>{try{paginatePanel();}catch(e){console.warn('pg',e);}try{fillAds(panel);}catch(e){}},0);$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
