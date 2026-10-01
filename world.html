@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>オフィストラベル - 試作</title>
+<title>オフィスdeトラベル - 試作</title>
 <style>
   :root{--bg:#0e1420;--panel:rgba(15,20,32,.92);--fg:#f2f4f8;--dim:#9aa4b8;--acc:#ffcc4d;--ok:#6ee7a1;--ng:#ff7b7b;--ad:#7cc4ff;}
   *{box-sizing:border-box}
@@ -47,7 +47,7 @@
   <span id="boost" class="badge boost hidden">臨時列車 ×2</span>
   <span id="region" class="badge"></span>
   <span id="dist" class="badge"></span>
-  <span class="badge" style="color:var(--dim)">オフィストラベル</span>
+  <span class="badge" style="color:var(--dim)">オフィスdeトラベル</span>
 </div>
 <div id="btns">
   <button id="bBuild">建設</button>
@@ -311,7 +311,7 @@ function renderPanel(){if(!tab)return;let h='';
     h+=`<div class="row"><div>今日の記録<small>移動 ${fmt(tb.dist)}km / 到着 ${tb.places}都市 / 収入 ¥${fmt(tb.money)} / 乗客 ${fmt(tb.pass)}人</small></div></div>`;
     h+=`<div class="row"><div>通算<small>走行 ${fmt(S.dist)}km(地球 ${(S.dist/40075).toFixed(2)}周ぶん) / 乗客 ${fmt(S.pass)}人 / 運行 ${S.trips}本</small></div></div>`;
     h+='<div style="margin-top:6px;font-size:12px">'+(S.log.length?S.log.slice().reverse().slice(0,40).map(e=>`<div style="padding:2px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:var(--dim)">${fmtTime(e.t)}</span> ${e.text}</div>`).join(''):'<div class="note">まだ出来事はありません。走らせておくと溜まります。</div>')+'</div>';}
-  if(tab==='more'){h+='<h3>オフィストラベル(試作)</h3>';
+  if(tab==='more'){h+='<h3>オフィスdeトラベル(試作)</h3>';
     h+=`<div class="row"><div>家と勤務時間<small>${S.home}の家 / ${S.work.days.map(d=>'日月火水木金土'[d]).join('')} ${fmtHM(S.work.start)}〜${fmtHM(S.work.end)}</small></div><button id="bSetup">設定</button></div>`;
     h+=`<div class="row"><div>もう1人の自分の名前<small>現在: ${S.alt.name}</small></div><button id="bName">変える</button></div>`;
     h+=`<div class="row"><div>小窓で開く<small>横長の別ウィンドウで表示(画面下に置く用)</small></div><button id="bPop">開く</button></div>`;
@@ -348,7 +348,7 @@ function watchAd(cb){if(S.adFree){cb();return;}
 
 /* おかえりモーダル */
 function showSetup(){const W=S.work;const days='日月火水木金土';
-  mbox.innerHTML=`<h2>オフィストラベル</h2><p>あなたが働いている間、${S.alt.name}が家から旅に出ます。電車・新幹線・飛行機、実際の所要時間で。</p>
+  mbox.innerHTML=`<h2>オフィスdeトラベル</h2><p>あなたが働いている間、${S.alt.name}が家から旅に出ます。電車・新幹線・飛行機、実際の所要時間で。</p>
    <div style="text-align:left;display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;margin:6px 0">
    <span>家</span><select id="sHome">${HOMES.map(h=>`<option ${h===S.home?'selected':''}>${h}</option>`).join('')}</select>
    <span>勤務</span><span><input id="sStart" type="time" value="${fmtHM(W.start)}"> 〜 <input id="sEnd" type="time" value="${fmtHM(W.end)}"></span>
