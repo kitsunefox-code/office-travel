@@ -2546,6 +2546,7 @@ function statusText(){const j=S.j;const A=S.name;
   if(j.state==='home'&&j.restUntil>Date.now())return '😴 家でひと眠り('+fmtT(j.restUntil)+'ごろ起きる)';
   if(j.state==='home'){const w=workWindow(Date.now());return !w?'🏠 今日はお休み':(Date.now()<w.st?'🏠 家 · '+fmtT(w.st)+'に出発':'🏠 家');}
   if(j.state==='walk'){const to=j.target>=0?POIS[j.target].n:'家';const rem=Math.max(0,(j.eta-Date.now())/1000);return '🚶 '+to+'へ あと'+Math.ceil(rem/60)+'分';}
+  if(j.state==='stay'&&j.at===-1&&!S.trip&&!j.transit)return '🏠 家で過ごしている';
   if(j.state==='stay'){const p=POIS[j.at];return (p?info(p).e+' '+p.n+'で'+info(p).label:'🚶 '+(M?M.name:'')+'の駅のまわりを歩いている');}return '';}
 
 /* ========== 描画 ========== */
