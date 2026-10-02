@@ -163,7 +163,15 @@ def extract(html, url):
             cands = [same] + [lines[k] for k in range(i - 1, max(-1, i - 4), -1)] + [lines[k] for k in range(i + 1, min(len(lines), i + 2))]
             for c in cands:
                 q = re.search(r"((?:[^\s「『、。]{0,10}(?:展|展示|企画|特集))?[「『][^」』]{2,50}[」』](?:展)?)", c)
-                if q: title = q.group(1); break
+                if q:
+                    title = q.group(1); st = q.start(1)
+                    # 「展示」の前が言葉の途中で切れていたら、区切り(空白・句読点・括弧)までさかのぼる。長すぎる時は括弧の中だけ
+                    if st > 0 and not re.match(r"[\s、。」』]", c[st - 1]):
+                        k = st
+                        while k > 0 and not re.match(r"[\s、。」』]", c[k - 1]) and st - k < 24: k -= 1
+                        if k == 0 or re.match(r"[\s、。」』]", c[k - 1]): title = c[k:q.end(1)]
+                        else: title = re.search(r"[「『][^」』]{2,50}[」』](?:展)?", title).group(0)
+                    break
                 if looks_title(c): title = c; break
             if title: items.append({"t": clean_title(title), "s": s.isoformat(), "e": e.isoformat(), "u": url})
     return items, p.links
