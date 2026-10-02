@@ -552,6 +552,21 @@ details.dwrap[open]>summary .dsum::after{content:'たたむ ▴';margin-left:aut
 #coach::after{content:'';position:absolute;left:var(--ax,140px);width:12px;height:12px;background:#2a2f3a;transform:translateX(-50%) rotate(45deg)}
 #coach.below::after{top:-5px}
 #coach.above::after{bottom:-5px}
+
+/* v107 */
+.sec.sec2{margin-top:14px!important;font-size:12.5px!important;color:var(--ink2)!important}
+#story .stCard{max-height:calc(100vh - 28px);overflow-y:auto;box-sizing:border-box}
+.refMap{position:relative;margin:10px 0 6px;border-radius:14px;overflow:hidden;background:#fffdf7;border:1px solid #eadfc8}
+.refMap svg{display:block;width:100%;height:auto}
+.refMap span{position:absolute;left:8px;bottom:8px;background:rgba(42,47,58,.78);color:#fff;font:700 11px/1 var(--fb);padding:5px 8px;border-radius:999px}
+.refFlow{margin:8px 0;display:flex;flex-direction:column;gap:4px}
+.refFlow>div{display:flex;gap:8px;font:500 12.5px/1.5 var(--fb);color:var(--ink)}
+.refFlow>div b{flex:none;font-variant-numeric:tabular-nums;color:var(--acc);font-weight:800;min-width:88px}
+.refFlow>div span{min-width:0}
+.refYou{margin:4px 0 0;font:700 12px/1.5 var(--fb);color:var(--ink2)}
+.refTom{margin:8px 0 10px;padding:9px 12px;border-radius:12px;background:#eef4f8;color:#24425a}
+.refTom b{font:800 12.5px/1.4 var(--fd)}
+.refTom ul{margin:4px 0 0;padding-left:18px;font:500 12.5px/1.6 var(--fb)}
 </style>
 </head>
 <body>
@@ -1157,7 +1172,7 @@ function isOpen(h,d){if(!h)return null;h=h.trim();if(h==='24/7')return true;cons
 let weatherAt=0;
 let weatherPos=null;
 async function updateWeather(){const j=S.j;const p=j.pos||[HOME.la,HOME.lo];const moved=weatherPos&&dist(weatherPos,p)>15000;if(!moved&&Date.now()-weatherAt<30*60000)return;weatherAt=Date.now();weatherPos=p.slice();
-  try{const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+p[0].toFixed(3)+'&longitude='+p[1].toFixed(3)+'&current=precipitation,weather_code,temperature_2m,apparent_temperature,wind_speed_10m&hourly=precipitation_probability,weather_code,temperature_2m&daily=sunrise,sunset&forecast_days=1&timezone=auto');if(!r.ok)return;const J=await r.json();const d=J.current;
+  try{const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+p[0].toFixed(3)+'&longitude='+p[1].toFixed(3)+'&current=precipitation,weather_code,temperature_2m,apparent_temperature,wind_speed_10m&hourly=precipitation_probability,weather_code,temperature_2m&daily=sunrise,sunset&forecast_days=2&timezone=auto');if(!r.ok)return;const J=await r.json();const d=J.current;
     const was=rainy();const hourly=[];try{const H=J.hourly;for(let i=0;i<H.time.length;i++)hourly.push({t:Date.parse(H.time[i]),pp:H.precipitation_probability[i],code:H.weather_code[i],temp:H.temperature_2m[i]});}catch(e){}
     let sunrise=null,sunset=null;try{sunrise=Date.parse(J.daily.sunrise[0]);sunset=Date.parse(J.daily.sunset[0]);}catch(e){}
     S.weather={t:Date.now(),code:d.weather_code,precip:d.precipitation,temp:d.temperature_2m,feel:d.apparent_temperature,wind:d.wind_speed_10m,hourly,sunrise,sunset,place:p.slice(),town:S.trip?S.trip.city:(S.townName||'')};
@@ -2054,6 +2069,36 @@ function showCoach(c,r){coachOn=true;coachCur=c;let el=$('coach');if(!el){el=doc
   el.innerHTML=`<p>${esc(c.text)}</p><button>わかった</button>`;el.classList.add('on');
   const done=()=>{S.coach[c.id]=1;save();el.classList.remove('on');coachOn=false;coachCur=null;setTimeout(coachCheck,1500);};el.querySelector('button').onclick=done;setTimeout(()=>{if(el.classList.contains('on')&&!S.coach[c.id])done();},12000);}
 setInterval(coachCheck,1200);
+
+/* ================= v107 ふりかえりカード ================= */
+function refRoute(d){const tr=(S.trail[d.k]||[]).map(p=>[p[0],p[1]]);const vis=d.vis.filter(e=>e.pla!=null).slice().sort((a,b)=>a.t-b.t);if(tr.length<2&&!vis.length)return '';
+  const pts=tr.concat(vis.map(e=>[e.pla,e.plo]));pts.push([HOME.la,HOME.lo]);let la0=1e9,la1=-1e9,lo0=1e9,lo1=-1e9;for(const p of pts){la0=Math.min(la0,p[0]);la1=Math.max(la1,p[0]);lo0=Math.min(lo0,p[1]);lo1=Math.max(lo1,p[1]);}
+  const W=320,H=150,pad=18;const cosl=Math.cos((la0+la1)/2*Math.PI/180);const sx=(lo1-lo0)*cosl||0.002,sy=(la1-la0)||0.002;const sc=Math.min((W-pad*2)/sx,(H-pad*2)/sy);
+  const P=p=>[(W/2+(p[1]-(lo0+lo1)/2)*cosl*sc).toFixed(1),(H/2-(p[0]-(la0+la1)/2)*sc).toFixed(1)];
+  const far=pts.some(p=>dist(p,[HOME.la,HOME.lo])>30000);
+  const line=tr.length>1?`<polyline points="${tr.map(p=>P(p).join(',')).join(' ')}" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><polyline points="${tr.map(p=>P(p).join(',')).join(' ')}" fill="none" stroke="#d97f5a" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>`:'';
+  const seq=vis.length>1?`<polyline points="${vis.map(e=>P([e.pla,e.plo]).join(',')).join(' ')}" fill="none" stroke="rgba(217,127,90,.5)" stroke-width="2" stroke-dasharray="5 5"/>`:'';
+  const h=P([HOME.la,HOME.lo]);const home=far?'':`<g><circle cx="${h[0]}" cy="${h[1]}" r="9" fill="#2a2f3a"/><text x="${h[0]}" y="${+h[1]+3.5}" text-anchor="middle" font-size="10">🏠</text></g>`;
+  const dots=vis.slice(0,12).map((e,i)=>{const q=P([e.pla,e.plo]);return `<g><circle cx="${q[0]}" cy="${q[1]}" r="8" fill="#fff"/><circle cx="${q[0]}" cy="${q[1]}" r="6.2" fill="${e.color||'#d97f5a'}"/><text x="${q[0]}" y="${+q[1]+3}" text-anchor="middle" font-size="8" font-weight="800" fill="#fff">${i+1}</text></g>`;}).join('');
+  return `<div class="refMap"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet"><defs><pattern id="rg" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="rgba(0,0,0,.05)"/></pattern></defs><rect width="${W}" height="${H}" fill="url(#rg)"/>${line}${seq}${home}${dots}</svg><span>🗺 ${d.km.toFixed(1)}km の道のり</span></div>`;}
+function refFlow(d){const es=S.diary.filter(e=>todayKey(e.t)===d.k).slice().sort((a,b)=>a.t-b.t);const outs=[];let cur=null;
+  for(const e of es){const x=String(e.text||'');if(/^家を出る。/.test(x)){cur={t0:e.t,v:[],theme:''};const th=es.find(y=>Math.abs(y.t-e.t)<180000&&/今日の歩き方は「(.+?)」/.test(y.text||''));if(th)cur.theme=(th.text.match(/今日の歩き方は「(.+?)」/)||[])[1]||'';const dg=es.find(y=>Math.abs(y.t-e.t)<180000&&/^(朝の|夕方の)散歩。/.test(y.text||''));if(dg)cur.theme='🐕 '+(dg.text.match(/^(朝の|夕方の)/)||[''])[0]+'散歩';outs.push(cur);continue;}
+    if(/^家に帰る。/.test(x)&&cur){cur.t1=e.t;cur=null;continue;}if(cur&&e.kind==='visit')cur.v.push(e.pn);}
+  const W=wS(Date.now()).day===new Date(d.k).toDateString()?S.watch:null;const seen=es.filter(e=>e.seen).length,pick=es.filter(e=>/^分かれ道で/.test(e.text||'')).length,ch=es.filter(e=>/^あなたから「/.test(e.text||'')).length;
+  if(!outs.length&&!seen&&!pick&&!ch)return '';
+  return `<div class="refFlow">${outs.slice(0,5).map(o=>`<div><b>${fmtT(o.t0)}${o.t1?'–'+fmtT(o.t1):'–'}</b><span>${o.theme?esc(o.theme)+' · ':''}${o.v.length?esc(o.v.slice(0,4).join(' → '))+(o.v.length>4?' ほか':''):'寄り道なし'}</span></div>`).join('')}${seen||pick||ch?`<p class="refYou">${seen?`👀 いっしょに見た ${seen}回`:''}${pick?` · 🪧 あなたが選んだ ${pick}回`:''}${ch?` · 💬 声かけ ${ch}回`:''}</p>`:''}</div>`;}
+function tomorrowWx(){const w=S.weather;if(!w||!w.hourly)return null;const t0=new Date();t0.setDate(t0.getDate()+1);t0.setHours(9,0,0,0);const t1=t0.getTime()+9*3600e3;const H=w.hourly.filter(h=>h.t>=t0.getTime()&&h.t<=t1);if(H.length<4)return null;
+  const pp=Math.max(...H.map(h=>h.pp||0));const tmax=Math.round(Math.max(...H.map(h=>h.temp)));const cnt={};H.forEach(h=>{cnt[h.code]=(cnt[h.code]||0)+1;});const code=+Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];return {pp,tmax,code};}
+function refTomorrow(d){if(d.k!==todayKey())return '';const L=[];const tw=tomorrowWx();
+  if(tw)L.push(`明日は${wxText(tw.code)}・${tw.tmax}℃${tw.pp>=50?'・雨の確率'+tw.pp+'%。傘がいりそう':tw.pp>=30?'・雨の確率'+tw.pp+'%':'。出かけやすそう'}`);
+  {const off=dayOff(Date.now()+864e5);L.push(off?'明日はお休み。少し遠くへ行けるかも':'明日も仕事の日');}
+  if(S.bucket&&S.bucket.items){const b=S.bucket.items.find(i=>!i.done);if(b)L.push('今週やりたいこと: '+b.text+(b.target?'('+(b.progress||0)+'/'+b.target+')':''));}
+  {const wi=(S.wish||[]).map(k=>idxOf(k)).filter(i=>i>=0);if(wi.length)L.push('行きたいリストの'+POIS[wi[0]].n+'にも行けるかも');}
+  return L.length?`<div class="refTom"><b>明日は</b><ul>${L.map(x=>'<li>'+esc(x)+'</li>').join('')}</ul></div>`:'';}
+/* 見逃した日は次の朝に */
+const _maybeStoryV107=maybeStory;
+maybeStory=function(now){_maybeStoryV107(now);try{if(!S.setup||document.visibilityState!=='visible')return;const el=$('story');if(el&&!el.classList.contains('hidden'))return;if(!$('modal').classList.contains('hidden'))return;
+  const yk=todayKey(now-864e5);if(S.storyDay===yk||S.storyY===yk||hour(now)>=12)return;if(S.diary.filter(e=>todayKey(e.t)===yk).length<2)return;S.storyY=yk;save();showStory(yk,false);}catch(e){}};
 /* ================= v93 飛行機で遠くへ ================= */
 /* 近くの出発空港(家から150km以内)から、その空港への片道の最安 */
 function airMinTo(code){const mn=FLIGHTS_STATIC&&FLIGHTS_STATIC.min;if(!mn||!code)return null;const here=S.j.pos||[HOME.la,HOME.lo];let best=null;
@@ -2553,9 +2598,10 @@ const ICON={
 const TAG_JA={ride:'移動',think:'考えた',money:'お金',you:'あなた',arrive:'到着',wx:'天気',stay:'宿',farm:'畑',friend:'友達',sleep:'おやすみ',cloth:'服',note:'メモ',visit:'寄った'};
 let diaryFilter='all';const diaryOpen={};
 let panelPg={};
-function paginatePanel(){const kids=[...panel.children];const isHead=e=>e.classList&&(e.classList.contains('sec')||e.classList.contains('dday'));if(kids.filter(isHead).length<2)return;
+function paginatePanel(){const kids=[...panel.children];const isHead=e=>e.classList&&!e.classList.contains('sec2')&&(e.classList.contains('sec')||e.classList.contains('dday'));if(kids.filter(isHead).length<2)return;
   const groups=[];let cur=null;for(const el of kids){if(isHead(el)){cur={head:el,nodes:[]};groups.push(cur);continue;}if(cur)cur.nodes.push(el);}
-  const label=g=>{if(g.head.classList.contains('dday')){const b=g.head.querySelector('.dd b');return (g.head.querySelector('.dd em')?'今日':(b?b.textContent:'日'));}return g.head.textContent.replace(/[(（].*$/,'').replace(/\s+/g,'').trim().slice(0,9);};
+  const label=g=>{if(g.head.dataset&&g.head.dataset.pg)return g.head.dataset.pg;if(g.head.classList.contains('dday')){const b=g.head.querySelector('.dd b');return (g.head.querySelector('.dd em')?'今日':(b?b.textContent:'日'));}return g.head.textContent.replace(/[(（].*$/,'').replace(/\s+/g,'').trim().slice(0,9);};
+  for(let gi=groups.length-1;gi>0;gi--){const a=groups[gi-1],b=groups[gi];const pa=a.head.dataset&&a.head.dataset.pg,pb=b.head.dataset&&b.head.dataset.pg;if(pa&&pa===pb){b.head.classList.add('sec2');a.nodes.push(b.head,...b.nodes);groups.splice(gi,1);}}
   const key=tab;const sel=Math.min(panelPg[key]||0,groups.length-1);const bar=document.createElement('div');bar.className='pgbar';
   groups.forEach((g,i)=>{const w=document.createElement('div');w.className='pg'+(i===sel?' on':'');g.head.before(w);w.append(g.head,...g.nodes);g.w=w;
     const b=document.createElement('button');b.type='button';b.textContent=label(g);if(i===sel)b.className='on';
@@ -2894,11 +2940,11 @@ function storyData(k){const es=S.diary.filter(e=>todayKey(e.t)===k);const vis=es
   return {k,es,vis,pics,spent,km,towns,rides,line:seededPick(lines.length?lines:['今日も一日おつかれさま'],k+S.name)};}
 function storyHTML(d){const dt=new Date(d.k);const wd='日月火水木金土'[dt.getDay()];
   const pic=e=>{const ph=e.pk&&S.photos[e.pk];return `<div class="sp"><div class="spi" style="background:${e.color||'#eee'}">${ph&&ph.src?`<img src="${esc(ph.src)}" crossorigin="anonymous" alt="">`:`<span>${e.emoji||'📍'}</span>`}</div><div class="spc">${esc((e.pn||'').slice(0,14))}</div></div>`;};
-  return `<div class="stCard"><div class="stTop"><span>${dt.getMonth()+1}月${dt.getDate()}日(${wd})の話</span><b>${esc(S.name)}</b></div>
+  return `<div class="stCard"><div class="stTop"><span>${d.k===todayKey(Date.now()-864e5)?'きのう · ':''}${dt.getMonth()+1}月${dt.getDate()}日(${wd})の話</span><b>${esc(S.name)}</b></div>
     <div class="stPics">${d.pics.length?d.pics.map(pic).join(''):'<div class="sp none"><div class="spi"><span>🏠</span></div><div class="spc">家</div></div>'}</div>
     <div class="stLine">「${esc(d.line)}」</div>
-    <div class="stStats"><span><b>${d.vis.length}</b>軒</span><span><b>${d.km.toFixed(1)}</b>km</span><span><b>¥${fmt(d.spent)}</b>使った</span>${d.towns.length?`<span>${esc(d.towns.slice(0,2).join('・'))}</span>`:''}</div>
-    ${d.rides.length?`<div class="stRides">${esc(d.rides.slice(0,4).join(' → '))}</div>`:''}
+    ${refRoute(d)}<div class="stStats"><span><b>${d.vis.length}</b>軒</span><span><b>${d.km.toFixed(1)}</b>km</span><span><b>¥${fmt(d.spent)}</b>使った</span>${d.towns.length?`<span>${esc(d.towns.slice(0,2).join('・'))}</span>`:''}</div>
+    ${d.rides.length?`<div class="stRides">${esc(d.rides.slice(0,4).join(' → '))}</div>`:''}${refFlow(d)}${refTomorrow(d)}
     <div class="stBtns"><button id="stSave" class="buy">画像で保存・共有</button><button id="stReplay">🎬 1日を再生</button><button id="stMap">思い出マップ</button><button id="stInvite">友だちに教える</button><button id="stClose">閉じる</button></div>${adUnit(ADS.adsense.slotStory,'inStory')}</div>`;}
 function showStory(k,auto){track('story',{auto:!!auto});k=k||todayKey();const d=storyData(k);let el=$('story');if(!el){el=document.createElement('div');el.id='story';document.body.appendChild(el);}
   el.innerHTML=storyHTML(d);el.classList.remove('hidden');{const iv=el.querySelector('#stInvite');if(iv)iv.onclick=()=>shareApp();}setTimeout(()=>fillAds(el),50);if(auto){S.storyDay=k;save();}
@@ -3547,19 +3593,19 @@ function renderPanel(){if(!tab)return;let h='';
     if(S.j.transit){h+='<div class="sec">いまの乗り継ぎ</div>'+S.j.transit.legs.map(l=>`<div class="tl"><span class="tlt">${fmtT(l.t0)}</span><span class="tle">${l.mode==='WALK'?'🚶':l.mode==='CHECKIN'?'🛂':l.mode==='BAGGAGE'?'🧳':vehSVG(l.mode)}</span><span>${l.mode==='WALK'?'歩く':l.mode==='CHECKIN'?'搭乗手続き・保安検査':l.mode==='BAGGAGE'?'荷物を受け取る':rideName(l)}<br><small style="color:var(--ink2)">${l.from.n} → ${l.to.n}(${fmtT(l.t1)}着)</small></span></div>`).join('');}
     const today=todayKey();const es=S.diary.filter(e=>todayKey(e.t)===today);
     {const cw=curWalk(Date.now());const pick=S.walkPick&&S.walkPick.day===todayKey()?S.walkPick.k:'';const out=S.j.at!==-1||S.j.state==='walk'||S.trip;
-     h+='<div class="sec">散歩のしかた</div><button id="bOpenDest" class="buy" style="width:100%;margin:0 0 10px">📍 行き先を指示する</button><div class="note" style="margin:0 0 8px">'+(cw?'いまは「'+cw.e+' '+esc(cw.n)+'」。':'まだ決めていない。')+(pick?'あなたが選んだ歩き方で回ります。':'出かけるたびに'+esc(S.name)+'が気分で決めます(途中で変わることも)。')+'</div>'
+     h+='<div class="sec" data-pg="きょう">散歩のしかた</div><button id="bOpenDest" class="buy" style="width:100%;margin:0 0 10px">📍 行き先を指示する</button><div class="note" style="margin:0 0 8px">'+(cw?'いまは「'+cw.e+' '+esc(cw.n)+'」。':'まだ決めていない。')+(pick?'あなたが選んだ歩き方で回ります。':'出かけるたびに'+esc(S.name)+'が気分で決めます(途中で変わることも)。')+'</div>'
        +(()=>{const now=Date.now();const ok=WALKS.filter(w=>walkOK(w,now)),ng=WALKS.filter(w=>!walkOK(w,now)&&w.k!=='storm');const b=w=>'<button data-walk="'+w.k+'" class="'+(pick===w.k?'on':'')+'"><i>'+w.e+'</i>'+esc(w.n)+'</button>';return '<div class="wkg"><button data-walk="" class="'+(pick?'':'on')+'"><i>🎲</i>おまかせ</button>'+ok.map(b).join('')+'</div>'+(ng.length?'<details class="wkmore"><summary>いまは選べない歩き方('+ng.length+')</summary><div class="wkg">'+ng.map(w=>'<button disabled><i>'+w.e+'</i>'+esc(w.n)+'</button>').join('')+'</div><small>天気・時間・元気・財布で変わります</small></details>':'');})()
        +(out?'<button id="bComeHome" class="buy" style="width:100%;margin-top:4px">🏠 家に戻す</button>':(S.homeHold>Date.now()?'<div class="note">'+fmtT(S.homeHold)+'まで家にいます。</div>':''));}
     {const here=S.j.pos||[HOME.la,HOME.lo];const L=[];if(EXHIBITS)POIS.forEach((p,i)=>{if(p.nv)return;const xs=exNow(p);if(xs.length)L.push({p,i,x:xs[0],d:dist(here,[p.la,p.lo])});});L.sort((a,b)=>a.d-b.d);
-     if(L.length){h+='<div class="sec">近くの展示</div><div class="note" style="margin:0 0 8px">各館の公式サイトから週に1回集めています。</div>'+L.slice(0,8).map(o=>{const k=PK(o.p);const left=exDaysLeft(o.x);return `<div class="row exItem"><div>${esc(exTitle(o.x))}<small>${esc(o.p.n)} · ${exMD(o.x.e)}まで${left<=7?' <b style="color:var(--ng)">もうすぐ終わる</b>':''} · ${(o.d/1000).toFixed(1)}km</small></div><span><button data-exwish="${esc(k)}">${S.wish.includes(k)?'♥':'♡'}</button> <a href="${esc(o.x.u)}" target="_blank" rel="noopener">公式</a></span></div>`;}).join('');}}
-    h+='<div class="sec">今日の流れ</div>'+(es.length?es.map(e=>`<div class="tl"><span class="tlt">${fmtT(e.t)}</span><span class="tle">${e.emoji||(e.kind==='note'?'・':'')}</span><span>${e.text}${e.cost?'<span class="tlc">¥'+fmt(e.cost)+'</span>':''}</span></div>`).join(''):'<div class="note">まだ何も。</div>');
-    if(S.bucket){h+='<div class="sec">今週やりたいこと</div>'+S.bucket.items.map(i=>`<div class="row" style="display:block"><div style="display:flex;justify-content:space-between"><span>${i.done?'🎯 ':''}${i.text}</span><span style="color:var(--ink2)">${i.progress}/${i.target}</span></div><div class="bar"><i style="width:${Math.round(100*i.progress/i.target)}%"></i></div></div>`).join('');}
-    const pend=S.asks.filter(a=>!a.done);if(pend.length)h+='<div class="sec">相談中</div>'+pend.map(a=>`<div class="row" style="display:block"><div>${S.name}「${a.text}」</div><div class="opts" style="display:flex;gap:6px;margin-top:6px">${a.opts.map(o=>`<button data-ansp="${a.id}|${o.key}">${o.label}</button>`).join('')}</div></div>`).join('');
-    h+=`<div class="sec">今日の予定</div><div style="display:flex;flex-wrap:wrap;gap:6px">${Object.entries(PLAN_LABEL).map(([k,v])=>`<button data-plan2="${k}" class="${todayPlan(Date.now())===k?'on':''}">${v}</button>`).join('')}${(S.j.at===-1&&S.j.state!=='walk'&&!S.j.transit&&!S.trip)?'<button data-goout="1" class="buy">いま出かけて 🚶</button>':''}</div>`;
+     if(L.length){h+='<div class="sec sec2">近くの展示</div><div class="note" style="margin:0 0 8px">各館の公式サイトから週に1回集めています。</div>'+L.slice(0,8).map(o=>{const k=PK(o.p);const left=exDaysLeft(o.x);return `<div class="row exItem"><div>${esc(exTitle(o.x))}<small>${esc(o.p.n)} · ${exMD(o.x.e)}まで${left<=7?' <b style="color:var(--ng)">もうすぐ終わる</b>':''} · ${(o.d/1000).toFixed(1)}km</small></div><span><button data-exwish="${esc(k)}">${S.wish.includes(k)?'♥':'♡'}</button> <a href="${esc(o.x.u)}" target="_blank" rel="noopener">公式</a></span></div>`;}).join('');}}
+    h+='<div class="sec sec2">今日の流れ</div>'+(es.length?es.map(e=>`<div class="tl"><span class="tlt">${fmtT(e.t)}</span><span class="tle">${e.emoji||(e.kind==='note'?'・':'')}</span><span>${e.text}${e.cost?'<span class="tlc">¥'+fmt(e.cost)+'</span>':''}</span></div>`).join(''):'<div class="note">まだ何も。</div>');
+    if(S.bucket){h+='<div class="sec" data-pg="予定">今週やりたいこと</div>'+S.bucket.items.map(i=>`<div class="row" style="display:block"><div style="display:flex;justify-content:space-between"><span>${i.done?'🎯 ':''}${i.text}</span><span style="color:var(--ink2)">${i.progress}/${i.target}</span></div><div class="bar"><i style="width:${Math.round(100*i.progress/i.target)}%"></i></div></div>`).join('');}
+    const pend=S.asks.filter(a=>!a.done);if(pend.length)h+='<div class="sec" data-pg="予定">相談中</div>'+pend.map(a=>`<div class="row" style="display:block"><div>${S.name}「${a.text}」</div><div class="opts" style="display:flex;gap:6px;margin-top:6px">${a.opts.map(o=>`<button data-ansp="${a.id}|${o.key}">${o.label}</button>`).join('')}</div></div>`).join('');
+    h+=`<div class="sec" data-pg="予定">今日の予定</div><div style="display:flex;flex-wrap:wrap;gap:6px">${Object.entries(PLAN_LABEL).map(([k,v])=>`<button data-plan2="${k}" class="${todayPlan(Date.now())===k?'on':''}">${v}</button>`).join('')}${(S.j.at===-1&&S.j.state!=='walk'&&!S.j.transit&&!S.trip)?'<button data-goout="1" class="buy">いま出かけて 🚶</button>':''}</div>`;
     h+=`<div class="row" style="border:0;margin-top:6px"><div><b>行き先を指定する</b><small>いまから、ここへ向かう(勤務時間外でも出発。切符代は財布から)</small></div></div>
       <div style="display:flex;gap:4px;flex-wrap:wrap"><select id="rqCity" hidden><option value="">街を選ぶ</option><optgroup label="国内">${CITIES_JP.map(c=>`<option value="${c[0]}">${c[0]}</option>`).join('')}</optgroup><optgroup label="海外${flightsAvailable()?'':'(便データの準備中)'}">${CITIES_WORLD.map(c=>`<option value="${c[0]}" ${flightsAvailable()?'':'disabled'}>${c[0]}</option>`).join('')}</optgroup></select><input id="rqText" placeholder="街の名前・住所・駅名・施設名" style="flex:1;min-width:140px"><button id="rqGo" class="buy">行ってほしい</button>${S.trip?'<button id="rqHome">帰ってきて</button>':''}</div>
-      <div class="sec" style="margin-top:8px">国内</div><div class="chips">${CITIES_JP.slice(0,planMore.jp?999:14).map(c=>`<button data-city="${c[0]}">${c[0]}</button>`).join('')}${planMore.jp?'':'<button data-morecity="jp" style="color:var(--dim)">もっと…</button>'}</div>
-      <div class="sec">海外 ${flightsAvailable()?'✈ 便データあり':'(便データの準備中)'}</div>${S.goal?`<div class="goalBar"><div class="gh"><b>旅の貯金: ${esc(S.goal.name)}</b><small>${esc(S.goal.fn)}便 ¥${fmt(S.goal.need)}</small></div><div class="gb"><i style="width:${Math.min(100,S.wallet/S.goal.need*100).toFixed(0)}%"></i></div><div class="gf"><span>${S.wallet>=S.goal.need?'貯まった!':'あと ¥'+fmt(S.goal.need-S.wallet)}</span>${S.wallet>=S.goal.need?'<button id="bGoalGo" class="buy">行く</button>':''}<button id="bGoalX">やめる</button></div></div>`:''}<div class="chips">${CITIES_WORLD.slice(0,planMore.w?999:12).map(c=>`<button data-city="${c[0]}" ${flightsAvailable()?'':'disabled'}>${c[0]}</button>`).join('')}${planMore.w?'':'<button data-morecity="w" style="color:var(--dim)">もっと…</button>'}</div>
+      <div class="sec" data-pg="遠出" style="margin-top:8px">国内</div><div class="chips">${CITIES_JP.slice(0,planMore.jp?999:14).map(c=>`<button data-city="${c[0]}">${c[0]}</button>`).join('')}${planMore.jp?'':'<button data-morecity="jp" style="color:var(--dim)">もっと…</button>'}</div>
+      <div class="sec sec2">海外 ${flightsAvailable()?'✈ 便データあり':'(便データの準備中)'}</div>${S.goal?`<div class="goalBar"><div class="gh"><b>旅の貯金: ${esc(S.goal.name)}</b><small>${esc(S.goal.fn)}便 ¥${fmt(S.goal.need)}</small></div><div class="gb"><i style="width:${Math.min(100,S.wallet/S.goal.need*100).toFixed(0)}%"></i></div><div class="gf"><span>${S.wallet>=S.goal.need?'貯まった!':'あと ¥'+fmt(S.goal.need-S.wallet)}</span>${S.wallet>=S.goal.need?'<button id="bGoalGo" class="buy">行く</button>':''}<button id="bGoalX">やめる</button></div></div>`:''}<div class="chips">${CITIES_WORLD.slice(0,planMore.w?999:12).map(c=>`<button data-city="${c[0]}" ${flightsAvailable()?'':'disabled'}>${c[0]}</button>`).join('')}${planMore.w?'':'<button data-morecity="w" style="color:var(--dim)">もっと…</button>'}</div>
       ${S.request?`<div class="note" style="color:var(--ok)">📌 次の朝: ${S.request.name} へ向かう予定 <button id="rqClear">取り消す</button></div>`:''}`;
     h+=`<div class="note">遠出は朝に気分と財布で決めることもある。移動は乗換案内の実ダイヤ(新幹線・特急も本物の列車名)。${flightsAvailable()?'飛行機は Aviasales の便データ(6時間ごとに更新)で本物の便に乗る。':'飛行機の便データが届くまでは鉄道だけ。'}訪ねた街: ${Object.keys(S.cities).join('、')||'まだなし'}</div>`;}
   if(tab==='teach'){const T=S.taught;h+='<h3>教える</h3><div class="note">乗換案内に無い土地勘、店の好み、癖をあなたが教える。教えたことは機械の経路案内より優先される。</div>';
@@ -3616,7 +3662,7 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
     h+='<div class="sec">データの出典</div><div class="note">地図・店: © OpenStreetMap contributors / 乗換: Transitous / 海外の見どころ: <a href="https://en.wikivoyage.org/" target="_blank" rel="noopener">Wikivoyage</a>(CC BY-SA 4.0) / 国の情報: Wikidata / 安全情報: 外務省海外安全ホームページ / 地震: 気象庁 / 祝日: holidays-jp / 市区町村: 国土地理院 / 為替: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a> / 写真: Wikimedia Commons / 観光地の説明: Wikipedia 日本語版(CC BY-SA 4.0) / 郷土料理: 農林水産省「うちの郷土料理」 / 宿: <a href="https://webservice.rakuten.co.jp/" target="_blank" rel="noopener">Supported by Rakuten Developers</a></div>';
-    h+='<div class="note">版: v106 (2026-10-02)</div>';
+    h+='<div class="note">版: v107 (2026-10-02)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;setTimeout(()=>{try{paginatePanel();}catch(e){console.warn('pg',e);}try{fillAds(panel);}catch(e){}},0);$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
