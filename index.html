@@ -20,8 +20,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
 <style>
   :root{
-    --paper:#faf6ee;--paper2:#f1ebdf;--line:#e3dccb;--ink:#2a2f3a;--ink2:#5b6270;--dim:#8a9099;
-    --acc:#d9773b;--acc2:#f2c9ab;--ok:#3f8f5f;--ng:#c8503c;--info:#3a78b5;--gold:#b8860b;
+    --paper:#faf6ee;--paper2:#f1ebdf;--line:#e3dccb;--ink:#2a2f3a;--ink2:#5b6270;--dim:#646b75;
+    --acc:#bd5c26;--acc2:#f2c9ab;--ok:#3f8f5f;--ng:#c8503c;--info:#3a78b5;--gold:#b8860b;
     --map:#f3efe6;--shadow:0 6px 24px rgba(40,30,10,.14),0 1px 3px rgba(40,30,10,.10);
     --fd:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Noto Sans JP",sans-serif;--fb:"Noto Sans JP","Hiragino Sans","Yu Gothic UI",system-ui,sans-serif;
   }
@@ -520,6 +520,38 @@ details.dwrap[open]>summary .dsum::after{content:'たたむ ▴';margin-left:aut
 .dnow span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dnow em{flex:none;font:700 11px/1 var(--fb);font-style:normal;color:#ffd9a8}
 @keyframes dnowp{0%{box-shadow:0 0 0 0 rgba(126,224,138,.7)}70%{box-shadow:0 0 0 8px rgba(126,224,138,0)}100%{box-shadow:0 0 0 0 rgba(126,224,138,0)}}
+
+/* v106 分かりやすく */
+#bMore{display:none!important}
+#btns button{font-size:11.5px!important;font-weight:700!important;min-height:52px}
+#btns button i svg{width:23px!important;height:23px!important}
+#hud{padding-right:44px!important}
+#hud .hgear{position:absolute;right:6px;top:6px;width:36px;height:36px;border-radius:50%;border:0;background:transparent;color:var(--ink2);display:flex;align-items:center;justify-content:center;padding:0;box-shadow:none}
+#hud .hgear svg{width:20px;height:20px}
+#hud .face{overflow:visible!important}
+#hud .face svg{clip-path:circle(50%)}
+.hprog{height:4px;border-radius:3px;background:var(--paper2);margin:5px 0 2px;overflow:hidden;max-width:260px}
+.hprog i{display:block;height:100%;background:var(--acc);border-radius:3px;transition:width 1s linear}
+.msRow{display:flex!important;align-items:center;gap:8px;flex-wrap:nowrap;overflow:hidden}
+.msRow em{flex:none}
+.msRow .msc{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msRow .more{margin-left:auto;flex:none;color:var(--dim);font-size:18px;line-height:1}
+.wkmore{margin:4px 0 8px}
+.wkmore summary{cursor:pointer;font:700 12.5px/1.6 var(--fb);color:var(--ink2);padding:4px 2px}
+.wkmore small{display:block;color:var(--dim);font-size:12px;margin-top:4px}
+.pgbar{flex-wrap:wrap!important;overflow:visible!important;position:static!important}
+.pgbar button{padding:9px 14px!important}
+.dchips{flex-wrap:wrap!important;overflow:visible!important;margin:0 0 6px!important;padding:0!important}
+.row small,.note{font-size:12.5px;line-height:1.6}
+#hfoot .chips{flex-wrap:wrap!important;overflow:visible!important}
+#coach{position:fixed;z-index:97;width:280px;box-sizing:border-box;background:#2a2f3a;color:#fff;border-radius:14px;padding:10px 12px 10px 14px;display:none;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font:600 13px/1.55 var(--fb)}
+#coach.on{display:flex}
+#coach.above{transform:translateY(-100%)}
+#coach p{margin:0;flex:1}
+#coach button{flex:none;border:0;border-radius:999px;background:#ffd9a8;color:#2a2f3a;font:800 12px/1 var(--fd);padding:9px 11px;min-height:36px}
+#coach::after{content:'';position:absolute;left:var(--ax,140px);width:12px;height:12px;background:#2a2f3a;transform:translateX(-50%) rotate(45deg)}
+#coach.below::after{top:-5px}
+#coach.above::after{bottom:-5px}
 </style>
 </head>
 <body>
@@ -538,7 +570,7 @@ details.dwrap[open]>summary .dsum::after{content:'たたむ ▴';margin-left:aut
 <div id="btns">
   <button id="bHome"><i data-ic="home"></i><span>うち</span></button>
   <button id="bMap"><i data-ic="map"></i><span>地図</span></button>
-  <button id="bPlan"><i data-ic="plan"></i><span>旅程</span></button>
+  <button id="bPlan"><i data-ic="plan"></i><span>行き先</span></button>
   <button id="bDiary"><i data-ic="diary"></i><span>日記</span></button>
   <button id="bFarm"><i data-ic="farm"></i><span>畑</span></button>
   <button id="bMore"><i data-ic="more"></i><span>設定</span></button>
@@ -1853,7 +1885,9 @@ function msBonus(p,t){if(!S.ms||S.ms.day!==todayKey(t))return 0;let b=0;const v=
 function ptExchange(n){track('pt_exchange');const P=ptS();n=Math.floor(Math.min(n,P.bal)/100)*100;if(n<100){toast('100ptからお小遣いにできます','var(--ng)');return;}P.bal-=n;S.wallet+=n;try{ledger('harvest',n,Date.now());}catch(e){}addDiary({kind:'note',tag:'money',emoji:'⭐',text:'旅ポイント'+n.toLocaleString()+'ptを、お小遣い¥'+fmt(n)+'に替えた。',t:Date.now(),noLedger:true});dockSig='';save();toast('⭐ '+n+'pt → ¥'+fmt(n),'var(--acc)');}
 function ptCardHTML(){if(!S.setup)return '';const P=ptS();const t=Date.now();const M_=msToday(t);const ri=rankOf(P.km);const R=RANKS[ri],Nx=RANKS[Math.min(RANKS.length-1,ri+1)];const pct=ri>=RANKS.length-1?100:Math.min(100,Math.round((P.km-R[0])/(Nx[0]-R[0])*100));
   const chips=M_.list.map(x=>{const m=MISSIONS.find(y=>y.id===x.id);if(!m)return '';const pr=m.prog?m.prog(t,P):null;return `<span class="msc${x.done?' ok':''}"><i>${x.done?'✓':m.e}</i>${esc(m.n)}${!x.done&&pr?`<small>${pr[0]}/${pr[1]}${pr[2]}</small>`:''}</span>`;}).join('');
-  return `<button class="ptCard" data-dock="zukan"><div class="ptTop"><span class="rk"><i>${R[2]}</i><b>${esc(R[1])}</b></span><span class="pb"><i style="width:${pct}%"></i></span><span class="km">${P.km<100?P.km.toFixed(1):Math.round(P.km).toLocaleString()}<small>/${Nx[0].toLocaleString()}km</small></span><span class="pt">⭐${P.bal.toLocaleString()}</span></div><div class="msRow"><em>今日のお題</em>${chips}</div></button>`;}
+  const nd=M_.list.filter(x=>x.done).length;const nx=M_.list.find(x=>!x.done);const nm=nx&&MISSIONS.find(y=>y.id===nx.id);const npr=nm&&nm.prog?nm.prog(t,P):null;
+  const msLine=`<em>今日のお題 ${nd}/${M_.list.length}</em>`+(nm?`<span class="msc"><i>${nm.e}</i>${esc(nm.n)}${npr?`<small>${npr[0]}/${npr[1]}${npr[2]}</small>`:''}</span>`:'<span class="msc ok"><i>✓</i>ぜんぶ達成</span>');
+  return `<button class="ptCard" data-dock="zukan"><div class="ptTop"><span class="rk"><i>${R[2]}</i><b>${esc(R[1])}</b></span><span class="pb"><i style="width:${pct}%"></i></span><span class="km">${P.km<100?P.km.toFixed(1):Math.round(P.km).toLocaleString()}<small>/${Nx[0].toLocaleString()}km</small></span><span class="pt">⭐${P.bal.toLocaleString()}</span></div><div class="msRow">${msLine}<b class="more">›</b></div></button>`;}
 function ptPanelHTML(){const P=ptS();const t=Date.now();const M_=msToday(t);const ri=rankOf(P.km);
   let h=`<div class="sec">旅ポイント</div><div class="ptBig"><div><small>いまのポイント</small><b>⭐ ${P.bal.toLocaleString()}<i>pt</i></b><small>今日 +${P.day.pt}pt · ${P.day.km.toFixed(1)}km(歩き ${P.day.walk.toFixed(1)}km)</small></div><button id="bPtEx" ${P.bal>=100?'':'disabled'}>お小遣いにする<small>${Math.floor(P.bal/100)*100}pt → ¥${fmt(Math.floor(P.bal/100)*100)}</small></button></div>
    <div class="note">1kmあたり 歩き10 / 自転車6 / バス・船3 / 電車2 / 新幹線・高速バス1.5 / 飛行機・車1 pt。自分の足ほどたまります。</div>
@@ -1995,6 +2029,31 @@ ajiBonus=function(p){let b=_ajiV105(p);const C=S.cheer||{};if(C.eat===todayKey()
 /* 日記: その日のひとこと */
 const dLineCache={};
 function dayLine(k){const n=S.diary.length;const c=dLineCache[k];if(c&&c.n===n)return c.line;let line='';try{line=storyData(k).line||'';}catch(e){}dLineCache[k]={n,line};return line;}
+
+/* ================= v106 分かりやすく ================= */
+const _goV106=go;
+go=function(i,t){_goV106(i,t);try{S.j.goT=t;}catch(e){}};
+function hudProgress(){const j=S.j;if(j.state!=='walk'||!j.eta||!j.goT)return null;const now=Date.now();if(j.eta<=j.goT)return null;return Math.max(0.03,Math.min(1,(now-j.goT)/(j.eta-j.goT)));}
+document.addEventListener('click',ev=>{if(ev.target.closest&&ev.target.closest('#hud .hgear')){ev.stopPropagation();openTab('more');}},true);
+/* 初めての画面で1つだけ吹き出し */
+const COACH=[
+ {id:'face',when:()=>view==='home'&&!tab,sel:'#hud .face',text:'顔を押すと、声をかけられます。「傘もった?」などで本当に動きが変わります。'},
+ {id:'map',when:()=>view==='map'&&!tab,sel:'#bHome',text:'地図は本物の街です。「うち」で部屋に戻れます。'},
+ {id:'diary',when:()=>tab==='diary',sel:'#panel .dwrap summary',text:'おでかけごとにまとまっています。前の日は押すと開きます。'},
+ {id:'plan',when:()=>tab==='plan',sel:'#bOpenDest',text:'行ってほしい所は、ここから頼めます。'},
+ {id:'fork',when:()=>{const a=S.asks.find(x=>!x.done);return a&&a.type==='fork';},sel:'#ask',text:'見ている時だけの分かれ道。選ぶとそこへ行きます。選ばなくても大丈夫。'},
+ {id:'gear',when:()=>view==='home'&&!tab&&(S.coach||{}).face,sel:'#hud .hgear',text:'設定はここに移りました。'}];
+const GEAR_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>';
+let coachOn=false,coachCur=null;
+function coachCheck(){if(coachOn&&coachCur){let ok=false;try{ok=coachCur.when();}catch(e){}if(!ok){const el=$('coach');if(el)el.classList.remove('on');coachOn=false;coachCur=null;}return;}if(!S.setup||coachOn)return;const W=$('welcome');if(W&&W.classList.contains('on'))return;S.coach=S.coach||{};
+  for(const c of COACH){if(S.coach[c.id])continue;let ok=false;try{ok=c.when();}catch(e){}if(!ok)continue;const el=document.querySelector(c.sel);if(!el)continue;const r=el.getBoundingClientRect();if(!r.width||r.bottom<0||r.top>innerHeight)continue;
+    showCoach(c,r);return;}}
+function showCoach(c,r){coachOn=true;coachCur=c;let el=$('coach');if(!el){el=document.createElement('div');el.id='coach';document.body.appendChild(el);}
+  const below=r.top<innerHeight/2;const x=Math.max(12,Math.min(innerWidth-292,r.left+r.width/2-140));
+  el.className=below?'below':'above';el.style.left=x+'px';el.style.top=(below?r.bottom+10:r.top-10)+'px';el.style.setProperty('--ax',Math.max(14,Math.min(266,r.left+r.width/2-x))+'px');
+  el.innerHTML=`<p>${esc(c.text)}</p><button>わかった</button>`;el.classList.add('on');
+  const done=()=>{S.coach[c.id]=1;save();el.classList.remove('on');coachOn=false;coachCur=null;setTimeout(coachCheck,1500);};el.querySelector('button').onclick=done;setTimeout(()=>{if(el.classList.contains('on')&&!S.coach[c.id])done();},12000);}
+setInterval(coachCheck,1200);
 /* ================= v93 飛行機で遠くへ ================= */
 /* 近くの出発空港(家から150km以内)から、その空港への片道の最安 */
 function airMinTo(code){const mn=FLIGHTS_STATIC&&FLIGHTS_STATIC.min;if(!mn||!code)return null;const here=S.j.pos||[HOME.la,HOME.lo];let best=null;
@@ -3417,7 +3476,7 @@ function renderHud(){const el=$('hud');if(!el)return;const now=Date.now();const 
   {const rk=curRideKind();const sp=$('bHome').querySelector('span');if(sp){const lab=rk==='plane'?'機内':rk==='lounge'?'空港':rk?'車内':'うち';if(sp.textContent!==lab)sp.textContent=lab;}}
   const wd=['日','月','火','水','木','金','土'][d.getDay()];{const pz=S.j.pos?px(S.j.pos[0],S.j.pos[1]):[0,0];const off=pz[0]<0||pz[1]<0||pz[0]>innerWidth||pz[1]>innerHeight;$('bViewMe').classList.toggle('hidden',view==='home'||!S.setup||!(off||Date.now()<followPauseUntil));}$('bViewHome').classList.toggle('hidden',view==='home'||!S.setup||(S.j.at===-1&&S.j.state!=='walk'&&!S.j.transit&&!S.trip)||!!tab);
   const wxc=wxNow();const place=S.trip?S.trip.city+'に滞在中':(S.townName||'');
-  el.innerHTML=`<div class="face" title="声をかける"><svg viewBox="196 364 88 92">${charSVG(240,561,{still:true})}</svg><i class="fcall">💬</i></div><div class="hbody"><div class="h1"><b class="nm">${S.name?esc(S.name):'もう1人のあなた'}</b><span class="hc"><i class="tm">${fmtT(now)}</i>${inJob(now)?'<i class="job">勤務中</i>':''}${wxc||temp?'<i class="wx">'+(rainy()?'☔':'')+(wxc?wxText(wxc.code):'')+(temp?' '+temp:'')+'</i>':''}${warnBadge()}</span></div><div class="st">${linkShops(esc(st))}</div><div class="meta">${road?'<span class="rd">'+esc(road)+'</span> · ':''}${d.getMonth()+1}/${d.getDate()}(${wd})${place?' · '+esc(place):''}${rainLater()!=null?' · <span class="rn">'+rainLater()+'時から雨</span>':''}${!w?' · 仕事は休み':''}</div></div>`;
+  const pr=hudProgress();el.innerHTML=`<button class="hgear" aria-label="設定">${GEAR_SVG}</button><div class="face" title="声をかける"><svg viewBox="196 364 88 92">${charSVG(240,561,{still:true})}</svg><i class="fcall">💬</i></div><div class="hbody"><div class="h1"><b class="nm">${S.name?esc(S.name):'もう1人のあなた'}</b><span class="hc"><i class="tm">${fmtT(now)}</i>${inJob(now)?'<i class="job">勤務中</i>':''}${wxc||temp?'<i class="wx">'+(rainy()?'☔':'')+(wxc?wxText(wxc.code):'')+(temp?' '+temp:'')+'</i>':''}${warnBadge()}</span></div><div class="st">${linkShops(esc(st))}</div>${pr!=null?`<div class="hprog"><i style="width:${Math.round(pr*100)}%"></i></div>`:''}<div class="meta">${road?'<span class="rd">'+esc(road)+'</span> · ':''}${d.getMonth()+1}/${d.getDate()}(${wd})${place?' · '+esc(place):''}${rainLater()!=null?' · <span class="rn">'+rainLater()+'時から雨</span>':''}${!w?' · 仕事は休み':''}</div></div>`;
   try{document.documentElement.style.setProperty('--hudH',el.offsetHeight+'px');}catch(e){}}
 /* 下「今日」カード: 予定・お小遣い・帳面。朝の選択や相談カードが出ている間は隠す */
 function renderFoot(){const el=$('hfoot');if(!el)return;const now=Date.now();const busy=view==='home'||tab||!$('dlg').classList.contains('hidden')||!$('morning').classList.contains('hidden')||!$('ask').classList.contains('hidden')||!$('poiCard').classList.contains('hidden')||!S.setup;
@@ -3481,7 +3540,7 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="seeds">${Object.entries(SEEDS).map(([k,K])=>{const owned=(S.field.owned||['job']).includes(k);const cur=fieldSkin()===k;const em=k==='job'?J.e:K.alt[0]+K.alt[1]+K.alt[2];return `<button class="seed${cur?' on':''}" data-seed="${k}" ${cur?'disabled':''}><span class="em">${em}</span><span class="nm">${K.n}</span><span class="pr">${cur?'いま':owned?'使う':'¥'+fmt(K.price)}</span></button>`;}).join('')}</div>
       ${ledgerHTML()}<div class="row"><div>これまでの収穫<small>${S.name}に渡したお小遣いの合計</small></div><b>¥${fmt(S.stats.harvest)}</b></div>
       <div class="row"><div>いまの財布<small>${S.name}が持っているお金</small></div><b style="color:var(--gold)">¥${fmt(S.wallet)}</b></div>`;}
-  if(tab==='plan'){h+='<h3>旅程</h3>';
+  if(tab==='plan'){h+='<h3>行き先と予定</h3>';
     const tr=S.trip;h+=`<div class="row"><div>いま<small>${statusText()} / 元気 ${Math.round(S.energy)}${tiredToday()?'(疲れている)':''}</small></div><b style="color:var(--acc)">${tr?tr.city:(S.townName||M.name)}</b></div>`;
     if(tr)h+=`<div class="row"><div>旅の途中<small>${fmtD(tr.since)}に出発 / ${tr.cities.join(' → ')} / ${Math.floor((Date.now()-tr.since)/86400000)+1}日目</small></div></div>`;
     if(S.j.transit&&S.j.transit.city&&!S.j.transit.city.home){const cn=S.j.transit.city.name;const cur=S.taught.farBy[cn]||'';h+=`<div class="row"><div>${esc(cn)}への行き方<small>次からの手段を教える(いまは${S.j.transit.legs.some(l=>l.mode==='AIRPLANE')?'飛行機':'鉄道'})</small></div><span><button data-farby="rail" ${cur==='rail'?'class="on"':''}>新幹線・電車で</button> <button data-farby="air" ${cur==='air'?'class="on"':''}>飛行機で</button> ${(COACH_ROUTES[cn]&&COACH_ROUTES[cn].to)||coachTaught(cn)?`<button data-farby="coach" ${cur==='coach'?'class="on"':''}>高速バスで</button> `:''}<button data-farby="" ${!cur?'class="on"':''}>比べて決める</button></span></div>`;}
@@ -3489,7 +3548,7 @@ function renderPanel(){if(!tab)return;let h='';
     const today=todayKey();const es=S.diary.filter(e=>todayKey(e.t)===today);
     {const cw=curWalk(Date.now());const pick=S.walkPick&&S.walkPick.day===todayKey()?S.walkPick.k:'';const out=S.j.at!==-1||S.j.state==='walk'||S.trip;
      h+='<div class="sec">散歩のしかた</div><button id="bOpenDest" class="buy" style="width:100%;margin:0 0 10px">📍 行き先を指示する</button><div class="note" style="margin:0 0 8px">'+(cw?'いまは「'+cw.e+' '+esc(cw.n)+'」。':'まだ決めていない。')+(pick?'あなたが選んだ歩き方で回ります。':'出かけるたびに'+esc(S.name)+'が気分で決めます(途中で変わることも)。')+'</div>'
-       +'<div class="wkg"><button data-walk="" class="'+(pick?'':'on')+'"><i>🎲</i>おまかせ</button>'+WALKS.map(w=>'<button data-walk="'+w.k+'" class="'+(pick===w.k?'on':'')+'"'+(walkOK(w,Date.now())?'':' disabled title="いまは条件が合わない"')+'><i>'+w.e+'</i>'+esc(w.n)+'</button>').join('')+'</div>'
+       +(()=>{const now=Date.now();const ok=WALKS.filter(w=>walkOK(w,now)),ng=WALKS.filter(w=>!walkOK(w,now)&&w.k!=='storm');const b=w=>'<button data-walk="'+w.k+'" class="'+(pick===w.k?'on':'')+'"><i>'+w.e+'</i>'+esc(w.n)+'</button>';return '<div class="wkg"><button data-walk="" class="'+(pick?'':'on')+'"><i>🎲</i>おまかせ</button>'+ok.map(b).join('')+'</div>'+(ng.length?'<details class="wkmore"><summary>いまは選べない歩き方('+ng.length+')</summary><div class="wkg">'+ng.map(w=>'<button disabled><i>'+w.e+'</i>'+esc(w.n)+'</button>').join('')+'</div><small>天気・時間・元気・財布で変わります</small></details>':'');})()
        +(out?'<button id="bComeHome" class="buy" style="width:100%;margin-top:4px">🏠 家に戻す</button>':(S.homeHold>Date.now()?'<div class="note">'+fmtT(S.homeHold)+'まで家にいます。</div>':''));}
     {const here=S.j.pos||[HOME.la,HOME.lo];const L=[];if(EXHIBITS)POIS.forEach((p,i)=>{if(p.nv)return;const xs=exNow(p);if(xs.length)L.push({p,i,x:xs[0],d:dist(here,[p.la,p.lo])});});L.sort((a,b)=>a.d-b.d);
      if(L.length){h+='<div class="sec">近くの展示</div><div class="note" style="margin:0 0 8px">各館の公式サイトから週に1回集めています。</div>'+L.slice(0,8).map(o=>{const k=PK(o.p);const left=exDaysLeft(o.x);return `<div class="row exItem"><div>${esc(exTitle(o.x))}<small>${esc(o.p.n)} · ${exMD(o.x.e)}まで${left<=7?' <b style="color:var(--ng)">もうすぐ終わる</b>':''} · ${(o.d/1000).toFixed(1)}km</small></div><span><button data-exwish="${esc(k)}">${S.wish.includes(k)?'♥':'♡'}</button> <a href="${esc(o.x.u)}" target="_blank" rel="noopener">公式</a></span></div>`;}).join('');}}
@@ -3557,7 +3616,7 @@ function renderPanel(){if(!tab)return;let h='';
       <div class="row"><div>ホーム画面に追加<small>${window.matchMedia&&matchMedia('(display-mode: standalone)').matches?'アプリとして開いている':'ブラウザのメニューから「ホーム画面に追加」。全画面で開ける'}</small></div>${window.__installPrompt?'<button id="bInstall">追加する</button>':''}</div>
       <div class="row"><div style="color:var(--ng)">データを消す</div><button id="bReset">消去</button></div>`;
     h+='<div class="sec">データの出典</div><div class="note">地図・店: © OpenStreetMap contributors / 乗換: Transitous / 海外の見どころ: <a href="https://en.wikivoyage.org/" target="_blank" rel="noopener">Wikivoyage</a>(CC BY-SA 4.0) / 国の情報: Wikidata / 安全情報: 外務省海外安全ホームページ / 地震: 気象庁 / 祝日: holidays-jp / 市区町村: 国土地理院 / 為替: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a> / 写真: Wikimedia Commons / 観光地の説明: Wikipedia 日本語版(CC BY-SA 4.0) / 郷土料理: 農林水産省「うちの郷土料理」 / 宿: <a href="https://webservice.rakuten.co.jp/" target="_blank" rel="noopener">Supported by Rakuten Developers</a></div>';
-    h+='<div class="note">版: v105 (2026-10-02)</div>';
+    h+='<div class="note">版: v106 (2026-10-02)</div>';
     h+='<div class="note">地図と店: © OpenStreetMap contributors(ODbL)。店の人気メニューや口コミは「Googleマップで開く」から。</div>';}
   panel.innerHTML='<button class="pclose" id="pClose" title="閉じる">×</button>'+h;setTimeout(()=>{try{paginatePanel();}catch(e){console.warn('pg',e);}try{fillAds(panel);}catch(e){}},0);$('pClose').onclick=()=>openTab(tab);
   const fvEl=$('field');if(fvEl){fvEl.addEventListener('click',e=>{const r=fvEl.getBoundingClientRect();harvestAt(e.clientX-r.left);});}
